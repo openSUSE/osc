@@ -879,8 +879,6 @@ class Osc(cmdln.Cmdln):
             return conf.config['apiurl']
 
     def do_version(self, subcmd, opts):
-        from .core import get_osc_version
-
         """
         Give version of osc binary
 
@@ -888,19 +886,14 @@ class Osc(cmdln.Cmdln):
             osc version
         """
 
+        from .core import get_osc_version
+
         print(get_osc_version())
 
     @cmdln.option('project')
     @cmdln.option('package', nargs='?')
     @cmdln.option('scm_url', nargs='?')
     def do_init(self, subcmd, opts):
-        from . import conf
-        from .core import Package
-        from .core import Project
-        from .core import show_files_meta
-        from .core import show_scmsync
-        from .core import store_write_string
-
         """
         Initialize a directory as working copy
 
@@ -922,6 +915,13 @@ class Osc(cmdln.Cmdln):
             osc init PRJ PAC
             osc init PRJ PAC SCM_URL
         """
+
+        from . import conf
+        from .core import Package
+        from .core import Project
+        from .core import show_files_meta
+        from .core import show_scmsync
+        from .core import store_write_string
 
         project = opts.project
         package = opts.package
@@ -973,23 +973,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-R', '--revision', metavar='REVISION',
                         help='specify revision (only for sources)')
     def do_list(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import Linkinfo
-        from .core import Repo
-        from .core import get_binarylist
-        from .core import get_repos_of_project
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import meta_get_filelist
-        from .core import meta_get_packagelist
-        from .core import meta_get_project_list
-        from .core import revision_is_empty
-        from .core import shorttime
-        from .core import show_files_meta
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         List sources or binaries on the server
 
@@ -1021,6 +1004,23 @@ class Osc(cmdln.Cmdln):
            ls [PROJECT [PACKAGE]]
            ls -b [PROJECT [PACKAGE [REPO [ARCH]]]]
         """
+
+        from .core import ET
+        from .core import Linkinfo
+        from .core import Repo
+        from .core import get_binarylist
+        from .core import get_repos_of_project
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import meta_get_filelist
+        from .core import meta_get_packagelist
+        from .core import meta_get_project_list
+        from .core import revision_is_empty
+        from .core import shorttime
+        from .core import show_files_meta
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
 
         args = slash_split(args)
         if subcmd == 'll':
@@ -1184,8 +1184,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--extend-package-names', default=False, action="store_true",
                   help='Extend packages names with project name as suffix')
     def do_addcontainers(self, subcmd, opts, *args):
-        from . import _private
-
         """
         Add maintained containers for a give package
 
@@ -1195,6 +1193,8 @@ class Osc(cmdln.Cmdln):
         Examples:
             osc addcontainers [PROJECT PACKAGE]
         """
+
+        from . import _private
 
         apiurl = self.get_api_url()
 
@@ -1212,8 +1212,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-e', '--enable-all', action='store_true',
                         help='Enable all added channels including the ones disabled by default.')
     def do_addchannels(self, subcmd, opts, *args):
-        from . import _private
-
         """
         Add channels to project
 
@@ -1226,6 +1224,9 @@ class Osc(cmdln.Cmdln):
         Examples:
             osc addchannels [PROJECT [PACKAGE]]
         """
+
+        from . import _private
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -1242,8 +1243,6 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.alias('enablechannel')
     def do_enablechannels(self, subcmd, opts, *args):
-        from . import _private
-
         """
         Enables channels
 
@@ -1254,6 +1253,9 @@ class Osc(cmdln.Cmdln):
         Examples:
             osc enablechannels [PROJECT [PACKAGE]]
         """
+
+        from . import _private
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -1266,19 +1268,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-f', '--force', action='store_true',
                         help='force generation of new patchinfo file, do not update existing one.')
     def do_patchinfo(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import checkout_package
-        from .core import http_POST
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import makeurl
-        from .core import meta_get_filelist
-        from .core import meta_get_packagelist
-        from .core import run_editor
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Generate and edit a patchinfo file
 
@@ -1291,6 +1280,19 @@ class Osc(cmdln.Cmdln):
             osc patchinfo
             osc patchinfo [PROJECT [PATCH_NAME]]
         """
+
+        from .core import Package
+        from .core import checkout_package
+        from .core import http_POST
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import makeurl
+        from .core import meta_get_filelist
+        from .core import meta_get_packagelist
+        from .core import run_editor
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
 
         args = slash_split(args)
         apiurl = self.get_api_url()
@@ -1356,14 +1358,15 @@ class Osc(cmdln.Cmdln):
     @cmdln.alias('bsdevelproject')
     @cmdln.alias('dp')
     def do_develproject(self, subcmd, opts, *args):
-        from .core import show_devel_project
-
         """
         Print the devel project / package of a package
 
         Examples:
             osc develproject [PROJECT PACKAGE]
         """
+
+        from .core import show_devel_project
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -1379,13 +1382,14 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.alias('ca')
     def do_cleanassets(self, subcmd, opts, *args):
-        from .core import clean_assets
-
         """
         Clean all previous downloaded assets
 
         This is useful to prepare a new git commit.
         """
+
+        from .core import clean_assets
+
         clean_assets(".")
 
     @cmdln.alias('da')
@@ -1401,13 +1405,14 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-u', '--unset', action='store_true',
                   help='remove devel project')
     def do_setdevelproject(self, subcmd, opts, *args):
-        from .core import set_devel_project
-
         """Set the devel project / package of a package
 
         Examples:
             osc setdevelproject [PROJECT PACKAGE] DEVEL_PROJECT [DEVEL_PACKAGE]
         """
+
+        from .core import set_devel_project
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -1443,14 +1448,14 @@ class Osc(cmdln.Cmdln):
         set_devel_project(apiurl, project, package, devel_project, devel_package, print_to="stdout")
 
     def do_showlinked(self, subcmd, opts, *args):
-        from . import _private
-
         """
         Show all packages linking to a given one
 
         Examples:
             osc showlinked [PROJECT PACKAGE]
         """
+
+        from . import _private
 
         apiurl = self.get_api_url()
 
@@ -1484,9 +1489,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--set-release', metavar='RELEASE_TAG',
                   help='Rename binaries during release using this release tag')
     def do_token(self, subcmd, opts, *args):
-        from . import conf
-        from .core import slash_split
-
         """
         Show and manage authentication token
 
@@ -1499,7 +1501,10 @@ class Osc(cmdln.Cmdln):
             osc token --delete <TOKENID>
             osc token --trigger <TOKENSTRING> [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
         """
+
+        from . import conf
         from . import obs_api
+        from .core import slash_split
 
         args = slash_split(args)
 
@@ -1594,28 +1599,6 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('--delete', action='store_true',
                   help='delete a pattern or attribute')
     def do_meta(self, subcmd, opts, *args):
-        from . import _private
-        from . import conf
-        from . import store as osc_store
-        from .core import decode_it
-        from .core import edit_meta
-        from .core import get_group_meta
-        from .core import get_user_meta
-        from .core import http_DELETE
-        from .core import http_POST
-        from .core import makeurl
-        from .core import metatypes
-        from .core import show_attribute_meta
-        from .core import show_package_meta
-        from .core import show_pattern_meta
-        from .core import show_pattern_metalist
-        from .core import show_project_conf
-        from .core import show_project_meta
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-        from .core import streamfile
-
         """
         Show meta information, or edit it
 
@@ -1658,6 +1641,28 @@ class Osc(cmdln.Cmdln):
             osc meta pattern --delete PRJ PATTERN
             osc meta attribute PRJ [PKG [SUBPACKAGE]] [--attribute ATTRIBUTE] [--create [--set <value_list>]|--delete|--set <value_list>]
         """
+
+        from . import _private
+        from . import conf
+        from . import store as osc_store
+        from .core import decode_it
+        from .core import edit_meta
+        from .core import get_group_meta
+        from .core import get_user_meta
+        from .core import http_DELETE
+        from .core import http_POST
+        from .core import makeurl
+        from .core import metatypes
+        from .core import show_attribute_meta
+        from .core import show_package_meta
+        from .core import show_pattern_meta
+        from .core import show_pattern_metalist
+        from .core import show_project_conf
+        from .core import show_project_meta
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+        from .core import streamfile
 
         args = slash_split(args)
 
@@ -1987,6 +1992,22 @@ class Osc(cmdln.Cmdln):
     @cmdln.alias("submitreq")
     @cmdln.alias("submitpac")
     def do_submitrequest(self, subcmd, opts, *args):
+        """
+        Create request to submit source into another Project
+
+        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration for information
+        on this topic.]
+
+        See the "request" command for showing and modifying existing requests.
+
+        usage:
+            osc submitreq [OPTIONS]
+            osc submitreq [OPTIONS] DESTPRJ [DESTPKG]
+            osc submitreq [OPTIONS] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
+
+            osc submitpac ... is a shorthand for osc submitreq --cleanup ...
+        """
+
         from . import _private
         from . import conf
         from .core import ET
@@ -2012,21 +2033,6 @@ class Osc(cmdln.Cmdln):
         from .core import slash_split
         from .core import store_read_project
 
-        """
-        Create request to submit source into another Project
-
-        [See http://en.opensuse.org/openSUSE:Build_Service_Collaboration for information
-        on this topic.]
-
-        See the "request" command for showing and modifying existing requests.
-
-        usage:
-            osc submitreq [OPTIONS]
-            osc submitreq [OPTIONS] DESTPRJ [DESTPKG]
-            osc submitreq [OPTIONS] SOURCEPRJ SOURCEPKG DESTPRJ [DESTPKG]
-
-            osc submitpac ... is a shorthand for osc submitreq --cleanup ...
-        """
         def _check_service(root):
             serviceinfo = root.find('serviceinfo')
             if serviceinfo is not None:
@@ -2669,15 +2675,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='proceed without asking.')
     @cmdln.alias("creq")
     def do_createrequest(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import _html_escape
-        from .core import change_request_state
-        from .core import edit_message
-        from .core import http_POST
-        from .core import makeurl
-        from .core import slash_split
-
         """
         Create a request with multiple actions
 
@@ -2700,6 +2697,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             This will submit all modified packages under current directory, delete project home:someone:branches:openSUSE:Tools and change the devel project to home:someone:branches:openSUSE:Tools for package osc in project openSUSE:Tools.
         """
+
+        from . import conf
+        from .core import ET
+        from .core import _html_escape
+        from .core import change_request_state
+        from .core import edit_message
+        from .core import http_POST
+        from .core import makeurl
+        from .core import slash_split
+
         src_update = conf.config['submitrequest_on_accept_action'] or None
         # we should check here for home:<id>:branch and default to update, but that would require OBS 1.7 server
         if opts.cleanup:
@@ -2770,14 +2777,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("reqms")
     @cmdln.alias("reqbs")
     def do_requestmaintainership(self, subcmd, opts, *args):
-        from . import conf
-        from .core import Request
-        from .core import edit_message
-        from .core import is_package_dir
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Requests to add user as maintainer or bugowner
 
@@ -2792,6 +2791,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             osc requestbugownership ...                          # accepts same parameters but uses bugowner role
         """
+
+        from . import conf
+        from .core import Request
+        from .core import edit_message
+        from .core import is_package_dir
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         args = slash_split(args)
         apiurl = self.get_api_url()
 
@@ -2863,14 +2871,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("droprequest")
     @cmdln.alias("deletereq")
     def do_deleterequest(self, subcmd, opts, *args):
-        from .core import Request
-        from .core import edit_message
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Request to delete (or 'drop') a package or project
 
@@ -2879,6 +2879,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc deletereq [-m TEXT] PROJECT PACKAGE
             osc deletereq [-m TEXT] PROJECT [--all|--repository REPOSITORY]
         """
+
+        from .core import Request
+        from .core import edit_message
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         args = slash_split(args)
 
         project = None
@@ -2929,13 +2938,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("cr")
     @cmdln.alias("changedevelreq")
     def do_changedevelrequest(self, subcmd, opts, *args):
-        from .core import Request
-        from .core import edit_message
-        from .core import find_default_project
-        from .core import is_package_dir
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Create request to change the devel package definition
 
@@ -2947,6 +2949,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc changedevelrequest PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
         """
+
+        from .core import Request
+        from .core import edit_message
+        from .core import find_default_project
+        from .core import is_package_dir
+        from .core import store_read_package
+        from .core import store_read_project
+
         if len(args) == 0 and is_package_dir('.') and find_default_project():
             wd = Path.cwd()
             devel_project = store_read_project(wd)
@@ -3035,39 +3045,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias("review")
     # FIXME: rewrite this mess and split request and review
     def do_request(self, subcmd, opts, *args):
-        from . import _private
-        from . import conf
-        from .core import ET
-        from .core import change_request_state
-        from .core import change_request_state_template
-        from .core import change_review_state
-        from .core import check_existing_requests
-        from .core import checkout_package
-        from .core import clone_request
-        from .core import create_submit_request
-        from .core import edit_message
-        from .core import get_request
-        from .core import get_request_collection
-        from .core import get_request_log
-        from .core import get_results
-        from .core import get_review_list
-        from .core import get_user_projpkgs_request_list
-        from .core import highlight_diff
-        from .core import http_GET
-        from .core import http_POST
-        from .core import makeurl
-        from .core import print_comments
-        from .core import raw_input
-        from .core import request_diff
-        from .core import request_interactive_review
-        from .core import run_pager
-        from .core import show_package_meta
-        from .core import show_project_meta
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-        from .core import submit_action_diff
-
         """
         Show or modify requests and reviews
 
@@ -3148,6 +3125,39 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc review reopen [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID
             osc review supersede [-m TEXT] [-U USER] [-G GROUP] [-P PROJECT [-p PACKAGE]] ID SUPERSEDING_ID
         """
+
+        from . import _private
+        from . import conf
+        from .core import ET
+        from .core import change_request_state
+        from .core import change_request_state_template
+        from .core import change_review_state
+        from .core import check_existing_requests
+        from .core import checkout_package
+        from .core import clone_request
+        from .core import create_submit_request
+        from .core import edit_message
+        from .core import get_request
+        from .core import get_request_collection
+        from .core import get_request_log
+        from .core import get_results
+        from .core import get_review_list
+        from .core import get_user_projpkgs_request_list
+        from .core import highlight_diff
+        from .core import http_GET
+        from .core import http_POST
+        from .core import makeurl
+        from .core import print_comments
+        from .core import raw_input
+        from .core import request_diff
+        from .core import request_interactive_review
+        from .core import run_pager
+        from .core import show_package_meta
+        from .core import show_project_meta
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+        from .core import submit_action_diff
 
         args = slash_split(args)
 
@@ -3595,11 +3605,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--vrev', metavar='vrev',
                   help='Enforce a given vrev')
     def do_setlinkrev(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import meta_get_packagelist
-        from .core import parseRevisionOption
-        from .core import set_link_rev
-
         """
         Updates a revision number in a source link
 
@@ -3610,6 +3615,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc setlinkrev
             osc setlinkrev PROJECT [PACKAGE]
         """
+
+        from .core import Package
+        from .core import meta_get_packagelist
+        from .core import parseRevisionOption
+        from .core import set_link_rev
 
         apiurl = self.get_api_url()
 
@@ -3654,9 +3664,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print(f"Set link revision of package {project}/{p} to {rev}")
 
     def do_linktobranch(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import link_to_branch
-
         """
         Convert a package containing a classic link with patch to a branch
 
@@ -3667,6 +3674,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc linktobranch                    # from a package working copy
             osc linktobranch PROJECT PACKAGE
         """
+
+        from .core import Package
+        from .core import link_to_branch
+
         apiurl = self.get_api_url()
 
         # assume we're in a working copy if no args were specified
@@ -3687,13 +3698,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
     def do_detachbranch(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import Linkinfo
-        from .core import copy_pac
-        from .core import delete_files
-        from .core import show_files_meta
-        from .core import show_package_meta
-
         """
         Replace a link with its expanded sources
 
@@ -3704,6 +3708,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc detachbranch                    # from a package working copy
             osc detachbranch PROJECT PACKAGE
         """
+
+        from .core import ET
+        from .core import Linkinfo
+        from .core import copy_pac
+        from .core import delete_files
+        from .core import show_files_meta
+        from .core import show_package_meta
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -3747,10 +3759,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-N', '--new-package', action='store_true',
                   help='create a link to a not yet existing package')
     def do_linkpac(self, subcmd, opts, *args):
-        from .core import link_pac
-        from .core import parseRevisionOption
-        from .core import show_upstream_rev_vrev
-
         """
         "Link" a package to another package
 
@@ -3775,6 +3783,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc linkpac PROJECT PACKAGE TARGET_PROJECT [TARGET_PACKAGE]
             osc linkpac TARGET_PROJECT [TARGET_PACKAGE]  # from a package checkout
         """
+
+        from .core import link_pac
+        from .core import parseRevisionOption
+        from .core import show_upstream_rev_vrev
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -3816,8 +3829,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-d', '--disable-publish', action='store_true',
                   help='disable publishing of the aggregated package')
     def do_aggregatepac(self, subcmd, opts, *args):
-        from .core import aggregate_pac
-
         """
         "Aggregate" a package to another package
 
@@ -3835,6 +3846,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc aggregatepac SOURCEPRJ SOURCEPAC[:FLAVOR] DESTPRJ [DESTPAC]
         """
+
+        from .core import aggregate_pac
 
         args = list(args)
         src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
@@ -3872,12 +3885,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-e', '--expand', action='store_true',
                         help='if the source package is a link then copy the expanded version of the link')
     def do_copypac(self, subcmd, opts, *args):
-        from . import conf
-        from .core import copy_pac
-        from .core import decode_it
-        from .core import parseRevisionOption
-        from .core import show_upstream_rev
-
         """
         Copy a package
 
@@ -3898,6 +3905,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc copypac SOURCEPRJ SOURCEPAC DESTPRJ [DESTPAC]
         """
+
+        from . import conf
+        from .core import copy_pac
+        from .core import decode_it
+        from .core import parseRevisionOption
+        from .core import show_upstream_rev
+
         args = list(args)
         src_project, src_package, tgt_project, tgt_package = pop_project_package_targetproject_targetpackage_from_args(
             args, target_package_is_optional=True,
@@ -3956,8 +3970,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--no-delay', action='store_true',
                   help="Don't put the release job in a queue to be run later, but immediately run it. Thus the next call to osc prjresult will reflect it. Otherwise there is no way to know if it is finished or didn't start yet.")
     def do_release(self, subcmd, opts, *args):
-        from . import _private
-
         """
         Release sources and binaries
 
@@ -3967,6 +3979,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc release [PROJECT [PACKAGE]]
         """
+
+        from . import _private
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -3992,15 +4007,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-p', '--package', metavar='PKG', action='append',
                   help='specify packages to release')
     def do_releaserequest(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import Request
-        from .core import create_release_request
-        from .core import edit_message
-        from .core import is_project_dir
-        from .core import show_project_meta
-        from .core import slash_split
-        from .core import store_read_project
-
         """
         Create a release request
 
@@ -4023,6 +4029,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc releaserequest [-p package] [ SOURCEPROJECT ]
         """
+
+        from .core import ET
+        from .core import Request
+        from .core import create_release_request
+        from .core import edit_message
+        from .core import is_project_dir
+        from .core import show_project_meta
+        from .core import slash_split
+        from .core import store_read_project
 
         # FIXME: additional parameters can be a certain repo list to create a partitial release
 
@@ -4067,13 +4082,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                         help='specify message TEXT')
     def do_createincident(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import http_POST
-        from .core import makeurl
-        from .core import search
-        from .core import slash_split
-
         """
         Create a maintenance incident
 
@@ -4088,6 +4096,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc createincident [ MAINTENANCEPROJECT ]
         """
+
+        from . import conf
+        from .core import ET
+        from .core import http_POST
+        from .core import makeurl
+        from .core import search
+        from .core import slash_split
 
         args = slash_split(args)
         apiurl = self.get_api_url()
@@ -4147,20 +4162,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Superseding another request by this one')
     @cmdln.alias("mr")
     def do_maintenancerequest(self, subcmd, opts, *args):
-        from . import _private
-        from . import conf
-        from .core import Package
-        from .core import change_request_state
-        from .core import check_existing_maintenance_requests
-        from .core import create_maintenance_request
-        from .core import edit_message
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import search
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Create a request for starting a maintenance incident
 
@@ -4183,6 +4184,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # FIXME: the follow syntax would make more sense and would obsolete the --release-project parameter
         #       but is incompatible with the current one
         # osc maintenancerequest [ SOURCEPROJECT [ RELEASEPROJECT [ SOURCEPACKAGES ] ]
+
+        from . import _private
+        from . import conf
+        from .core import Package
+        from .core import change_request_state
+        from .core import check_existing_maintenance_requests
+        from .core import create_maintenance_request
+        from .core import edit_message
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import search
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
 
         args = slash_split(args)
         apiurl = self.get_api_url()
@@ -4289,16 +4304,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('sm')
     @cmdln.alias('maintained')
     def do_mbranch(self, subcmd, opts, *args):
-        from . import conf
-        from .core import Project
-        from .core import attribute_branch_pkg
-        from .core import checkout_package
-        from .core import get_source_rev
-        from .core import meta_get_packagelist
-        from .core import output
-        from .core import slash_split
-        from .core import statfrmt
-
         """
         Search or branch multiple instances of a package
 
@@ -4322,6 +4327,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc sm [SOURCEPACKAGE] [-a ATTRIBUTE]
             osc mbranch [ SOURCEPACKAGE [ TARGETPROJECT ] ]
         """
+
+        from . import conf
+        from .core import Project
+        from .core import attribute_branch_pkg
+        from .core import checkout_package
+        from .core import get_source_rev
+        from .core import meta_get_packagelist
+        from .core import output
+        from .core import slash_split
+        from .core import statfrmt
+
         args = slash_split(args)
         apiurl = self.get_api_url()
         tproject = None
@@ -4418,19 +4434,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--disable-build', action='store_true',
                   help='disable building of the branched package')
     def do_branch(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import branch_pkg
-        from .core import checkout_package
-        from .core import find_default_project
-        from .core import is_package_dir
-        from .core import output
-        from .core import print_request_list
-        from .core import show_attribute_meta
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Branch a package
 
@@ -4460,6 +4463,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc getpac SOURCEPACKAGE
             osc bco ...
         """
+
+        from . import conf
+        from .core import ET
+        from .core import branch_pkg
+        from .core import checkout_package
+        from .core import find_default_project
+        from .core import is_package_dir
+        from .core import output
+        from .core import print_request_list
+        from .core import show_attribute_meta
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
 
         if subcmd in ('getpac', 'branchco', 'bco'):
             opts.checkout = True
@@ -4561,10 +4577,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
     def do_undelete(self, subcmd, opts, *args):
-        from .core import edit_message
-        from .core import undelete_package
-        from .core import undelete_project
-
         """
         Restores a deleted project or package on the server
 
@@ -4575,6 +4587,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc undelete PROJECT
            osc undelete PROJECT PACKAGE
         """
+
+        from .core import edit_message
+        from .core import undelete_package
+        from .core import undelete_project
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -4597,10 +4614,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
     def do_rdelete(self, subcmd, opts, *args):
-        from .core import delete_package
-        from .core import delete_project
-        from .core import edit_message
-
         """
         Delete a project or packages on the server
 
@@ -4615,6 +4628,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc rdelete [-r] [-f] PROJECT [PACKAGE]
         """
+
+        from .core import delete_package
+        from .core import delete_project
+        from .core import edit_message
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -4637,14 +4655,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
     def do_lock(self, subcmd, opts, *args):
-        from .core import lock
-
         """
         Locks a project or package
 
         usage:
            osc lock PROJECT [PACKAGE]
         """
+
+        from .core import lock
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -4659,10 +4678,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')
     def do_unlock(self, subcmd, opts, *args):
-        from .core import edit_message
-        from .core import unlock_package
-        from .core import unlock_project
-
         """
         Unlocks a project or package
 
@@ -4671,6 +4686,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc unlock PROJECT [PACKAGE]
         """
+
+        from .core import edit_message
+        from .core import unlock_package
+        from .core import unlock_project
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -4691,14 +4711,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('', '--specfile', metavar='FILE',
                       help='Path to specfile. (if you pass more than working copy this option is ignored)')
     def do_updatepacmetafromspec(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import parseargs
-
         """
         Update package meta information from a specfile
 
         ARG, if specified, is a package working copy.
         """
+
+        from .core import Package
+        from .core import parseargs
 
         args = parseargs(args)
         if opts.specfile and len(args) == 1:
@@ -4732,17 +4752,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-u', '--unexpand', action='store_true',
                         help='Local changes only, ignore changes in linked package sources')
     def do_diff(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import Package
-        from .core import highlight_diff
-        from .core import http_GET
-        from .core import makeurl
-        from .core import parseRevisionOption
-        from .core import parseargs
-        from .core import run_pager
-        from .core import server_diff
-        from .core import server_diff_noex
-
         """
         Generates a diff
 
@@ -4761,6 +4770,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc linkdiff PROJ PACK
                 Compare a package against the link base (ignoring working copy changes).
         """
+
+        from .core import ET
+        from .core import Package
+        from .core import highlight_diff
+        from .core import http_GET
+        from .core import makeurl
+        from .core import parseRevisionOption
+        from .core import parseargs
+        from .core import run_pager
+        from .core import server_diff
+        from .core import server_diff_noex
 
         if (subcmd in ('ldiff', 'linkdiff')):
             opts.link = True
@@ -4860,12 +4880,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--xml', action='store_true',
                   help='show diff as xml (only for issues diff)')
     def do_rdiff(self, subcmd, opts, *args):
-        from .core import decode_it
-        from .core import highlight_diff
-        from .core import parseRevisionOption
-        from .core import run_pager
-        from .core import server_diff_noex
-
         """
         Server-side "pretty" diff of two packages
 
@@ -4879,6 +4893,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc rdiff PROJECT PACKAGE
             osc rdiff PROJECT --meta
         """
+
+        from .core import decode_it
+        from .core import highlight_diff
+        from .core import parseRevisionOption
+        from .core import run_pager
+        from .core import server_diff_noex
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -5026,15 +5047,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   dest='nomissingok',
                   help='fail if the parent package does not exist on the server')
     def do_pdiff(self, subcmd, opts, *args):
-        from .core import highlight_diff
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import run_pager
-        from .core import server_diff
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Quick alias to diff the content of a package with its parent
 
@@ -5043,6 +5055,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc pdiff [--plain|-p] [--nomissing-ok|-n] PKG
             osc pdiff [--plain|-p] [--nomissing-ok|-n] PRJ PKG
         """
+
+        from .core import highlight_diff
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import run_pager
+        from .core import server_diff
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
 
         apiurl = self.get_api_url()
         args = slash_split(args)
@@ -5172,12 +5193,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-d', '--diffstat', action='store_true',
                   help='show diffstat of differences')
     def do_prdiff(self, subcmd, opts, *args):
-        from .core import Project
-        from .core import get_request_collection
-        from .core import is_project_dir
-        from .core import meta_get_packagelist
-        from .core import server_diff_noex
-
         """
         Server-side diff of two projects
 
@@ -5191,6 +5206,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc prdiff [OPTIONS] OLDPRJ NEWPRJ
             osc prdiff [OPTIONS] [home:$USER:branch:$PRJ]
         """
+
+        from .core import Project
+        from .core import get_request_collection
+        from .core import is_project_dir
+        from .core import meta_get_packagelist
+        from .core import server_diff_noex
 
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -5261,13 +5282,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(f"new only:  {pkg}")
 
     def do_repourls(self, subcmd, opts, *args):
-        from . import _private
-        from .core import decode_it
-        from .core import get_buildconfig
-        from .core import get_repositories_of_project
-        from .core import return_external
-        from .core import store_read_project
-
         """
         Shows URLs of .repo files
 
@@ -5276,6 +5290,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
            osc repourls [PROJECT]
         """
+
+        from . import _private
+        from .core import decode_it
+        from .core import get_buildconfig
+        from .core import get_repositories_of_project
+        from .core import return_external
+        from .core import store_read_project
+
         def _repo_type(apiurl, project, repo):
             if not os.path.exists('/usr/lib/build/queryconfig'):
                 return None
@@ -5315,9 +5337,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print(url_tmpl % (project.replace(':', ':/'), repo, project))
 
     def do_browse(self, subcmd, opts, *args):
-        from . import _private
-        from .core import run_external
-
         """
         Opens browser
 
@@ -5325,6 +5344,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc browse [PROJECT [PACKAGE]]
            osc browse [REQUEST_ID]
         """
+
+        from . import _private
+        from .core import run_external
+
         args = list(args)
         apiurl = self.get_api_url()
         obs_url = _private.get_configuration_value(apiurl, "obs_url")
@@ -5375,29 +5398,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Do not clone native scm repositories: Different representation and you will not be able to submit changes!')
     @cmdln.alias('co')
     def do_checkout(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import Linkinfo
-        from .core import Project
-        from .core import checkRevision
-        from .core import checkout_deleted_package
-        from .core import checkout_package
-        from .core import get_osc_version
-        from .core import get_source_file
-        from .core import is_project_dir
-        from .core import meta_get_packagelist
-        from .core import parseRevisionOption
-        from .core import print_request_list
-        from .core import revision_is_empty
-        from .core import run_obs_scm_bridge
-        from .core import show_files_meta
-        from .core import show_project_meta
-        from .core import show_scmsync
-        from .core import show_upstream_srcmd5
-        from .core import slash_split
-        from .core import statfrmt
-        from .core import store_read_project
-
         """
         Check out content from the repository
 
@@ -5423,6 +5423,29 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             with the result of rpm -q --qf '%%{DISTURL}\\n' PACKAGE
                osc co obs://API/PROJECT/PLATFORM/REVISION-PACKAGE
         """
+
+        from . import conf
+        from .core import ET
+        from .core import Linkinfo
+        from .core import Project
+        from .core import checkRevision
+        from .core import checkout_deleted_package
+        from .core import checkout_package
+        from .core import get_osc_version
+        from .core import get_source_file
+        from .core import is_project_dir
+        from .core import meta_get_packagelist
+        from .core import parseRevisionOption
+        from .core import print_request_list
+        from .core import revision_is_empty
+        from .core import run_obs_scm_bridge
+        from .core import show_files_meta
+        from .core import show_project_meta
+        from .core import show_scmsync
+        from .core import show_upstream_srcmd5
+        from .core import slash_split
+        from .core import statfrmt
+        from .core import store_read_project
 
         if opts.unexpand_link:
             expand_link = False
@@ -5563,13 +5586,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                              '"exclude_glob" config option')
     @cmdln.alias('st')
     def do_status(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import Project
-        from .core import compare
-        from .core import is_project_dir
-        from .core import parseargs
-        from .core import statfrmt
-
         """
         Show status of files in working copy
 
@@ -5597,6 +5613,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc status [OPTS] [PATH...]
         """
+
+        from .core import Package
+        from .core import Project
+        from .core import compare
+        from .core import is_project_dir
+        from .core import parseargs
+        from .core import statfrmt
 
         args = parseargs(args)
         lines = []
@@ -5635,11 +5658,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-f', '--force', action='store_true',
                   help='add files even if they are excluded by the exclude_glob config option')
     def do_add(self, subcmd, opts, *args):
-        from .core import addDownloadUrlService
-        from .core import addFiles
-        from .core import addGitSource
-        from .core import parseargs
-
         """
         Mark files to be added upon the next commit
 
@@ -5653,6 +5671,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc add URL [URL...]
             osc add FILE [FILE...]
         """
+
+        from .core import addDownloadUrlService
+        from .core import addFiles
+        from .core import addGitSource
+        from .core import parseargs
+
         if not args:
             self.argparse_error("Incorrect number of arguments.")
 
@@ -5669,15 +5693,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
 
     def do_mkpac(self, subcmd, opts, *args):
-        from . import conf
-        from .core import createPackageDir
-
         """
         Create a new package under version control
 
         usage:
             osc mkpac new_package
         """
+
+        from . import conf
+        from .core import createPackageDir
+
         if not conf.config['do_package_tracking']:
             print("to use this feature you have to enable \'do_package_tracking\' "
                   "in the [general] section in the configuration file", file=sys.stderr)
@@ -5693,6 +5718,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='If CWD is a project dir then scan all package dirs as well')
     @cmdln.alias('ar')
     def do_addremove(self, subcmd, opts, *args):
+        """
+        Adds new files, removes disappeared files
+
+        Adds all files new in the local copy, and removes all disappeared files.
+
+        ARG, if specified, is a package working copy.
+        """
+
         from . import conf
         from .core import Package
         from .core import Project
@@ -5701,14 +5734,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_project_dir
         from .core import parseargs
         from .core import statfrmt
-
-        """
-        Adds new files, removes disappeared files
-
-        Adds all files new in the local copy, and removes all disappeared files.
-
-        ARG, if specified, is a package working copy.
-        """
 
         args = parseargs(args)
         arg_list = args[:]
@@ -5770,8 +5795,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option("--skip-local-service-run", "--noservice", "--no-service", default=False, action="store_true",
                   help="Skip run of local source services as specified in _service file.")
     def do_commit(self, subcmd, opts, *args):
-        from .core import get_default_editor
-
         """
         Upload content to the repository server
 
@@ -5783,6 +5806,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc ci <dir>
            osc ci file1 file2 ...
         """
+
+        from .core import get_default_editor
+
         try:
             self._commit(subcmd, opts, args)
         except oscerr.ExtRuntimeError as e:
@@ -5951,19 +5977,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='Skip all files with a given size')
     @cmdln.alias('up')
     def do_update(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import Linkinfo
-        from .core import Package
-        from .core import Project
-        from .core import checkRevision
-        from .core import is_project_dir
-        from .core import parseRevisionOption
-        from .core import parseargs
-        from .core import print_request_list
-        from .core import show_files_meta
-        from .core import show_upstream_rev
-
         """
         Update a working copy
 
@@ -5986,6 +5999,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         patches will be checked out. The option --unexpand-link can be used to
         switch back to the "raw" source with a _link file plus patch(es).
         """
+
+        from . import conf
+        from .core import ET
+        from .core import Linkinfo
+        from .core import Package
+        from .core import Project
+        from .core import checkRevision
+        from .core import is_project_dir
+        from .core import parseRevisionOption
+        from .core import parseargs
+        from .core import print_request_list
+        from .core import show_files_meta
+        from .core import show_upstream_rev
 
         if opts.expand_link and opts.unexpand_link:
             raise oscerr.WrongOptions('Sorry, the options --expand-link and '
@@ -6094,15 +6120,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('del')
     @cmdln.alias('remove')
     def do_delete(self, subcmd, opts, *args):
-        from . import conf
-        from .core import Package
-        from .core import Project
-        from .core import getPrjPacPaths
-        from .core import getTransActPath
-        from .core import is_project_dir
-        from .core import parseargs
-        from .core import statfrmt
-
         """
         Mark files or package directories to be deleted upon the next 'checkin'
 
@@ -6121,6 +6138,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         If you are sure that you want to remove a package and all
         its files use \'--force\' switch. Sometimes this also works without --force.
         """
+
+        from . import conf
+        from .core import Package
+        from .core import Project
+        from .core import getPrjPacPaths
+        from .core import getTransActPath
+        from .core import is_project_dir
+        from .core import parseargs
+        from .core import statfrmt
 
         if not args:
             self.argparse_error("Incorrect number of arguments.")
@@ -6169,9 +6195,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         sys.exit(f'\'{filename}\' is marked as skipped and no local file with this name exists')
 
     def do_resolved(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import parseargs
-
         """
         Remove 'conflicted' state on working copy files
 
@@ -6190,6 +6213,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc resolved FILE [FILE...]
         """
 
+        from .core import Package
+        from .core import parseargs
+
         if not args:
             self.argparse_error("Incorrect number of arguments.")
 
@@ -6203,9 +6229,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('dists')
     def do_distributions(self, subcmd, opts, *args):
-        from .core import get_distributions
-        from .util.helper import format_table
-
         """
         Shows all available distributions
 
@@ -6215,6 +6238,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc distributions
         """
+
+        from .core import get_distributions
+        from .util.helper import format_table
+
         apiurl = self.get_api_url()
 
         dists = get_distributions(apiurl)
@@ -6231,12 +6258,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('package')
     @cmdln.option('files', metavar="file", nargs='+')
     def do_rremove(self, subcmd, opts):
-        from .core import delete_files
-        from .core import raw_input
-
         """
         Remove source files from selected package
         """
+
+        from .core import delete_files
+        from .core import raw_input
+
         project = opts.project
         package = opts.package
         files = opts.files
@@ -6303,6 +6331,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--show-excluded', action='store_true',
                   help='show repos that are excluded for this package')
     def do_results(self, subcmd, opts, *args):
+        """
+        Shows the build results of a package or project
+
+        usage:
+            osc results                 # (inside working copy of PRJ or PKG)
+            osc results PROJECT [PACKAGE[:FLAVOR]]
+        """
+
         from .core import MultibuildFlavorResolver
         from .core import csv
         from .core import decode_it
@@ -6315,14 +6351,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
-
-        """
-        Shows the build results of a package or project
-
-        usage:
-            osc results                 # (inside working copy of PRJ or PKG)
-            osc results PROJECT [PACKAGE[:FLAVOR]]
-        """
 
         args = slash_split(args)
 
@@ -6446,11 +6474,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='show packages that are excluded in all repos, also hide repos that have only excluded packages')
     @cmdln.alias('pr')
     def do_prjresults(self, subcmd, opts, *args):
-        from .core import decode_it
-        from .core import get_package_results
-        from .core import get_prj_results
-        from .core import store_read_project
-
         """
         Shows project-wide build results
 
@@ -6458,6 +6481,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc prjresults (inside working copy)
             osc prjresults PROJECT
         """
+
+        from .core import decode_it
+        from .core import get_package_results
+        from .core import get_prj_results
+        from .core import store_read_project
+
         apiurl = self.get_api_url()
 
         if args:
@@ -6493,13 +6522,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('rpmlint')
     @cmdln.alias('lint')
     def do_rpmlintlog(self, subcmd, opts, *args):
-        from . import build as osc_build
-        from .core import decode_it
-        from .core import get_rpmlint_log
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Shows the rpmlint logfile
 
@@ -6509,6 +6531,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc rpmlintlog project package repository arch
         """
+
+        from . import build as osc_build
+        from .core import decode_it
+        from .core import get_rpmlint_log
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         apiurl = self.get_api_url()
         args = slash_split(args)
 
@@ -6549,16 +6579,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--strip-time', action='store_true',
                         help='strip leading build time from the log')
     def do_buildlog(self, subcmd, opts, *args):
-        from . import build as osc_build
-        from . import conf
-        from .core import ET
-        from .core import http_GET
-        from .core import makeurl
-        from .core import parse_buildlogurl
-        from .core import print_buildlog
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Shows the build log of a package
 
@@ -6575,6 +6595,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         buildlog [REPOSITORY ARCH | BUILDLOGURL]
         """
+
+        from . import build as osc_build
+        from . import conf
+        from .core import ET
+        from .core import http_GET
+        from .core import makeurl
+        from .core import parse_buildlogurl
+        from .core import print_buildlog
+        from .core import store_read_package
+        from .core import store_read_project
+
         project = package = repository = arch = None
 
         apiurl = self.get_api_url()
@@ -6668,14 +6699,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--strip-time', action='store_true',
                         help='strip leading build time from the log')
     def do_remotebuildlog(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import http_GET
-        from .core import makeurl
-        from .core import parse_buildlogurl
-        from .core import print_buildlog
-        from .core import slash_split
-
         """
         Shows the build log of a package
 
@@ -6691,6 +6714,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             or
             osc remotebuildlog buildlogurl
         """
+
+        from . import conf
+        from .core import ET
+        from .core import http_GET
+        from .core import makeurl
+        from .core import parse_buildlogurl
+        from .core import print_buildlog
+        from .core import slash_split
+
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
         else:
@@ -6757,6 +6789,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-s', '--strip-time', action='store_true',
                         help='strip leading build time from the log')
     def do_localbuildlog(self, subcmd, opts, *args):
+        """
+        Shows the build log of a local buildchroot
+
+        usage:
+            osc lbl [REPOSITORY [ARCH]]
+            osc lbl # show log of newest last local build
+        """
+
         from . import build as osc_build
         from . import conf
         from .core import BUFSIZE
@@ -6765,13 +6805,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_package
         from .core import store_read_project
 
-        """
-        Shows the build log of a local buildchroot
-
-        usage:
-            osc lbl [REPOSITORY [ARCH]]
-            osc lbl # show log of newest last local build
-        """
         if conf.config['build-type']:
             # FIXME: raise Exception instead
             print('Not implemented for VMs', file=sys.stderr)
@@ -6818,13 +6851,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('tr')
     def do_triggerreason(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import is_package_dir
-        from .core import show_package_trigger_reason
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Show reason why a package got triggered to build
 
@@ -6842,6 +6868,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc triggerreason REPOSITORY ARCH
             osc triggerreason PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH
         """
+
+        from .core import ET
+        from .core import is_package_dir
+        from .core import show_package_trigger_reason
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         wd = Path.cwd()
         args = slash_split(args)
         project = package = repository = arch = None
@@ -7006,16 +7040,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--nodebugpackages', '--no-debug-packages', action='store_true',
                   help='Skip installation of additional debug packages for CLI builds (specified in obs:cli_debug_packages in project metadata)')
     def do_buildinfo(self, subcmd, opts, *args):
-        from . import build as osc_build
-        from .core import decode_it
-        from .core import get_buildconfig
-        from .core import get_buildinfo
-        from .core import is_package_dir
-        from .core import return_external
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Shows the build info
 
@@ -7048,6 +7072,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             osc buildinfo [OPTS] PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH [BUILD_DESCR]
         """
+
+        from . import build as osc_build
+        from .core import decode_it
+        from .core import get_buildconfig
+        from .core import get_buildinfo
+        from .core import is_package_dir
+        from .core import return_external
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         wd = Path.cwd()
         args = slash_split(args)
 
@@ -7120,13 +7155,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print(decode_it(buildinfo))
 
     def do_buildconfig(self, subcmd, opts, *args):
-        from .core import decode_it
-        from .core import get_buildconfig
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import slash_split
-        from .core import store_read_project
-
         """
         Shows the build config
 
@@ -7144,6 +7172,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc buildconfig REPOSITORY                      (in pkg or prj dir)
             osc buildconfig PROJECT REPOSITORY
         """
+
+        from .core import decode_it
+        from .core import get_buildconfig
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import slash_split
+        from .core import store_read_project
 
         wd = Path.cwd()
         args = slash_split(args)
@@ -7170,8 +7205,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('worker', metavar='<hostarch>:<workerid>')
     def do_workerinfo(self, subcmd, opts):
-        from .core import get_worker_info
-
         """
         Gets the information to a worker from the server
 
@@ -7181,6 +7214,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc workerinfo <hostarch>:<workerid>
         """
+
+        from .core import get_worker_info
+
         worker = opts.worker
         apiurl = self.get_api_url()
         print(''.join(get_worker_info(apiurl, worker)))
@@ -7190,12 +7226,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
                   help=HELP_MULTIBUILD_ONE)
     def do_checkconstraints(self, subcmd, opts, *args):
-        from .core import check_constraints
-        from .core import get_repos_of_project
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Check the constraints and view compliant workers
 
@@ -7210,6 +7240,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 osc checkconstraints [OPTS] CONSTRAINTSFILE
                 osc checkconstraints [OPTS]
         """
+
+        from .core import check_constraints
+        from .core import get_repos_of_project
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         repository = arch = constraintsfile = None
         args = slash_split(args)
 
@@ -7271,16 +7308,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('repos')
     @cmdln.alias('platforms')
     def do_repositories(self, subcmd, opts, *args):
-        from . import store as osc_store
-        from .core import build_table
-        from .core import get_repos_of_project
-        from .core import get_repositories_of_project
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import show_package_disabled_repos
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Shows repositories configured for a project
 
@@ -7290,6 +7317,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc repos
             osc repos [PROJECT] [PACKAGE]
         """
+
+        from . import store as osc_store
+        from .core import build_table
+        from .core import get_repos_of_project
+        from .core import get_repositories_of_project
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import show_package_disabled_repos
+        from .core import store_read_package
+        from .core import store_read_project
 
         apiurl = self.get_api_url()
         project = None
@@ -7647,13 +7684,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('shell')
     @cmdln.alias('wipe')
     def do_build(self, subcmd, opts, *args):
-        from . import build as osc_build
-        from . import conf
-        from . import git_scm
-        from . import store as osc_store
-        from .core import Project
-        from .output import get_user_input
-
         """
         Build a package on your local machine
 
@@ -7719,6 +7749,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # OSC_BUILD_ROOT overrides the setting of build-root.
         # OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
         """
+
+        from . import build as osc_build
+        from . import conf
+        from . import git_scm
+        from . import store as osc_store
+        from .core import Project
+        from .output import get_user_input
+
         if shutil.which(conf.config['build-cmd']) is None:
             print(f"Error: build ('{conf.config['build-cmd']}') command not found", file=sys.stderr)
             print('Install the build package from http://download.opensuse.org/repositories/openSUSE:/Tools/', file=sys.stderr)
@@ -8009,8 +8047,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('buildhist')
     def do_buildhistory(self, subcmd, opts, *args):
-        from . import _private
-
         """
         Shows the build history of a package
 
@@ -8021,6 +8057,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc buildhist REPOSITORY ARCHITECTURE
            osc buildhist PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCHITECTURE
         """
+
+        from . import _private
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -8052,13 +8091,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help=HELP_MULTIBUILD_ONE)
     @cmdln.alias('jobhist')
     def do_jobhistory(self, subcmd, opts, *args):
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import print_jobhistory
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Shows the job history of a project
 
@@ -8069,6 +8101,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc jobhist REPOSITORY ARCHITECTURE  (in project dir)
            osc jobhist PROJECT [PACKAGE[:FLAVOR]] REPOSITORY ARCHITECTURE
         """
+
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import print_jobhistory
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         wd = Path.cwd()
         args = slash_split(args)
 
@@ -8121,12 +8161,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--meta', action='store_true', default=None,
                         help='checkout out meta data instead of sources')
     def do_log(self, subcmd, opts, *args):
-        from .core import checkRevision
-        from .core import get_commitlog
-        from .core import parseRevisionOption
-        from .core import revision_is_empty
-        from .output import pipe_to_pager
-
         """
         Shows the commit log of a package
 
@@ -8134,6 +8168,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc log (inside working copy)
             osc log remote_project [remote_package]
         """
+
+        from .core import checkRevision
+        from .core import get_commitlog
+        from .core import parseRevisionOption
+        from .core import revision_is_empty
+        from .output import pipe_to_pager
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -8158,12 +8199,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-v', '--verbose', action='store_true',
                   help='verbose run of local services for debugging purposes')
     def do_service(self, subcmd, opts, *args):
-        from . import store as osc_store
-        from .core import Package
-        from .core import mergeservice
-        from .core import runservice
-        from .core import waitservice
-
         """
         Handle source services
 
@@ -8195,6 +8230,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             disabledrun dr run all services with mode "disabled"
         """
         # disabledrun and localrun exists as well, but are considered to be obsolete
+
+        from . import store as osc_store
+        from .core import Package
+        from .core import mergeservice
+        from .core import runservice
+        from .core import waitservice
 
         args = list(args)
         apiurl = self.get_api_url()
@@ -8267,9 +8308,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Rebuild all packages of entire project')
     @cmdln.alias('rebuildpac')
     def do_rebuild(self, subcmd, opts, *args):
-        from .core import MultibuildFlavorResolver
-        from .core import rebuild
-
         """
         Trigger package rebuilds
 
@@ -8284,6 +8322,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc rebuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
         """
+
+        from .core import MultibuildFlavorResolver
+        from .core import rebuild
+
         apiurl = self.get_api_url()
 
         args = list(args)
@@ -8323,17 +8365,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(rebuild(apiurl, project, package, repo, arch, code))
 
     def do_info(self, subcmd, opts, *args):
-        from . import store as osc_store
-        from .core import Package
-        from .core import Project
-        from .core import parseargs
-
         """
         Print information about a working copy
 
         Print information about each ARG (default: '.')
         ARG is a working-copy path.
         """
+
+        from . import store as osc_store
+        from .core import Package
+        from .core import Project
+        from .core import parseargs
 
         args = parseargs(args)
         for pdir in args:
@@ -8347,14 +8389,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR', action='append',
                   help=HELP_MULTIBUILD_MANY)
     def do_sendsysrq(self, subcmd, opts, *args):
-        from . import store as osc_store
-        from .core import MultibuildFlavorResolver
-        from .core import cmdbuild
-        from .core import is_package_dir
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Trigger a sysrq in a running build
 
@@ -8366,6 +8400,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc sendsysrq REPOSITORY ARCH SYSRQ
             osc sendsysrq PROJECT PACKAGE[:FLAVOR] REPOSITORY ARCH SYSRQ
         """
+
+        from . import store as osc_store
+        from .core import MultibuildFlavorResolver
+        from .core import cmdbuild
+        from .core import is_package_dir
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         args = slash_split(args)
 
         project = package = repo = arch = sysrq = None
@@ -8409,6 +8452,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Restart all running builds of entire project')
     @cmdln.alias('abortbuild')
     def do_restartbuild(self, subcmd, opts, *args):
+        """
+        Restart the build of a certain project or package
+
+        usage:
+            osc restartbuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
+        """
+
         from . import store as osc_store
         from .core import MultibuildFlavorResolver
         from .core import cmdbuild
@@ -8418,12 +8468,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_package
         from .core import store_read_project
 
-        """
-        Restart the build of a certain project or package
-
-        usage:
-            osc restartbuild [PROJECT [PACKAGE[:FLAVOR] [REPOSITORY [ARCH]]]]
-        """
         args = slash_split(args)
 
         package = repo = arch = code = None
@@ -8485,15 +8529,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Delete all binaries regardless of the package status (previously default)')
     @cmdln.alias("unpublish")
     def do_wipebinaries(self, subcmd, opts, *args):
-        from .core import MultibuildFlavorResolver
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-        from .core import unpublish
-        from .core import wipebinaries
-
         """
         Delete all binary packages of a certain project/package
 
@@ -8506,6 +8541,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc unpublish OPTS                       # works in checked out project dir
             osc unpublish OPTS PROJECT [PACKAGE[:FLAVOR]]
         """
+
+        from .core import MultibuildFlavorResolver
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+        from .core import unpublish
+        from .core import wipebinaries
 
         args = slash_split(args)
 
@@ -8574,18 +8618,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--ccache', action="store_true",
                   help='allow fetching ccache archive')
     def do_getbinaries(self, subcmd, opts, *args):
-        from .core import MultibuildFlavorResolver
-        from .core import get_binary_file
-        from .core import get_binarylist
-        from .core import get_repos_of_project
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import meta_get_packagelist
-        from .core import output
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Download binaries to a local directory
 
@@ -8600,6 +8632,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE
            osc getbinaries PROJECT PACKAGE REPOSITORY ARCHITECTURE FILE
         """
+
+        from .core import MultibuildFlavorResolver
+        from .core import get_binary_file
+        from .core import get_binarylist
+        from .core import get_repos_of_project
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import meta_get_packagelist
+        from .core import output
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
 
         args = slash_split(args)
 
@@ -8732,15 +8776,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--maintained', action='store_true',
                   help='limit search results to packages with maintained attribute set.')
     def do_my(self, subcmd, opts, *args):
-        from . import conf
-        from .core import ET
-        from .core import Request
-        from .core import get_request_collection
-        from .core import get_user_projpkgs
-        from .core import get_user_projpkgs_request_list
-        from .core import http_GET
-        from .core import makeurl
-
         """
         Show waiting work, packages, projects or requests involving yourself
 
@@ -8770,6 +8805,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # of my projects and TO one of my projects. The current implementation appears to make this difference.
         # The usage above indicates, that sr would be a subset of rq, which is no the case with my tests.
         # jw.
+
+        from . import conf
+        from .core import ET
+        from .core import Request
+        from .core import get_request_collection
+        from .core import get_user_projpkgs
+        from .core import get_user_projpkgs_request_list
+        from .core import http_GET
+        from .core import makeurl
 
         args_rq = ('requests', 'request', 'req', 'rq', 'work')
         args_sr = ('submitrequests', 'submitrequest', 'submitreq', 'submit', 'sr')
@@ -8992,13 +9036,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('se')
     @cmdln.alias('bse')
     def do_search(self, subcmd, opts, *args):
-        from . import conf
-        from .core import build_table
-        from .core import filter_role
-        from .core import get_source_rev
-        from .core import search
-        from .core import xpath_join
-
         """
         Search for a project and/or package
 
@@ -9011,6 +9048,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc bse ...                         ('osc search --binary')
             osc se 'perl(Foo::Bar)'             ('osc search --package perl-Foo-Bar')
         """
+
+        from . import conf
+        from .core import build_table
+        from .core import filter_role
+        from .core import get_source_rev
+        from .core import search
+        from .core import xpath_join
+
         def build_xpath(attr, what, substr=False):
             if substr:
                 return f'contains({attr}, \'{what}\')'
@@ -9231,6 +9276,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='commit the new files')
     @cmdln.option('srpm')
     def do_importsrcpkg(self, subcmd, opts):
+        """
+        Import a new package from a src.rpm
+
+        A new package dir will be created inside the project dir
+        (if no project is specified and the current working dir is a
+        project dir the package will be created in this project). If
+        the package does not exist on the server it will be created
+        too otherwise the meta data of the existing package will be
+        updated (<title /> and <description />).
+        The src.rpm will be extracted into the package dir. The files
+        won't be committed unless you explicitly pass the --commit switch.
+
+        SRPM is the path of the src.rpm in the local filesystem,
+        or an URL.
+        """
+
         from . import conf
         from . import store as osc_store
         from .core import ET
@@ -9247,21 +9308,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .grabber import OscFileGrabber
         from .util import rpmquery
 
-        """
-        Import a new package from a src.rpm
-
-        A new package dir will be created inside the project dir
-        (if no project is specified and the current working dir is a
-        project dir the package will be created in this project). If
-        the package does not exist on the server it will be created
-        too otherwise the meta data of the existing package will be
-        updated (<title /> and <description />).
-        The src.rpm will be extracted into the package dir. The files
-        won't be committed unless you explicitly pass the --commit switch.
-
-        SRPM is the path of the src.rpm in the local filesystem,
-        or an URL.
-        """
         srpm = opts.srpm
 
         if opts.delete_old_files and conf.config['do_package_tracking']:
@@ -9385,9 +9431,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('url',
                         help="either URL '/path' or full URL with 'scheme://hostname/path'")
     def do_api(self, subcmd, opts):
-        from .core import edit_text
-        from .core import http_request
-
         """
         Issue an arbitrary request to the API
 
@@ -9403,6 +9446,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
           osc api -X PUT -T /etc/fstab source/home:user/test5/myfstab
           osc api -e /configuration
         """
+
+        from .core import edit_text
+        from .core import http_request
 
         url = opts.url
         apiurl = self.get_api_url()
@@ -9472,26 +9518,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Define message as commit entry or request description')
     @cmdln.alias('bugowner')
     def do_maintainer(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import _html_escape
-        from .core import addPerson
-        from .core import build_table
-        from .core import delPerson
-        from .core import edit_message
-        from .core import get_group_data
-        from .core import get_user_data
-        from .core import http_POST
-        from .core import makeurl
-        from .core import owner
-        from .core import raw_input
-        from .core import setBugowner
-        from .core import set_devel_project
-        from .core import show_package_meta
-        from .core import show_project_meta
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-
         """
         Show maintainers according to server side configuration
 
@@ -9516,6 +9542,27 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         PRJ and PKG default to current working-copy path.
         """
+
+        from .core import ET
+        from .core import _html_escape
+        from .core import addPerson
+        from .core import build_table
+        from .core import delPerson
+        from .core import edit_message
+        from .core import get_group_data
+        from .core import get_user_data
+        from .core import http_POST
+        from .core import makeurl
+        from .core import owner
+        from .core import raw_input
+        from .core import setBugowner
+        from .core import set_devel_project
+        from .core import show_package_meta
+        from .core import show_project_meta
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+
         def get_maintainer_data(apiurl, maintainer, verbose=False):
             tags = ('email',)
             if maintainer.startswith('group:'):
@@ -9775,11 +9822,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('user')
     @cmdln.option('user', nargs='*')
     def do_whois(self, subcmd, opts):
-        from . import conf
-
         """
         Show fullname and email of a buildservice user
         """
+
+        from . import conf
         from . import obs_api
         from .output import print_msg
 
@@ -9806,11 +9853,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option("repository")
     @cmdln.option("arch")
     def do_create_pbuild_config(self, subcmd, opts):
-        from .core import create_pbuild_config
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import store_read_project
-
         """
         This command is creating the necessary files to build using pbuild tool.
         It basically creates _config and _pbuild file in the project directory.
@@ -9820,6 +9862,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Examples:
             osc cpc REPOSITORY ARCH
         """
+
+        from .core import create_pbuild_config
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import store_read_project
 
         apiurl = self.get_api_url()
         project = None
@@ -9848,17 +9895,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('blame')
     @cmdln.alias('less')
     def do_cat(self, subcmd, opts, *args):
-        from .core import http_GET
-        from .core import is_package_dir
-        from .core import makeurl
-        from .core import parseRevisionOption
-        from .core import run_pager
-        from .core import show_upstream_srcmd5
-        from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
-        from .core import streamfile
-
         """
         Output the content of a file to standard output
 
@@ -9875,6 +9911,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc blame file
             osc blame project package file
         """
+
+        from .core import http_GET
+        from .core import is_package_dir
+        from .core import makeurl
+        from .core import parseRevisionOption
+        from .core import run_pager
+        from .core import show_upstream_srcmd5
+        from .core import slash_split
+        from .core import store_read_package
+        from .core import store_read_project
+        from .core import streamfile
 
         if len(args) == 1 and (args[0].startswith('http://') or
                                args[0].startswith('https://')):
@@ -9942,19 +9989,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-d', '--destdir', default='repairlink', metavar='DIR',
                   help='destination directory')
     def do_repairlink(self, subcmd, opts, *args):
-        from .core import ET
-        from .core import Package
-        from .core import binary_file
-        from .core import http_GET
-        from .core import is_package_dir
-        from .core import makeurl
-        from .core import run_external
-        from .core import slash_split
-        from .core import statfrmt
-        from .core import store_read_package
-        from .core import store_read_project
-        from .core import store_write_string
-
         """
         Repair a broken source link
 
@@ -9973,6 +10007,19 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         * Pull conflicting changes from one project into another one:
             osc repairlink PROJECT PACKAGE INTO_PROJECT [INTO_PACKAGE]
         """
+
+        from .core import ET
+        from .core import Package
+        from .core import binary_file
+        from .core import http_GET
+        from .core import is_package_dir
+        from .core import makeurl
+        from .core import run_external
+        from .core import slash_split
+        from .core import statfrmt
+        from .core import store_read_package
+        from .core import store_read_project
+        from .core import store_write_string
 
         apiurl = self.get_api_url()
         args = slash_split(args)
@@ -10150,6 +10197,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         print('run \'osc resolved ...\', and commit the changes.')
 
     def do_pull(self, subcmd, opts, *args):
+        """
+        Merge the changes of the link target into your working copy
+        """
+
         from .core import ET
         from .core import Package
         from .core import binary_file
@@ -10158,10 +10209,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import run_external
         from .core import statfrmt
         from .core import store_write_string
-
-        """
-        Merge the changes of the link target into your working copy
-        """
 
         p = Package('.')
         # check if everything is committed
@@ -10298,13 +10345,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--sslcert', action='store_true', default=False,
                   help='fetch SSL certificate instead of GPG key')
     def do_signkey(self, subcmd, opts, *args):
-        from .core import http_DELETE
-        from .core import http_POST
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import makeurl
-        from .core import store_read_project
-
         """
         Manage Project Signing Key
 
@@ -10324,6 +10364,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         WARNING: THE OLD KEY CANNOT BE RESTORED AFTER USING DELETE OR CREATE
         """
+
+        from .core import http_DELETE
+        from .core import http_POST
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import makeurl
+        from .core import store_read_project
 
         apiurl = self.get_api_url()
         f = None
@@ -10394,12 +10441,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-e', '--just-edit', action='store_true', default=False,
                   help='just open changes (cannot be used with -m)')
     def do_vc(self, subcmd, opts, *args):
-        from . import conf
-        from . import store as osc_store
-        from .core import is_package_dir
-        from .core import vc_export_env
-        from .core import which
-
         """
         Edit the changes file
 
@@ -10421,6 +10462,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         a temporary file that should replace the *.changes file when saved by
         the editor, or discarded otherwise.
         """
+
+        from . import conf
+        from . import store as osc_store
+        from .core import is_package_dir
+        from .core import vc_export_env
+        from .core import which
+
         if opts.message and opts.file:
             raise oscerr.WrongOptions('\'--message\' and \'--file\' are mutually exclusive')
         elif opts.message and opts.just_edit:
@@ -10487,11 +10535,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('source')
     @cmdln.option('dest')
     def do_mv(self, subcmd, opts):
-        from .core import Package
-
         """
         Move SOURCE file to DEST and keep it under version control
         """
+
+        from .core import Package
+
         source = opts.source
         dest = opts.dest
 
@@ -10537,9 +10586,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--dump-full', action='store_true',
                   help='dump the complete configuration (including \'pass\' and \'passx\' options)')
     def do_config(self, subcmd, opts, *args):
-        from . import conf
-        from .core import raw_input
-
         """
         Get/set a config option
 
@@ -10551,6 +10597,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             (section is either an apiurl or an alias or 'general')
             osc config --dump (dump the complete configuration)
         """
+
+        from . import conf
+        from .core import raw_input
+
         prompt_value = 'Value: '
         if opts.change_password:
             opts.no_echo = True
@@ -10623,8 +10673,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.option('file', nargs='+')
     def do_revert(self, subcmd, opts):
-        from .core import Package
-
         """
         Restore changed files or the entire working copy
 
@@ -10633,6 +10681,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc revert .
         Note: this only works for package working copies
         """
+
+        from .core import Package
+
         files = opts.file
         pacs = Package.from_paths(files)
         for p in pacs:
@@ -10644,14 +10695,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--force-apiurl', action='store_true',
                   help='ask once for an apiurl and force this apiurl for all inconsistent projects/packages')
     def do_repairwc(self, subcmd, opts, *args):
-        from . import conf
-        from .core import Package
-        from .core import Project
-        from .core import is_package_dir
-        from .core import is_project_dir
-        from .core import parseargs
-        from .core import raw_input
-
         """
         Try to repair an inconsistent working copy
 
@@ -10663,6 +10706,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         Warning: This command might delete some files in the storedir
         (.osc). Please check the state of the wc afterwards (via 'osc status').
         """
+
+        from . import conf
+        from .core import Package
+        from .core import Project
+        from .core import is_package_dir
+        from .core import is_project_dir
+        from .core import parseargs
+        from .core import raw_input
+
         def get_apiurl(apiurls):
             print('No apiurl is defined for this working copy.\n'
                   'Please choose one from the following list (enter the number):')
@@ -10724,11 +10776,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-n', '--dry-run', action='store_true',
                   help='print the results without actually removing a file')
     def do_clean(self, subcmd, opts, *args):
-        from .core import Package
-        from .core import getTransActPath
-        from .core import is_package_dir
-        from .core import parseargs
-
         """
         Removes all untracked files from the package working copy
 
@@ -10739,6 +10786,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Warning: This command removes all files with status '?'.
         """
+
+        from .core import Package
+        from .core import getTransActPath
+        from .core import is_package_dir
+        from .core import parseargs
+
         pacs = parseargs(args)
         # do a sanity check first
         for pac in pacs:
@@ -10763,12 +10816,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-p', '--parent',
                   help='reply to comment with parent id', metavar='PARENT')
     def do_comment(self, subcmd, opts, *args):
-        from .core import create_comment
-        from .core import delete_comment
-        from .core import edit_text
-        from .core import print_comments
-        from .core import slash_split
-
         """
         List / create / delete comments
 
@@ -10789,6 +10836,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             osc comment delete ID
         """
+
+        from .core import create_comment
+        from .core import delete_comment
+        from .core import edit_text
+        from .core import print_comments
+        from .core import slash_split
 
         comment = None
         args = slash_split(args)
