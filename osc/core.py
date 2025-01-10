@@ -3317,10 +3317,10 @@ def link_pac(
     if disable_publish:
         dst_package_obj.publish_list = [{"flag": "disable"}]
 
+    dst_package_obj.scmsync = None
+
     if dst_package_obj.has_changed():
         dst_package_obj.to_api(apiurl)
-
-    dst_package_obj.scmsync = None
 
     # create the _link file
     # but first, make sure not to overwrite an existing one
