@@ -1,3 +1,9 @@
+- 1.11.1
+  - Command-line:
+    - Fix 'linkpac' command for projects with a project link
+    - Fix 'linkpac' command by always removing <scmsync> element from target meta
+    - Fix command descriptions in help by moving the import statements under docstring in the do_*() methods
+
 - 1.11.0
   - Command-line:
     - Add hint how to deal with scmsync-nobranch scenarios
