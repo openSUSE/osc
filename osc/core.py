@@ -3287,12 +3287,21 @@ def link_pac(
 
     apiurl = conf.config["apiurl"]
 
+    create_dst_package = False
     src_package_obj = obs_api.Package.from_api(apiurl, src_project, src_package)
     try:
         dst_package_obj = obs_api.Package.from_api(apiurl, dst_project, dst_package)
+        if dst_package_obj.project != dst_project:
+            # If the target package doesn't exist and the target project contains a project link,
+            # the package meta from the linked project is returned instead!
+            # We need to detect it and create the target package based on source package meta.
+            create_dst_package = True
     except HTTPError as e:
         if e.code != 404:
             raise
+        create_dst_package = True
+
+    if create_dst_package:
         if missing_target:
             # we start with empty values because we want has_changed() to return True
             dst_package_obj = obs_api.Package(project="", name="")
