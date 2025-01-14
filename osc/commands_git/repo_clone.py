@@ -54,6 +54,6 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
             directory=args.directory,
             anonymous=args.anonymous,
             add_remotes=True,
-            ssh_private_key_path=self.gitea_login.ssh_key or args.ssh_key,
+            ssh_private_key_path=args.ssh_key or self.gitea_login.ssh_key,
             ssh_strict_host_key_checking=not(args.no_ssh_strict_host_key_checking),
         )
