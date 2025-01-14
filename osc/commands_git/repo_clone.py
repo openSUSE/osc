@@ -4,6 +4,9 @@ import osc.commandline_git
 class RepoCloneCommand(osc.commandline_git.GitObsCommand):
     """
     Clone a git repo
+
+    NOTE: Some of the options may result in setting "core.sshCommand"
+    config option in the git repository."
     """
 
     name = "clone"
