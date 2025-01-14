@@ -146,6 +146,11 @@ jobs:
         run: |
           podman pull ghcr.io/suse-autobuild/obs-server:latest
 
+      - name: "Configure git"
+        run: |
+            git config --global user.email "admin@example.com"
+            git config --global user.name "Admin"
+
       - name: "Run tests"
         run: |
           cd behave

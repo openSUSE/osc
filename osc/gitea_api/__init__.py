@@ -7,6 +7,8 @@ from .branch import Branch
 from .conf import Config
 from .conf import Login
 from .fork import Fork
+from .git import Git
+from .pr import PullRequest
 from .ssh_key import SSHKey
 from .repo import Repo
 from .user import User

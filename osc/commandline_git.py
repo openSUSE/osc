@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 
 import osc.commandline_common
@@ -132,7 +133,9 @@ def main():
     except oscerr.OscBaseError as e:
         print_msg(str(e), print_to="error")
         sys.exit(1)
-
+    except subprocess.CalledProcessError as e:
+        print_msg(str(e), print_to="error")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
