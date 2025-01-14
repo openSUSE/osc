@@ -42,7 +42,10 @@ jobs:
       - name: 'Install packages'
         run: |
             sudo apt-get -y update
-            sudo apt-get -y --no-install-recommends install pylint python3-rpm python3-ruamel.yaml
+            sudo apt-get -y --no-install-recommends install python3-rpm python3-ruamel.yaml
+            # we're using the latest pylint from pypi
+            sudo pip3 config set global.break-system-packages 1
+            sudo pip3 install pylint
 
       - uses: actions/checkout@v3
 
@@ -68,7 +71,10 @@ jobs:
       - name: 'Install packages'
         run: |
             sudo apt-get -y update
-            sudo apt-get -y --no-install-recommends install diffutils pylint python3-pip python3-rpm python3-ruamel.yaml
+            sudo apt-get -y --no-install-recommends install diffutils python3-pip python3-rpm python3-ruamel.yaml
+            # we're using the latest pylint from pypi
+            sudo pip3 config set global.break-system-packages 1
+            sudo pip3 install pylint
 
       - uses: actions/checkout@v3
         with:
