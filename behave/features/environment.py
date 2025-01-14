@@ -17,14 +17,14 @@ def after_step(context, step):
 
 def before_scenario(context, scenario):
     # truncate the logs before running any commands
-    proc = context.podman.container.exec(["bash", "-c", "find /srv/www/obs/api/log/ /srv/obs/log/ -name '*.log' -exec truncate --size=0 {} \\;"])
+    proc = context.podman.container.exec(["bash", "-c", "find /srv/www/obs/api/log/ /srv/obs/log/ /var/log/gitea/ -name '*.log' -exec truncate --size=0 {} \\;"])
 
 
 def after_scenario(context, scenario):
     if scenario.status == Status.failed:
         # the scenario has failed, dump server logs
         print("===== BEGIN: server logs ======")
-        proc = context.podman.container.exec(["bash", "-c", "tail -n +1 /srv/www/obs/api/log/*.log /srv/obs/log/*.log"])
+        proc = context.podman.container.exec(["bash", "-c", "tail -n +1 /srv/www/obs/api/log/*.log /srv/obs/log/*.log /var/log/gitea/*.log"])
         print(proc.stdout)
         print("===== END: server logs ======")
 
