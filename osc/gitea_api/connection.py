@@ -1,16 +1,15 @@
 import copy
 import http.client
 import json
+import time
 import urllib.parse
 from typing import Optional
 
 import urllib3
+import urllib3.exceptions
 import urllib3.response
 
 from .conf import Login
-
-
-# TODO: retry, backoff, connection pool?
 
 
 class GiteaHTTPResponse:
@@ -51,6 +50,16 @@ class Connection:
         assert self.host is not None
         self.port = alternative_port if alternative_port else parsed_url.port
         self.conn = ConnectionClass(host=self.host, port=self.port)
+
+        # retries; variables are named according to urllib3
+        self.retry_count = 3
+        self.retry_backoff_factor = 2
+        self.retry_status_forcelist = (
+            500,  # Internal Server Error
+            502,  # Bad Gateway
+            503,  # Service Unavailable
+            504,  # Gateway Timeout
+        )
 
         if hasattr(self.conn, "set_cert"):
             # needed to avoid: AttributeError: 'HTTPSConnection' object has no attribute 'assert_hostname'. Did you mean: 'server_hostname'?
@@ -95,8 +104,27 @@ class Connection:
 
         body = json.dumps(json_data) if json_data else None
 
-        self.conn.request(method, url, body, headers)
-        response = self.conn.getresponse()
+        for retry in range(1 + self.retry_count):
+            # 1 regular request + ``self.retry_count`` retries
+            try:
+                self.conn.request(method, url, body, headers)
+                response = self.conn.getresponse()
+
+                if response.status not in self.retry_status_forcelist:
+                    # we are happy with the response status -> use the response
+                    break
+
+                if retry >= self.retry_count:
+                    # we have reached maximum number of retries -> use the response
+                    break
+
+            except (urllib3.exceptions.HTTPError, ConnectionResetError):
+                if retry >= self.retry_count:
+                    raise
+
+            # {backoff factor} * (2 ** ({number of previous retries}))
+            time.sleep(self.retry_backoff_factor * (2 ** retry))
+            self.conn.close()
 
         if isinstance(response, http.client.HTTPResponse):
             result = GiteaHTTPResponse(urllib3.response.HTTPResponse.from_httplib(response))
