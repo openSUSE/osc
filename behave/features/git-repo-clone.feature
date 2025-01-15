@@ -7,7 +7,7 @@ Background:
 
 @destructive
 Scenario: Clone a git repo
-    When I execute git-obs with args "repo clone pool test-GitPkgA --no-ssh-strict-host-key-checking"
+    When I execute git-obs with args "repo clone pool/test-GitPkgA --no-ssh-strict-host-key-checking"
     Then the exit code is 0
      And stdout is
         """
@@ -20,5 +20,8 @@ Scenario: Clone a git repo
          * URL: http://localhost:{context.podman.container.ports[gitea_http]}
          * User: Admin
 
+        Cloning git repo pool/test-GitPkgA ...
         Cloning into 'test-GitPkgA'...
+
+        Total cloned repos: 1
         """

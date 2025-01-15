@@ -56,8 +56,8 @@ class Fork:
             return conn.request("POST", url, json_data=json_data)
         except GiteaException as e:
             # use ForkExists exception to parse fork_owner and fork_repo from the response
-            fork_exists_exception = ForkExists(e.response, owner, repo)
             if e.status == 409:
+                fork_exists_exception = ForkExists(e.response, owner, repo)
                 if exist_ok:
                     from . import Repo
                     return Repo.get(conn, fork_exists_exception.fork_owner, fork_exists_exception.fork_repo)

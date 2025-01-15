@@ -3,8 +3,8 @@ Feature: `git-obs pr` command
 
 Background:
    Given I set working directory to "{context.osc.temp}"
-     And I execute git-obs with args "repo fork pool test-GitPkgA"
-     And I execute git-obs with args "repo clone Admin test-GitPkgA --no-ssh-strict-host-key-checking"
+     And I execute git-obs with args "repo fork pool/test-GitPkgA"
+     And I execute git-obs with args "repo clone Admin/test-GitPkgA --no-ssh-strict-host-key-checking"
      And I set working directory to "{context.osc.temp}/test-GitPkgA"
      And I execute "sed -i 's@^\(Version.*\)@\1.1@' *.spec"
      And I execute "git commit -m 'Change version' -a"
@@ -14,7 +14,7 @@ Background:
 
 @destructive
 Scenario: List pull requests
-    When I execute git-obs with args "pr list pool test-GitPkgA"
+    When I execute git-obs with args "pr list pool/test-GitPkgA"
     Then the exit code is 0
      And stdout matches
         """

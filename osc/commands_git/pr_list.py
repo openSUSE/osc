@@ -12,8 +12,7 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
     parent = "PullRequestCommand"
 
     def init_arguments(self):
-        self.add_argument_owner()
-        self.add_argument_repo()
+        self.add_argument_owner_repo(nargs="+")
         self.add_argument(
             "--state",
             choices=["open", "closed", "all"],
@@ -26,11 +25,14 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
-        data = gitea_api.PullRequest.list(self.gitea_conn, args.owner, args.repo, state=args.state).json()
+        total_entries = 0
+        for owner, repo in args.owner_repo:
+            data = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state).json()
+            total_entries += len(data)
 
-        text = gitea_api.PullRequest.list_to_human_readable_string(data, sort=True)
-        if text:
-            print(text)
-            print("", file=sys.stderr)
+            text = gitea_api.PullRequest.list_to_human_readable_string(data, sort=True)
+            if text:
+                print(text)
+                print("", file=sys.stderr)
 
-        print(f"Total entries: {len(data)}", file=sys.stderr)
+        print(f"Total entries: {total_entries}", file=sys.stderr)

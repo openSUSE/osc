@@ -13,11 +13,7 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
     parent = "PullRequestCommand"
 
     def init_arguments(self):
-        self.add_argument(
-            "id",
-            nargs="+",
-            help="Pull request ID in <owner>/<repo>#<number> format",
-        )
+        self.add_argument_owner_repo_pull(nargs="+")
         self.add_argument(
             "-p",
             "--patch",
@@ -34,14 +30,13 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
 
         num_entries = 0
         failed_entries = []
-        for pr_id in args.id:
-            owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
+        for owner, repo, pull in args.owner_repo_pull:
             try:
-                pr = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number).json()
+                pr = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, pull).json()
                 num_entries += 1
             except gitea_api.GiteaException as e:
                 if e.status == 404:
-                    failed_entries.append(pr_id)
+                    failed_entries.append(f"{owner}/{repo}#{pull}")
                     continue
                 raise
             print(gitea_api.PullRequest.to_human_readable_string(pr))
@@ -49,9 +44,11 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
             if args.patch:
                 print("")
                 print(tty.colorize("Patch:", "bold"))
-                patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, number).data
+                patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, pull).data
                 patch = highlight_diff(patch)
                 print(patch.decode("utf-8"))
+
+            print()
 
         print(f"Total entries: {num_entries}", file=sys.stderr)
         if failed_entries:

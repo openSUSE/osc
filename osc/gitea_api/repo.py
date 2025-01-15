@@ -1,6 +1,8 @@
 import os
+import re
 import subprocess
 from typing import Optional
+from typing import Tuple
 
 from .connection import Connection
 from .connection import GiteaHTTPResponse
@@ -8,6 +10,16 @@ from .user import User
 
 
 class Repo:
+    @classmethod
+    def split_id(cls, repo_id: str) -> Tuple[str, str]:
+        """
+        Split <owner>/<repo> into individual components and return them in a tuple.
+        """
+        match = re.match(r"^([^/]+)/([^/]+)$", repo_id)
+        if not match:
+            raise ValueError(f"Invalid repo id: {repo_id}")
+        return match.groups()
+
     @classmethod
     def get(
         cls,
