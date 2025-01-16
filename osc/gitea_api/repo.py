@@ -1,6 +1,8 @@
 import os
+import re
 import subprocess
 from typing import Optional
+from typing import Tuple
 
 from .connection import Connection
 from .connection import GiteaHTTPResponse
@@ -8,6 +10,16 @@ from .user import User
 
 
 class Repo:
+    @classmethod
+    def split_id(cls, repo_id: str) -> Tuple[str, str]:
+        """
+        Split <owner>/<repo> into individual components and return them in a tuple.
+        """
+        match = re.match(r"^([^/]+)/([^/]+)$", repo_id)
+        if not match:
+            raise ValueError(f"Invalid repo id: {repo_id}")
+        return match.groups()
+
     @classmethod
     def get(
         cls,
@@ -77,27 +89,39 @@ class Repo:
                     fork = forks[0]
                     remotes["fork"] = fork["clone_url"] if anonymous else fork["ssh_url"]
 
-        env = os.environ.copy()
         ssh_args = []
+        env = os.environ.copy()
+
         if ssh_private_key_path:
-            ssh_args += [f"-i {shlex.quote(ssh_private_key_path)}"]
+            ssh_args += [
+                # avoid guessing the ssh key, use the specified one
+                "-o IdentitiesOnly=yes",
+                f"-o IdentityFile={shlex.quote(ssh_private_key_path)}",
+            ]
+
         if not ssh_strict_host_key_checking:
             ssh_args += [
                 "-o StrictHostKeyChecking=no",
                 "-o UserKnownHostsFile=/dev/null",
                 "-o LogLevel=ERROR",
             ]
+
         if ssh_args:
             env["GIT_SSH_COMMAND"] = f"ssh {' '.join(ssh_args)}"
 
         # clone
         cmd = ["git", "clone", clone_url, directory]
-
         subprocess.run(cmd, cwd=cwd, env=env, check=True)
 
         # setup remotes
         for name, url in remotes.items():
             cmd = ["git", "-C", directory_abspath, "remote", "add", name, url]
+            subprocess.run(cmd, cwd=cwd, check=True)
+
+        # store used ssh args (GIT_SSH_COMMAND) in the local git config
+        # to allow seamlessly running ``git push`` and other commands
+        if ssh_args:
+            cmd = ["git", "-C", directory_abspath, "config", "core.sshCommand", f"echo 'Using core.sshCommand: {env['GIT_SSH_COMMAND']}' >&2; {env['GIT_SSH_COMMAND']}"]
             subprocess.run(cmd, cwd=cwd, check=True)
 
         return directory_abspath

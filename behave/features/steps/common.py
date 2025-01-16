@@ -83,6 +83,12 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
         raise AssertionError('Running command "%s" failed: %s' % (cmd, context.cmd_exitcode))
 
 
+@behave.step("I execute \"{command}\"")
+def step_impl(context, command):
+    command = command.format(context=context)
+    run_in_context(context, command, can_fail=True)
+
+
 @behave.step("stdout contains \"{text}\"")
 def step_impl(context, text):
     if re.search(text.format(context=context), context.cmd_stdout):

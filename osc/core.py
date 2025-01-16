@@ -1935,7 +1935,7 @@ def get_default_editor():
 
 
 def format_diff_line(line):
-    if line.startswith(b"+++") or line.startswith(b"---") or line.startswith(b"Index:"):
+    if line.startswith(b"+++ ") or line.startswith(b"--- ") or line.startswith(b"Index:"):
         line = b"\x1b[1m" + line + b"\x1b[0m"
     elif line.startswith(b"+"):
         line = b"\x1b[32m" + line + b"\x1b[0m"

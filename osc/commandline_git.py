@@ -1,10 +1,42 @@
+import argparse
 import os
+import subprocess
 import sys
 
 import osc.commandline_common
 import osc.commands_git
 from . import oscerr
 from .output import print_msg
+
+
+class OwnerRepoAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        from . import gitea_api
+
+        try:
+            if isinstance(value, list):
+                namespace_value = [gitea_api.Repo.split_id(i) for i in value]
+            else:
+                namespace_value = gitea_api.Repo.split_id(value)
+        except ValueError as e:
+            raise argparse.ArgumentError(self, str(e))
+
+        setattr(namespace, self.dest, namespace_value)
+
+
+class OwnerRepoPullAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        from . import gitea_api
+
+        try:
+            if isinstance(value, list):
+                namespace_value = [gitea_api.PullRequest.split_id(i) for i in value]
+            else:
+                namespace_value = gitea_api.PullRequest.split_id(value)
+        except ValueError as e:
+            raise argparse.ArgumentError(self, str(e))
+
+        setattr(namespace, self.dest, namespace_value)
 
 
 class GitObsCommand(osc.commandline_common.Command):
@@ -28,16 +60,20 @@ class GitObsCommand(osc.commandline_common.Command):
         print(f" * User: {self.gitea_login.user}", file=sys.stderr)
         print("", file=sys.stderr)
 
-    def add_argument_owner(self):
+    def add_argument_owner_repo(self, **kwargs):
         self.add_argument(
-            "owner",
-            help="Name of the repository owner (login, org)",
+            "owner_repo",
+            action=OwnerRepoAction,
+            help="Owner and repo: (format: <owner>/<repo>)",
+            **kwargs,
         )
 
-    def add_argument_repo(self):
+    def add_argument_owner_repo_pull(self, **kwargs):
         self.add_argument(
-            "repo",
-            help="Name of the repository",
+            "owner_repo_pull",
+            action=OwnerRepoPullAction,
+            help="Owner, repo and pull request number (format: <owner>/<repo>#<pull-request-number>)",
+            **kwargs,
         )
 
     def add_argument_new_repo_name(self):
@@ -132,7 +168,9 @@ def main():
     except oscerr.OscBaseError as e:
         print_msg(str(e), print_to="error")
         sys.exit(1)
-
+    except subprocess.CalledProcessError as e:
+        print_msg(str(e), print_to="error")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
