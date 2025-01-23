@@ -39,6 +39,18 @@ class OwnerRepoPullAction(argparse.Action):
         setattr(namespace, self.dest, namespace_value)
 
 
+class BooleanAction(argparse.Action):
+    def __call__(self, parser, namespace, value, option_string=None):
+        if value is None:
+            setattr(namespace, self.dest, None)
+        elif value.lower() in ["0", "no", "false", "off"]:
+            setattr(namespace, self.dest, False)
+        elif value.lower() in ["1", "yes", "true", "on"]:
+            setattr(namespace, self.dest, True)
+        else:
+            raise argparse.ArgumentError(self, f"Invalid boolean value: {value}")
+
+
 class GitObsCommand(osc.commandline_common.Command):
     @property
     def gitea_conf(self):

@@ -56,6 +56,7 @@ class PullRequest:
         if is_pull_request:
             table.add("Draft", yes_no(entry["draft"]))
             table.add("Merged", yes_no(entry["merged"]))
+            table.add("Allow edit", yes_no(entry["allow_maintainer_edit"]))
         table.add("Author", f"{User.to_login_full_name_email_string(entry['user'])}")
         if is_pull_request:
             table.add("Source", f"{entry['head']['repo']['full_name']}, branch: {entry['head']['ref']}, commit: {entry['head']['sha']}")
@@ -113,7 +114,7 @@ class PullRequest:
         conn: Connection,
         owner: str,
         repo: str,
-        number: str,
+        number: int,
     ) -> GiteaHTTPResponse:
         """
         Get a pull request.
@@ -123,8 +124,39 @@ class PullRequest:
         :param repo: Name of the repo.
         :param number: Number of the pull request in the repo.
         """
-        url = conn.makeurl("repos", owner, repo, "pulls", number)
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number))
         return conn.request("GET", url)
+
+    @classmethod
+    def set(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        *,
+        title: Optional[str] = None,
+        description: Optional[str] = None,
+        allow_maintainer_edit: Optional[bool] = None,
+    ) -> GiteaHTTPResponse:
+        """
+        Change a pull request.
+
+        :param conn: Gitea ``Connection`` instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request in the repo.
+        :param title: Change pull request title.
+        :param description: Change pull request description.
+        :param allow_maintainer_edit: Change whether users with write access to the base branch can also push to the pull request's head branch.
+        """
+        json_data = {
+            "title": title,
+            "description": description,
+            "allow_maintainer_edit": allow_maintainer_edit,
+        }
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number))
+        return conn.request("PATCH", url, json_data=json_data)
 
     @classmethod
     def list(
