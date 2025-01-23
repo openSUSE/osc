@@ -32,7 +32,7 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
         failed_entries = []
         for owner, repo, pull in args.owner_repo_pull:
             try:
-                pr = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, pull).json()
+                pr = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, int(pull)).json()
                 num_entries += 1
             except gitea_api.GiteaException as e:
                 if e.status == 404:
