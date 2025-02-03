@@ -5860,7 +5860,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 repl = raw_input(prompt).strip()
 
             # remember if we're accepting so we can decide whether to forward request to the parent project later on
-            accept = repl == "a"
+            accept = repl == "a" or repl.startswith("a ")
 
             if repl == 'i' and src_actions:
                 req_summary = str(request) + '\n'
