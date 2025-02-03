@@ -1,3 +1,19 @@
+- 1.12.0
+  - Command-line:
+    - Add 'git-obs pr' command
+    - Add 'git-obs api' command for making arbitrary API calls
+    - Change 'git-obs' to use owner/repo[#pull] arguments consistently
+    - Change 'git-obs repo clone' command to store ssh command in core.sshCommand git config option
+    - Fix 'request list --interactive' command that wasn't showing request forward prompt when message was part of the state change
+  - Library:
+    - Avoid fetching _scmsync.obsinfo when scmsync url contains 'noobsinfo' query parameter
+    - Fix ssh key priority in 'git-obs repo clone' command
+    - Fix loading config entries with underscores instead of dashes in the keys
+    - Fix detecting binary files
+    - Fix diff highligting
+  - Connection:
+    - Implement retries in 'git-obs'
+
 - 1.11.1
   - Command-line:
     - Fix 'linkpac' command for projects with a project link
