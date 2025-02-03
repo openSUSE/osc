@@ -1,5 +1,9 @@
+import os
+import shutil
+import tempfile
 import unittest
 
+from osc.core import binary_file
 from osc.core import makeurl
 from osc.core import UrlQueryArray
 from osc.core import parseRevisionOption
@@ -136,6 +140,53 @@ class TestMakeurl(unittest.TestCase):
         for char, encoded_char in mapping:
             url = makeurl("https://example.com/api/v1", [], {char: char})
             self.assertEqual(url, f"https://example.com/api/v1?{encoded_char}={encoded_char}")
+
+
+class TestBinaryFile(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="osc_test_")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def test_text(self):
+        path = os.path.join(self.tmpdir, "text")
+        with open(path, "w") as f:
+            f.write(1000 * "a")
+        self.assertFalse(binary_file(path))
+
+    def test_text_with_binary_chars(self):
+        path = os.path.join(self.tmpdir, "binary")
+        with open(path, "wb") as f:
+            f.write(1000 * b"a")
+            f.write(b"\0")
+        self.assertFalse(binary_file(path))
+
+        with open(path, "wb") as f:
+            f.write(4096 * b"a")
+            f.write(b"\0")
+        self.assertFalse(binary_file(path))
+
+    def test_binary(self):
+        path = os.path.join(self.tmpdir, "binary")
+
+        # sufficient control chars in first 4k
+        with open(path, "wb") as f:
+            f.write(1000 * b"a")
+            f.write(26 * b"\0")
+        self.assertTrue(binary_file(path))
+
+        # sufficient control chars in first 4k
+        with open(path, "wb") as f:
+            f.write(3993 * b"a")
+            f.write(103 * b"\0")
+        self.assertTrue(binary_file(path))
+
+        # detected as text because we're reading only first 4k characters
+        with open(path, "wb") as f:
+            f.write(4096 * b"a")
+            f.write(1000 * b"\0")
+        self.assertFalse(binary_file(path))
 
 
 if __name__ == "__main__":
