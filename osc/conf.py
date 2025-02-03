@@ -1941,6 +1941,7 @@ def get_config(override_conffile=None,
 
             ini_key = field.extra.get("ini_key", name)
             known_ini_keys.add(ini_key)
+            known_ini_keys.add(name)
 
             # iterate through aliases and store the value of the the first env that matches OSC_HOST_{ALIAS}_{NAME}
             env_value = None
@@ -1993,6 +1994,7 @@ def get_config(override_conffile=None,
     for name, field in config.__fields__.items():
         ini_key = field.extra.get("ini_key", name)
         known_ini_keys.add(ini_key)
+        known_ini_keys.add(name)
         env_key = f"OSC_{name.upper()}"
 
         # priority: env, overrides, config

@@ -31,7 +31,7 @@ from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from typing import Optional, Dict, Union, List, Iterable
-from urllib.parse import urlsplit, urlunsplit, urlparse, quote, urlencode, unquote
+from urllib.parse import parse_qs, urlsplit, urlunsplit, urlparse, quote, urlencode, unquote
 from urllib.error import HTTPError
 from xml.etree import ElementTree as ET
 
@@ -3168,14 +3168,16 @@ def checkout_package(
     if not native_obs_package and scmsync_element is not None and scmsync_element.text is not None:
         directory = make_dir(apiurl, project, package, pathname, prj_dir, conf.config['do_package_tracking'], outdir)
 
-        if revision is not None:
+        scm_url = scmsync_element.text
+        fetch_obsinfo = "noobsinfo" not in parse_qs(urlparse(scm_url).query)
+
+        if revision is not None and fetch_obsinfo:
             # search for the git sha sum based on the OBS DISTURL package source revision
             # we need also take into account that the url was different at that point of time
             from .obs_api.scmsync_obsinfo import ScmsyncObsinfo
             scmsync_obsinfo = ScmsyncObsinfo.from_api(apiurl, project, package, rev=revision)
             scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
 
-        scm_url = scmsync_element.text
         run_obs_scm_bridge(url=scm_url, target_dir=directory)
 
         Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
