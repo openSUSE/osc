@@ -2790,11 +2790,14 @@ def sha256_dgst(file):
     return s.hexdigest()
 
 
-def binary(s):
-    """return ``True`` if a string is binary data using diff's heuristic"""
-    if s and bytes('\0', "utf-8") in s[:4096]:
-        return True
-    return False
+def binary(data: bytes):
+    """
+    Return ``True`` if ``data`` is binary data.
+
+    We're using heuristics according to OBS: src/backend/BSSrcServer/filediff - look for "diff binary detection"
+    """
+    binary_chars = re.findall(b"[\x00-\0x07\x0e-\x1f]", data)
+    return len(binary_chars) * 40 > len(data)
 
 
 def binary_file(fn):
