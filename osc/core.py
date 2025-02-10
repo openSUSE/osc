@@ -2796,7 +2796,7 @@ def binary(data: bytes):
 
     We're using heuristics according to OBS: src/backend/BSSrcServer/filediff - look for "diff binary detection"
     """
-    binary_chars = re.findall(b"[\x00-\0x07\x0e-\x1f]", data)
+    binary_chars = re.findall(b"[\x00-\x07\x0e-\x1f]", data)
     return len(binary_chars) * 40 > len(data)
 
 
