@@ -159,12 +159,12 @@ class TestBinaryFile(unittest.TestCase):
         path = os.path.join(self.tmpdir, "binary")
         with open(path, "wb") as f:
             f.write(1000 * b"a")
-            f.write(b"\0")
+            f.write(b"\1")
         self.assertFalse(binary_file(path))
 
         with open(path, "wb") as f:
             f.write(4096 * b"a")
-            f.write(b"\0")
+            f.write(b"\1")
         self.assertFalse(binary_file(path))
 
     def test_binary(self):
@@ -173,19 +173,26 @@ class TestBinaryFile(unittest.TestCase):
         # sufficient control chars in first 4k
         with open(path, "wb") as f:
             f.write(1000 * b"a")
-            f.write(26 * b"\0")
+            f.write(26 * b"\1")
         self.assertTrue(binary_file(path))
 
         # sufficient control chars in first 4k
         with open(path, "wb") as f:
             f.write(3993 * b"a")
-            f.write(103 * b"\0")
+            f.write(103 * b"\1")
+        self.assertTrue(binary_file(path))
+
+        # a single \0 is good enough for us to say it's a binary file
+        with open(path, "wb") as f:
+            f.write(3993 * b"a")
+            f.write(b"\0")
+            f.write(999 * b"\1")
         self.assertTrue(binary_file(path))
 
         # detected as text because we're reading only first 4k characters
         with open(path, "wb") as f:
             f.write(4096 * b"a")
-            f.write(1000 * b"\0")
+            f.write(1000 * b"\1")
         self.assertFalse(binary_file(path))
 
 
