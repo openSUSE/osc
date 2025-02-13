@@ -873,9 +873,10 @@ class Osc(cmdln.Cmdln):
             print("Path.cwd() failed: ", e, file=sys.stderr)
             sys.exit(1)
 
-        if (is_package_dir(localdir) or is_project_dir(localdir)) and not self.options.apiurl:
-            return osc_store.Store(Path.cwd()).apiurl
-        else:
+        try:
+            store = osc_store.get_store(Path.cwd())
+            return store.apiurl
+        except oscerr.NoWorkingCopy:
             return conf.config['apiurl']
 
     def do_version(self, subcmd, opts):

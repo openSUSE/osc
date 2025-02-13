@@ -79,20 +79,42 @@ class GitStore:
 
     @property
     def apiurl(self):
+        from ..obs_scm.store import Store
+
+        # read apiurl from the current directory with .osc metadata
+        # NOTE: this never triggers if a store is retrieved from osc.store.get_store(),
+        # because obs_scm store takes precedence as .osc is present
+        store = Store(self.toplevel, check=False)
+        if store.apiurl:
+            return store.apiurl
+
+        # read project from parent directory that contains a project with .osc metadata
+        store = Store(os.path.join(self.toplevel, ".."), check=False)
+        if store.is_project and store.apiurl:
+            return store.apiurl
+
         # HACK: we're using the currently configured apiurl
         return osc_conf.config["apiurl"]
 
     @property
     def project(self):
-        if self._project is None:
-            try:
-                # NOTE: this never triggers if a store is retrieved from osc.store.get_store(),
-                # because obs_scm store takes precedence as .osc is present
-                with open(os.path.join(self.toplevel, ".osc/_project")) as f:
-                    self._project = f.readline().strip()
-            except FileNotFoundError:
-                pass
+        from ..obs_scm.store import Store
 
+        # read project from the current directory with .osc metadata
+        # NOTE: this never triggers if a store is retrieved from osc.store.get_store(),
+        # because obs_scm store takes precedence as .osc is present
+        if self._project is None:
+            store = Store(self.toplevel, check=False)
+            if store.project:
+                self._project = store.project
+
+        # read project from parent directory that contains a project with .osc metadata
+        if self._project is None:
+            store = Store(os.path.join(self.toplevel, ".."), check=False)
+            if store.is_project and store.project:
+                self._project = store.project
+
+        # guess project from git branch
         if self._project is None:
             # get project from the branch name
             branch = self._run_git(["branch", "--show-current"])
