@@ -198,7 +198,7 @@ def run(prg, argv=None):
     return 1
 
 
-def main():
+def setup():
     # avoid buffering output on pipes (bnc#930137) Basically,
     # a "print('foo')" call is translated to a corresponding
     # fwrite call that writes to the stdout stream (cf.
@@ -224,6 +224,15 @@ def main():
         # https://docs.appimage.org/packaging-guide/environment-variables.html
         os.chdir(owd)
 
+
+def gitOscPrecommitHook():
+    setup()
+    sys.argv.extend(["service", "precommit"])
+    sys.exit(run(commandline.OscMainCommand()))
+
+
+def main():
+    setup()
     sys.exit(run(commandline.OscMainCommand()))
 
 # vim: sw=4 et
