@@ -1,3 +1,14 @@
+- 1.12.1
+  - Command-line:
+    - Improve 'maintenancerequest' command to inherit description from superseded request
+  - Library:
+    - Tell the build script to disable repos/containers handling for normal builds
+    - Improve detecting git packages, use .osc metadata from project in parent directory
+    - Fix retrieving apiurl from git repositories in get_api_url() in the command-line code
+    - Fix typo in core.binary() that caused text files being detected as binary
+    - Improve core.binary() by always considering data that contains \0 binary
+    - Fix assembling scm_url when scmsync_obsinfo.revision is None
+
 - 1.12.0
   - Command-line:
     - Add 'git-obs pr' command
