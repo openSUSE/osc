@@ -3178,7 +3178,10 @@ def checkout_package(
             # we need also take into account that the url was different at that point of time
             from .obs_api.scmsync_obsinfo import ScmsyncObsinfo
             scmsync_obsinfo = ScmsyncObsinfo.from_api(apiurl, project, package, rev=revision)
-            scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
+            if scmsync_obsinfo.revision:
+                scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
+            else:
+                scm_url = f"{scmsync_obsinfo.url}"
 
         run_obs_scm_bridge(url=scm_url, target_dir=directory)
 
