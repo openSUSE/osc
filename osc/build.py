@@ -1273,9 +1273,9 @@ def main(apiurl, store, opts, argv):
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile
     if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'productcompose'):
-        if os.path.exists('repos'):
+        if os.path.lexists('repos'):
             shutil.rmtree('repos')
-        if os.path.exists('containers'):
+        if os.path.lexists('containers'):
             shutil.rmtree('containers')
         os.mkdir('repos')
         for i in bi.deps:
@@ -1348,6 +1348,10 @@ def main(apiurl, store, opts, argv):
                     os.link(path, tffn)
                 else:
                     os.symlink(path, tffn)
+
+    else:
+        buildargs.append("--repos-directory=-")
+        buildargs.append("--containers-directory=-")
 
     if build_type == 'kiwi':
         # Is a obsrepositories tag used?
