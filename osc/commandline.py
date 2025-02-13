@@ -4259,7 +4259,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(f'Using target project \'{target_project}\'{release_in}')
 
         if not opts.message:
-            opts.message = edit_message()
+            msg = ""
+            if opts.supersede:
+                from .obs_api import Request
+
+                req = Request.from_api(apiurl, opts.supersede)
+                msg = req.description + "\n"
+            opts.message = edit_message(template=f"{msg}")
+
 
         supersede_existing = False
         reqs = []
