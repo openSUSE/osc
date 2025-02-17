@@ -6539,6 +6539,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         with the spec file and the built binaries.
 
         usage:
+            osc rpmlintlog repository arch # (inside checked out PKG dir)
             osc rpmlintlog project package repository arch
         """
 
