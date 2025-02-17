@@ -17,7 +17,6 @@ concurrency:
 jobs:
   rpmbuild:
     name: 'rpmbuild test'
-    needs: unit-ro
     runs-on: 'ubuntu-latest'
     strategy:
       fail-fast: false
