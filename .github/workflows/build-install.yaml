@@ -9,6 +9,7 @@ on:
       - 'NEWS'
       - 'README.md'
       - 'doc/**'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
