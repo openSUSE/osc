@@ -6529,6 +6529,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     @cmdln.alias('rpmlint')
     @cmdln.alias('lint')
+    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
+                  help=HELP_MULTIBUILD_ONE)
     def do_rpmlintlog(self, subcmd, opts, *args):
         """
         Shows the rpmlint logfile
@@ -6553,6 +6555,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(args) <= 3:
             project = store_read_project(Path.cwd())
             package = store_read_package(Path.cwd())
+            if opts.multibuild_package:
+                package = package + ":" + opts.multibuild_package
             if len(args) == 1:
                 repository, arch = self._find_last_repo_arch(args[0], fatal=False)
                 if repository is None:
@@ -6568,6 +6572,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 self.print_repos()
         elif len(args) == 4:
             project, package, repository, arch = args
+            if opts.multibuild_package:
+                package = package + ":" + opts.multibuild_package
         else:
             raise oscerr.WrongArgs('please provide project package repository arch.')
 
