@@ -18,7 +18,7 @@ class Repo:
         match = re.match(r"^([^/]+)/([^/]+)$", repo_id)
         if not match:
             raise ValueError(f"Invalid repo id: {repo_id}")
-        return match.groups()
+        return match.group(1), match.group(2)
 
     @classmethod
     def get(
