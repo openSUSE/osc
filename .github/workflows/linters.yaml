@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/**'
       - '**.py'
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
