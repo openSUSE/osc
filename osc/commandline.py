@@ -5515,7 +5515,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         elif package:
             if opts.deleted:
-                checkout_deleted_package(apiurl, project, package, opts.output_dir)
+                checkout_deleted_package(apiurl, project, package, opts.output_dir, revision=rev)
             else:
                 if opts.current_dir:
                     project_dir = None
