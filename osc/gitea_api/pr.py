@@ -18,14 +18,14 @@ class PullRequest:
             return entry["repository"]["full_name"], entry["number"]
 
     @classmethod
-    def split_id(cls, pr_id: str) -> Tuple[str, str, str]:
+    def split_id(cls, pr_id: str) -> Tuple[str, str, int]:
         """
         Split <owner>/<repo>#<number> into individual components and return them in a tuple.
         """
         match = re.match(r"^([^/]+)/([^/]+)#([0-9]+)$", pr_id)
         if not match:
             raise ValueError(f"Invalid pull request id: {pr_id}")
-        return match.groups()
+        return match.group(1), match.group(2), int(match.group(3))
 
     @classmethod
     def to_human_readable_string(cls, entry: dict):
@@ -230,7 +230,7 @@ class PullRequest:
         conn: Connection,
         owner: str,
         repo: str,
-        number: str,
+        number: int,
     ) -> GiteaHTTPResponse:
         """
         Get a patch associated with a pull request.
@@ -242,3 +242,59 @@ class PullRequest:
         """
         url = conn.makeurl("repos", owner, repo, "pulls", f"{number}.patch")
         return conn.request("GET", url)
+
+    @classmethod
+    def add_comment(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        msg: str,
+    ) -> GiteaHTTPResponse:
+        """
+        Add comment to a pull request.
+        """
+        url = conn.makeurl("repos", owner, repo, "issues", str(number), "comments")
+        json_data = {
+            "body": msg,
+        }
+        return conn.request("POST", url, json_data=json_data)
+
+    @classmethod
+    def approve_review(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        msg: str = "LGTM",
+    ) -> GiteaHTTPResponse:
+        """
+        Approve review in a pull request.
+        """
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
+        json_data = {
+            "event": "APPROVED",
+            "body": msg,
+        }
+        return conn.request("POST", url, json_data=json_data)
+
+    @classmethod
+    def decline_review(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        msg: str,
+    ) -> GiteaHTTPResponse:
+        """
+        Decline review (request changes) in a pull request.
+        """
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
+        json_data = {
+            "event": "REQUEST_CHANGES",
+            "body": msg,
+        }
+        return conn.request("POST", url, json_data=json_data)

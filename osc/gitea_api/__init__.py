@@ -9,6 +9,7 @@ from .conf import Login
 from .fork import Fork
 from .git import Git
 from .pr import PullRequest
-from .ssh_key import SSHKey
 from .repo import Repo
+from .ssh_key import SSHKey
+from .tardiff import TarDiff
 from .user import User

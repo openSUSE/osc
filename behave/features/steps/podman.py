@@ -183,6 +183,8 @@ class Container:
             "--detach",
             "--interactive",
             "--tty",
+            "--privileged",
+            "--security-opt", "label=disable",
         ]
 
         with get_free_port() as obs_https, get_free_port() as gitea_http, get_free_port() as gitea_ssh:

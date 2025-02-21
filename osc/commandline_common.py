@@ -7,6 +7,7 @@ import pkgutil
 import sys
 import textwrap
 from typing import List
+from typing import Tuple
 
 from . import cmdln
 
@@ -195,7 +196,7 @@ class Command:
 
 
 class MainCommand(Command):
-    MODULES = ()
+    MODULES: Tuple[Tuple[str, str]] = ()
 
     def __init__(self):
         super().__init__(self.__class__.__name__)

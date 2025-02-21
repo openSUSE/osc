@@ -141,3 +141,19 @@ popd
 
 # create test-GitPkgA package in test:factory that has scmsync set to gitea
 $OSC api -X PUT '/source/test:factory/test-GitPkgA/_meta' --file "$TOPDIR"/fixtures/pac/test-GitPkgA.xml
+
+
+# gitea-action-runner
+systemctl enable podman.socket
+systemctl enable gitea-action-runner.service
+
+# auth token for action runners
+export TOKEN_ACT_RUNNER="rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr"
+su - gitea -c "echo \"INSERT INTO action_runner_token (token, owner_id, repo_id, is_active) VALUES ('$TOKEN_ACT_RUNNER', 0, 0, 1);\" | sqlite3 $DB_PATH"
+
+# gitea-action-runner.service requires .runner file in this location
+pushd /var/lib/gitea-action-runner
+gitea-action-runner register --no-interactive --instance http://localhost:3000 --token=$TOKEN_ACT_RUNNER
+# localhost in the container spawned by the gitea action runner is different than the localhost gitea is running in
+# so we need to redirect the address to the parent container
+sed -i 's@"address": ".*"@"address": "http://host.containers.internal:3000"@' .runner
