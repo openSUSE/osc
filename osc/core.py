@@ -6299,10 +6299,11 @@ def get_rpmlint_log(apiurl: str, proj: str, pkg: str, repo: str, arch: str):
     return f.read()
 
 
-def checkout_deleted_package(apiurl: str, proj: str, pkg: str, dst):
-    pl = meta_get_filelist(apiurl, proj, pkg, deleted=True)
+def checkout_deleted_package(apiurl: str, proj: str, pkg: str, dst, *, revision: Optional[str] = None):
+    pl = meta_get_filelist(apiurl, proj, pkg, revision=revision, deleted=True)
     query = {}
     query['deleted'] = 1
+    query['rev'] = revision
 
     if os.path.isdir(dst):
         print(f'Restoring in existing directory {dst}')
