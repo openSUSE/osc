@@ -1,4 +1,5 @@
 import typing
+import urllib.parse
 
 from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-import
 
@@ -58,3 +59,23 @@ class ScmsyncObsinfo(BaseModel):
                 raise oscerr.NotFoundAPIError(f"File '_scmsync.obsinfo' was not found in {project}/{package}, rev={rev}")
             raise
         return cls.from_file(response)
+
+
+    @property
+    def scm_url(self):
+        """
+        scm_url for obs-scm-bridge
+        """
+        parsed_url = list(urllib.parse.urlparse(self.url))
+        query = urllib.parse.parse_qs(parsed_url[4])
+
+        if self.subdir:
+            query["subdir"] = self.subdir
+
+        parsed_url[4] = urllib.parse.urlencode(query)
+
+        if self.revision:
+            # set revision as fragment
+            parsed_url[5] = self.revision
+
+        return urllib.parse.urlunparse(parsed_url)
