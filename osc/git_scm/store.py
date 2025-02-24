@@ -33,7 +33,7 @@ class GitStore:
         if not hasattr(self, "_git_project_dir"):
             self._git_project_dir = None
             path = self.abspath
-            while path:
+            while path and path != "/":
                 path, _ = os.path.split(path)
 
                 osc_path = os.path.join(path, ".osc")
