@@ -4,6 +4,8 @@ import subprocess
 import urllib.parse
 from pathlib import Path
 
+import ruamel.yaml
+
 from .. import conf as osc_conf
 from .. import oscerr
 
@@ -26,30 +28,65 @@ class GitStore:
             return False
         return store.is_package
 
+    @property
+    def git_project_dir(self):
+        if not hasattr(self, "_git_project_dir"):
+            self._git_project_dir = None
+            path = self.abspath
+            while path:
+                path, _ = os.path.split(path)
+
+                osc_path = os.path.join(path, ".osc")
+                git_path = os.path.join(path, ".git")
+                config_path = os.path.join(path, "_config")
+                pbuild_path = os.path.join(path, "_pbuild")
+                subdirs_path = os.path.join(path, "_subdirs")
+
+                if os.path.isdir(osc_path) and os.path.isdir(git_path) and (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
+                    if os.path.isfile(subdirs_path):
+                        # the _subdirs file contains a list of project subdirs that contain packages
+                        yaml = ruamel.yaml.YAML()
+                        with open(subdirs_path, "r") as f:
+                            subdirs = yaml.load(f).get("subdirs", [])
+                        subdirs_abspath = [os.path.abspath(os.path.join(path, subdir)) for subdir in subdirs]
+                        if os.path.abspath(os.path.join(self.abspath, "..")) not in subdirs_abspath:
+                            break
+                    else:
+                        # no _subdirs file and self.abspath is not directly under the project dir -> not a valid package
+                        if path != os.path.abspath(os.path.join(self.abspath, "..")):
+                            break
+
+                    self._git_project_dir = path
+                    break
+        return self._git_project_dir
+
     def __init__(self, path, check=True):
         self.path = path
         self.abspath = os.path.abspath(self.path)
-        try:
-            self.toplevel = self._run_git(["rev-parse", "--show-toplevel"])
-            self.toplevel = os.path.abspath(self.toplevel)
-        except subprocess.CalledProcessError:
-            self.toplevel = None
 
-        # TODO: how to determine if the current git repo contains a project or a package?
         self.is_project = False
         self.is_package = False
 
-        if self.toplevel:
-            # NOTE: we have only one store in project-git for all packages
-            config_path = os.path.join(self.toplevel, "_config")
-            pbuild_path = os.path.join(self.toplevel, "_pbuild")
-            if self.toplevel == self.abspath and (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
-                self.is_project = True
-                self.is_package = False
-            else:
-                self.is_project = False
-                self.is_package = True
+        self.project_obs_scm_store = None
 
+        if os.path.isdir(os.path.join(self.abspath, ".git")):
+            # NOTE: we have only one store in project-git for all packages
+            config_path = os.path.join(self.abspath, "_config")
+            pbuild_path = os.path.join(self.abspath, "_pbuild")
+            if os.path.isfile(config_path) or os.path.isfile(pbuild_path):
+                # there's .git and _config/_pbuild in the working directory -> it's a project
+                self.is_project = True
+            else:
+                # there's .git and no _config/_pbuild in the working directory -> it's a package
+                self.is_package = True
+        elif self.git_project_dir:
+            from ..obs_scm import Store
+
+            # there's no .git in the working directory and there's .osc, .git and _config/_pbuild in the parent directory tree -> it's a package
+            self.is_package = True
+            self.project_obs_scm_store = Store(self.git_project_dir, check=False)
+
+        self._apiurl = None
         self._package = None
         self._project = None
 
@@ -79,52 +116,32 @@ class GitStore:
 
     @property
     def apiurl(self):
-        from ..obs_scm.store import Store
+        if not self._apiurl:
+            if self.is_package and self.project_obs_scm_store:
+                # read apiurl from parent directory that contains a project with .osc metadata
+                self._apiurl = self.project_obs_scm_store.apiurl
+            if not self._apiurl:
+                # HACK: use the currently configured apiurl
+                self._apiurl = osc_conf.config["apiurl"]
+        return self._apiurl
 
-        # read apiurl from the current directory with .osc metadata
-        # NOTE: this never triggers if a store is retrieved from osc.store.get_store(),
-        # because obs_scm store takes precedence as .osc is present
-        store = Store(self.toplevel, check=False)
-        if store.apiurl:
-            return store.apiurl
-
-        # read project from parent directory that contains a project with .osc metadata
-        store = Store(os.path.join(self.toplevel, ".."), check=False)
-        if store.is_project and store.apiurl:
-            return store.apiurl
-
-        # HACK: we're using the currently configured apiurl
-        return osc_conf.config["apiurl"]
+    @apiurl.setter
+    def apiurl(self, value):
+        self._apiurl = value
 
     @property
     def project(self):
-        from ..obs_scm.store import Store
-
-        # read project from the current directory with .osc metadata
-        # NOTE: this never triggers if a store is retrieved from osc.store.get_store(),
-        # because obs_scm store takes precedence as .osc is present
-        if self._project is None:
-            store = Store(self.toplevel, check=False)
-            if store.project:
-                self._project = store.project
-
-        # read project from parent directory that contains a project with .osc metadata
-        if self._project is None:
-            store = Store(os.path.join(self.toplevel, ".."), check=False)
-            if store.is_project and store.project:
-                self._project = store.project
-
-        # guess project from git branch
-        if self._project is None:
-            # get project from the branch name
-            branch = self._run_git(["branch", "--show-current"])
-
-            # HACK: replace hard-coded mapping with metadata from git or the build service
-            # NOTE: you never know which git repo is supposed to be used in which project
-            if branch == "factory":
-                self._project = "openSUSE:Factory"
-            else:
-                raise oscerr.NoWorkingCopy(f"Couldn't map git branch '{branch}' to a project")
+        if not self._project:
+            if self.is_package and self.project_obs_scm_store:
+                # read project from parent directory that contains a project with .osc metadata
+                self._project = self.project_obs_scm_store.project
+            if not self._project:
+                # HACK: guess project from git branch
+                branch = self._run_git(["branch", "--show-current"])
+                if branch == "factory":
+                    self._project = "openSUSE:Factory"
+                else:
+                    raise oscerr.NoWorkingCopy(f"Couldn't map git branch '{branch}' to a project")
         return self._project
 
     @project.setter
