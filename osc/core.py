@@ -3178,13 +3178,11 @@ def checkout_package(
             # we need also take into account that the url was different at that point of time
             from .obs_api.scmsync_obsinfo import ScmsyncObsinfo
             scmsync_obsinfo = ScmsyncObsinfo.from_api(apiurl, project, package, rev=revision)
-            if scmsync_obsinfo.revision:
-                scm_url = f"{scmsync_obsinfo.url}#{scmsync_obsinfo.revision}"
-            else:
-                scm_url = f"{scmsync_obsinfo.url}"
+            scm_url = scmsync_obsinfo.scm_url
 
         run_obs_scm_bridge(url=scm_url, target_dir=directory)
 
+        # this will fail if the git repo contains .osc directory added by mistake
         Package.init_package(apiurl, project, package, directory, size_limit, meta, progress_obj, scm_url)
 
         # add package to <prj>/.obs/_packages
