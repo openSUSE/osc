@@ -19,6 +19,7 @@ API:
 .. toctree::
    :maxdepth: 2
 
+   git-obs-quickstart
    api/modules
    plugins/index
    oscrc

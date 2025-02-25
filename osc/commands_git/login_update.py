@@ -1,3 +1,4 @@
+import getpass
 import sys
 
 import osc.commandline_git
@@ -16,7 +17,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         self.parser.add_argument("--new-name")
         self.parser.add_argument("--new-url")
         self.parser.add_argument("--new-user")
-        self.parser.add_argument("--new-token")
+        self.parser.add_argument("--new-token", help="Set to '-' to invoke a secure interactive prompt.")
         self.parser.add_argument("--new-ssh-key")
         self.parser.add_argument("--set-as-default", action="store_true")
 
@@ -30,6 +31,11 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         original_login = self.gitea_conf.get_login(args.name)
         print("Original entry:")
         print(original_login.to_human_readable_string())
+
+        if args.new_token == "-":
+            print(file=sys.stderr)
+            while not args.new_token or args.new_token == "-":
+                args.new_token = getpass.getpass(prompt=f"Enter a new Gitea token for user '{args.new_user or original_login.user}': ")
 
         updated_login = self.gitea_conf.update_login(
             args.name,

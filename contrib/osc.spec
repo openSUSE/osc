@@ -196,6 +196,7 @@ install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
 
 # install man page
 %if %{with man}
+install -Dm0644 git-obs-quickstart.1 %{buildroot}%{_mandir}/man1/git-obs-quickstart.1
 install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %endif
@@ -216,6 +217,7 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %license COPYING
 %doc AUTHORS README.md NEWS
 %if %{with man}
+%{_mandir}/man*/git-obs*
 %{_mandir}/man*/osc*
 %endif
 

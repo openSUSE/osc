@@ -109,4 +109,5 @@ html_css_files = [
 # (source start file, name, description, authors, manual section).
 man_pages = [
     ("oscrc", "oscrc", "openSUSE Commander configuration file", "openSUSE project <opensuse-buildservice@opensuse.org>", 5),
+    ("git-obs-quickstart", "git-obs-quickstart", "git-obs Quickstart", "openSUSE project <opensuse-buildservice@opensuse.org>", 1),
 ]

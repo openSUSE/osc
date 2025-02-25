@@ -1,3 +1,4 @@
+import getpass
 import sys
 
 import osc.commandline_git
@@ -15,7 +16,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         self.parser.add_argument("name")
         self.parser.add_argument("--url", required=True)
         self.parser.add_argument("--user", required=True)
-        self.parser.add_argument("--token", required=True)
+        self.parser.add_argument("--token", help="Omit or set to '-' to invoke a secure interactive prompt.")
         self.parser.add_argument("--ssh-key")
         self.parser.add_argument("--set-as-default", action="store_true", default=None)
 
@@ -27,6 +28,9 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         print("", file=sys.stderr)
 
         # TODO: try to authenticate to verify that the new entry works
+
+        while not args.token or args.token == "-":
+            args.token = getpass.getpass(prompt=f"Enter Gitea token for user '{args.user}': ")
 
         login = gitea_api.Login(name=args.name, url=args.url, user=args.user, token=args.token, ssh_key=args.ssh_key, default=args.set_as_default)
         self.gitea_conf.add_login(login)
