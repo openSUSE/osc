@@ -23,7 +23,7 @@ from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import List
+from typing import List, NoReturn
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -6669,7 +6669,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
         print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
 
-    def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments', project=None):
+    def print_repos(
+        self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg="Missing arguments", project=None
+    ) -> NoReturn:
         from .core import is_package_dir
         from .core import is_project_dir
 
