@@ -4359,8 +4359,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not args or len(args) > 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
-        if len(args) >= 1:
-            package = args[0]
+        package = args[0]
         if len(args) >= 2:
             tproject = self._process_project_name(args[1])
 
