@@ -154,4 +154,4 @@ jobs:
       - name: "Run tests"
         run: |
           cd behave
-          behave -Dosc=../osc-wrapper.py -Dgit-obs=../git-obs.py -Dpodman_max_containers=2
+          behave -Dosc=../osc-wrapper.py -Dgit-obs=../git-obs.py -Dgit-osc-precommit-hook=../git-osc-precommit-hook.py -Dpodman_max_containers=2

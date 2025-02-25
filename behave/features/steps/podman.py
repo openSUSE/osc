@@ -255,3 +255,4 @@ def step_impl(context):
     context.podman.container.wait_on_systemd()
     context.osc.write_config()
     context.git_obs.write_config()
+    context.git_osc_precommit_hook.write_config()

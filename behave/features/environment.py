@@ -36,6 +36,7 @@ def after_scenario(context, scenario):
 
     context.osc.clear()
     context.git_obs.clear()
+    context.git_osc_precommit_hook.clear()
 
     common.check_exit_code(context)
 
@@ -60,6 +61,11 @@ def before_all(context):
     if "git-obs" in context.config.userdata:
         context.config.userdata["git-obs"] = os.path.abspath(os.path.expanduser(context.config.userdata["git-obs"]))
 
+    if "git-osc-precommit-hook" in context.config.userdata:
+        context.config.userdata["git-osc-precommit-hook"] = os.path.abspath(
+            os.path.expanduser(context.config.userdata["git-osc-precommit-hook"])
+        )
+
     # absolute path to .../behave/fixtures
     context.fixtures = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "fixtures"))
 
@@ -77,9 +83,11 @@ def before_all(context):
         context.podman = podman.Podman(context, container_name="osc-behave")
     context.osc = osc.Osc(context)
     context.git_obs = osc.GitObs(context)
+    context.git_osc_precommit_hook = osc.GitOscPrecommitHook(context)
 
 
 def after_all(context):
+    del context.git_osc_precommit_hook
     del context.git_obs
     del context.osc
     context.podman.kill()
