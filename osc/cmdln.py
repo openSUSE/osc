@@ -7,6 +7,7 @@ import argparse
 import inspect
 import sys
 import textwrap
+from typing import NoReturn
 
 
 def option(*args, **kwargs):
@@ -213,7 +214,7 @@ class Cmdln:
             for option_args, option_kwargs in options:
                 subparser.add_argument(*option_args, **option_kwargs)
 
-    def argparse_error(self, *args, **kwargs):
+    def argparse_error(self, *args, **kwargs) -> NoReturn:
         """
         Raise an argument parser error.
         Automatically pick the right parser for the main program or a subcommand.
