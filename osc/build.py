@@ -117,6 +117,9 @@ class Buildinfo:
             self.pacsuffix = 'arch'
         if self.buildtype == 'livebuild':
             self.pacsuffix = 'deb'
+        if self.buildtype == 'docker':
+            # supports rpm and deb
+            self.pacsuffix = binarytype
         if self.buildtype == 'snapcraft':
             # atm ubuntu is used as base, but we need to be more clever when
             # snapcraft also supports rpm
