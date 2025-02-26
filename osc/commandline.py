@@ -8300,7 +8300,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         store.assert_is_package()
 
         if command in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'lr', 'mr', 'dr', 'r'):
-            p = Package(".")
             if command  in ("localrun", "lr"):
                 mode = "local"
             elif command in ("manualrun", "mr"):
@@ -8310,6 +8309,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif command in ("runall", "ra"):
                 mode = "all"
 
+        p = Package(".")
         return p.run_source_services(mode, singleservice, opts.verbose)
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
