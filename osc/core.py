@@ -2043,6 +2043,7 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
         mtime = os.stat(filename).st_mtime
         ri_err = False
         while True:
+            file_changed = False
             if not ri_err:
                 file_changed = _edit_message_open_editor(filename, data, mtime)
                 msg = open(filename).read()

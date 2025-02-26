@@ -74,7 +74,7 @@ from .util.models import *
 GENERIC_KEYRING = False
 
 try:
-    import keyring
+    import keyring  # pylint: disable=import-error
     GENERIC_KEYRING = True
 except:
     pass

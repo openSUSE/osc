@@ -3221,6 +3221,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         reqid = None
         supersedid = None
+        incident = None
+        priority = None
+
         if cmd == 'list' or cmd == 'approvenew':
             package = None
             project = None
@@ -3259,6 +3262,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # approve request
         elif cmd == 'approve' or cmd == 'cancelapproval':
+            assert reqid is not None
             query = {'cmd': cmd}
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
@@ -3266,6 +3270,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # change incidents
         elif cmd == 'setincident':
+            assert reqid is not None
+            assert incident is not None
             query = {'cmd': 'setincident', 'incident': incident}
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
@@ -3273,6 +3279,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # change priority
         elif cmd in ['prioritize', 'priorize']:
+            assert reqid is not None
+            assert priority is not None
             query = {'cmd': 'setpriority', 'priority': priority}
             url = makeurl(apiurl, ['request', reqid], query)
             r = http_POST(url, data=opts.message)
@@ -3372,12 +3380,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             # FIXME: date filtering should become implemented on server side
 
-            if opts.target_package_filter:
-                filter_pattern = re.compile(opts.target_package_filter)
+            filter_pattern = re.compile(opts.target_package_filter) if opts.target_package_filter else None
             for result in results:
                 filtered = False
                 for action in result.actions:
-                    if action.type == 'group' or not opts.target_package_filter:
+                    if action.type == "group" or not filter_pattern:
                         continue
                     if action.tgt_package is not None and not filter_pattern.match(action.tgt_package):
                         filtered = True
@@ -6677,6 +6684,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         wd = Path.cwd()
         doprint = False
+        msg = ""
         if is_package_dir(wd):
             msg = 'Valid arguments for this package are:'
             doprint = True
