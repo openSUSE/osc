@@ -37,6 +37,19 @@ class Token(XmlModel):
         ),
     )
 
+    class TrueFalse(str, Enum):
+        TRUE = "true"
+        FALSE = "false"
+
+    enabled: Optional[TrueFalse] = Field(
+        xml_attribute=True,
+        description=textwrap.dedent(
+            """
+            Indicates whether a token can accept trigger requests or not.
+            """
+        ),
+    )
+
     project: Optional[str] = Field(
         xml_attribute=True,
         description=textwrap.dedent(
@@ -101,6 +114,8 @@ class Token(XmlModel):
         table.add("String", self.string, color="bold")
         table.add("Operation", self.kind)
         table.add("Description", self.description)
+        # defaults to "true", because all tokens were enabled before introducing the "enabled" field
+        table.add("Enabled", self.enabled or "true")
         table.add("Project", self.project)
         table.add("Package", self.package)
         table.add("Triggered at", self.triggered_at)
