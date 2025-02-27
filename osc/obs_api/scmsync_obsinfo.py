@@ -43,7 +43,7 @@ class ScmsyncObsinfo(BaseModel):
         return cls.from_string(data)
 
     @classmethod
-    def from_api(cls, apiurl: str, project: str, package: str, *, rev: str) -> "ScmsyncObsinfo":
+    def from_api(cls, apiurl: str, project: str, package: str, *, rev: Optional[str] = None) -> "ScmsyncObsinfo":
         import urllib.error
         from .. import oscerr
         from ..connection import http_request
