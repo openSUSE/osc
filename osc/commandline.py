@@ -23,7 +23,7 @@ from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import List
+from typing import List, NoReturn
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -4359,8 +4359,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if not args or len(args) > 2:
             raise oscerr.WrongArgs('Wrong number of arguments.')
-        if len(args) >= 1:
-            package = args[0]
+        package = args[0]
         if len(args) >= 2:
             tproject = self._process_project_name(args[1])
 
@@ -6670,7 +6669,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         strip_time = opts.strip_time or conf.config['buildlog_strip_time']
         print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
 
-    def print_repos(self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg='Missing arguments', project=None):
+    def print_repos(
+        self, repos_only=False, exc_class=oscerr.WrongArgs, exc_msg="Missing arguments", project=None
+    ) -> NoReturn:
         from .core import is_package_dir
         from .core import is_project_dir
 
@@ -8299,7 +8300,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         store.assert_is_package()
 
         if command in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'lr', 'mr', 'dr', 'r'):
-            p = Package(".")
             if command  in ("localrun", "lr"):
                 mode = "local"
             elif command in ("manualrun", "mr"):
@@ -8309,6 +8309,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif command in ("runall", "ra"):
                 mode = "all"
 
+        p = Package(".")
         return p.run_source_services(mode, singleservice, opts.verbose)
 
     @cmdln.option('-a', '--arch', metavar='ARCH',
