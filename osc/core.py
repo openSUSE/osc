@@ -1,5 +1,3 @@
-# Copyright (C) 2006 Novell Inc.  All rights reserved.
-# This program is free software; it may be used, copied, modified
 # and distributed under the terms of the GNU General Public Licence,
 # either version 2, or version 3 (at your option).
 
@@ -1794,13 +1792,41 @@ def show_upstream_xsrcmd5(
     return li.xsrcmd5
 
 
-def show_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages):
+def show_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages) -> bytes:
     query = {}
     query["view"] = "info"
-    query["package"] = packages
     query["nofilename"] = nofilename
-    f = http_GET(makeurl(apiurl, ['source', project], query=query))
-    return f.read()
+
+    def to_chunks(lst, size):
+        import itertools
+
+        pos = 0
+        while True:
+            chunk = list(itertools.islice(lst, pos, pos + size))
+            if not chunk:
+                break
+            yield chunk
+            pos += size
+
+    # sometimes the number of packages exceeds reasonable size of a GET query
+    # that's why we make multiple requests and join the results
+    max_packages = 100
+
+    if packages:
+        packages_chunks = to_chunks(packages, max_packages)
+    else:
+        packages_chunks = [None]
+
+    sourceinfolist = ET.Element("sourceinfolist")
+    for packages_chunk in packages_chunks:
+        query["package"] = packages_chunk
+        url = makeurl(apiurl, ['source', project], query=query)
+        f = http_GET(url)
+        root = xml_parse(f).getroot()
+        assert root.tag == "sourceinfolist"
+        assert root.attrib == {}
+        sourceinfolist.extend(root[:])
+    return ET.tostring(sourceinfolist)
 
 
 def get_project_sourceinfo(apiurl: str, project: str, nofilename: bool, *packages):
