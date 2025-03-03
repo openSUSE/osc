@@ -27,6 +27,7 @@ Scenario: Run `osc token --operation rebuild`
         String       : .*
         Operation    : rebuild
         Description  : 
+        Enabled      : true
         Project      : test:factory
         Package      : test-pkgA
         Triggered at : 
