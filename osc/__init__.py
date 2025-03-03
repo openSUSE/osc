@@ -13,7 +13,7 @@ __all__ = [
 
 
 from .util import git_version
-__version__ = git_version.get_version('1.12.1')
+__version__ = git_version.get_version('1.13.0')
 
 
 # vim: sw=4 et

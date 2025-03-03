@@ -1,3 +1,25 @@
+- 1.13.0
+  - Command-line:
+    - Add 'osc fork' command for forking a package with sources managed in Gitea
+    - Add 'git-obs pr review' command
+    - Allow 'git-obs login' subcommands to prompt for Gitea tokens
+    - Fix 'osc checkout' command to support deleted packages incl. revisions
+    - Update 'osc rpmlint' command by adding help message for invoking command in PKG dir
+    - Add '--multibuild-package' option to 'osc rpmlint' command
+  - Library:
+    - Change how git projects and packages are detected
+    - Change show_project_sourceinfo() to split a huge request into many and join the results to workaround GET limitations
+    - Make 'rev' option in ScmsyncObsinfo.from_api() optional
+    - Make GitObsCommand.gitea_{conf,login,conf} properties writable
+    - Fix local building of deb dockerfile
+    - Fix getting scm_url from scmsync_obsinfo that has subdir set
+    - Fix or silence pylint errors
+    - Support 'enabled' field in tokens
+    - Highlight trailing whitespaces in diffs
+    - Fix missing spaces in help string
+  - Other:
+    - Add git-obs Quickstart documentation and man page
+
 - 1.12.1
   - Command-line:
     - Improve 'maintenancerequest' command to inherit description from superseded request
