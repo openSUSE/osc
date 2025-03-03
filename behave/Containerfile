@@ -3,13 +3,16 @@ FROM opensuse/leap:15.6
 RUN zypper -n modifyrepo --disable repo-openh264 || : \
     && zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.6/OBS:Server:Unstable.repo \
     && zypper ar --repo http://download.opensuse.org/repositories/devel:/tools:/scm/15.6/devel:tools:scm.repo \
+    && zypper ar --repo https://download.opensuse.org/repositories/devel:/Factory:/git-workflow/15.6/devel:Factory:git-workflow.repo \
     && zypper -n --gpg-auto-import-keys refresh
 
 RUN zypper -n install \
     bash \
     bash-completion \
+    crun \
+    fuse-overlayfs \
     git \
-    gitea \
+    gitea-action-runner \
     less \
     obs-api \
     obs-gitea-bridge \
@@ -20,10 +23,13 @@ RUN zypper -n install \
     openslp \
     openssl \
     perl-XML-SAX \
+    podman \
+    podman-docker \
     rpm-build \
     sqlite3 \
     systemd \
     vim \
+    && zypper -n install --repo=devel_tools_scm gitea \
     && rm -rf /var/cache/zypp/*
 
 COPY container-files/ /
