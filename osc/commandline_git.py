@@ -56,13 +56,25 @@ class GitObsCommand(osc.commandline_common.Command):
     def gitea_conf(self):
         return self.main_command.gitea_conf
 
+    @gitea_conf.setter
+    def gitea_conf(self, value):
+        self.main_command.gitea_conf = value
+
     @property
     def gitea_login(self):
         return self.main_command.gitea_login
 
+    @gitea_login.setter
+    def gitea_login(self, value):
+        self.main_command.gitea_login = value
+
     @property
     def gitea_conn(self):
         return self.main_command.gitea_conn
+
+    @gitea_conn.setter
+    def gitea_conn(self, value):
+        self.main_command.gitea_conn = value
 
     def print_gitea_settings(self):
         print(f"Using the following Gitea settings:", file=sys.stderr)
@@ -158,11 +170,19 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             self._gitea_conf = gitea_api.Config(self._args.gitea_config)
         return self._gitea_conf
 
+    @gitea_conf.setter
+    def gitea_conf(self, value):
+        self._gitea_conf = value
+
     @property
     def gitea_login(self):
         if self._gitea_login is None:
             self._gitea_login = self.gitea_conf.get_login(name=self._args.gitea_login)
         return self._gitea_login
+
+    @gitea_login.setter
+    def gitea_login(self, value):
+        self._gitea_login = value
 
     @property
     def gitea_conn(self):
@@ -172,6 +192,10 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             self._gitea_conn = gitea_api.Connection(self.gitea_login)
             assert self._gitea_login is not None
         return self._gitea_conn
+
+    @gitea_conn.setter
+    def gitea_conn(self, value):
+        self._gitea_conn = value
 
 
 def main():
