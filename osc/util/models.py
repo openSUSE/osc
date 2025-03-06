@@ -474,7 +474,7 @@ class BaseModel(metaclass=ModelMeta):
 
 
 class XmlModel(BaseModel):
-    XML_TAG = None
+    XML_TAG: Optional[str] = None
 
     _apiurl: Optional[str] = Field(
         exclude=True,
