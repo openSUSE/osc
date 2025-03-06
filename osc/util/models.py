@@ -88,8 +88,9 @@ class FromParent(NotSetClass):
     def __repr__(self):
         return f"FromParent(field_name={self.field_name})"
 
-
-class Field(property):
+# HACK: inheriting from Any fixes the following mypy error:
+#       Incompatible types in assignment (expression has type "Field", variable has type "X | None")  [assignment]
+class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
     def __init__(
         self,
         default: Any = NotSet,
