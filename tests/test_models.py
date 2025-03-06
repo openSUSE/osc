@@ -1,3 +1,4 @@
+import sys
 import unittest
 from typing import Set
 
@@ -24,6 +25,16 @@ class TestNotSet(unittest.TestCase):
 
 
 class Test(unittest.TestCase):
+    @unittest.skipIf(sys.version_info[:2] < (3, 10), "added in python 3.10")
+    def test_union_or(self):
+        class TestModel(BaseModel):
+            text: str | None = Field()
+
+        m = TestModel()
+        self.assertEqual(m.dict(), {"text": None})
+
+        self.assertRaises(TypeError, setattr, m.text, 123)
+
     def test_dict(self):
         class TestSubmodel(BaseModel):
             text: str = Field(default="default")
