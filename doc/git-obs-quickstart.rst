@@ -34,7 +34,7 @@ Add a login entry to the git-obs configuration file
 
 - Run the following command, replacing the placeholders with your actual values::
 
-    git-obs add opensuse --url https://src.opensuse.org --user USER [--token TOKEN] [--set-as-default]
+    git-obs login add opensuse --url https://src.opensuse.org --user USER [--token TOKEN] [--set-as-default]
 
 - If the ``--token`` option in the command above is omitted,
   the command will prompt you to enter the token securely.
