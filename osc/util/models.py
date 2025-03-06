@@ -39,6 +39,15 @@ if sys.version_info < (3, 8):
 else:
     from typing import get_origin
 
+
+# types.UnionType was added in Python 3.10
+if sys.version_info < (3, 10):
+    class UnionType:
+        pass
+else:
+    from types import UnionType
+
+
 import urllib3.response
 
 from . import xml
@@ -165,7 +174,7 @@ class Field(property):
     @property
     def is_optional(self):
         origin_type = get_origin(self.type) or self.type
-        return origin_type == Union and len(self.type.__args__) == 2 and type(None) in self.type.__args__
+        return origin_type in (Union, UnionType) and type(None) in self.type.__args__
 
     @property
     def is_model(self):
@@ -193,7 +202,7 @@ class Field(property):
             origin_type = get_origin(expected_type) or expected_type
 
             # unwrap Union
-            if origin_type == Union:
+            if origin_type in (Union, UnionType):
                 if value is None and type(None) in expected_type.__args__:
                     valid_type = True
                     continue
