@@ -107,6 +107,10 @@ new_project_templ = """\
   <description></description>
     <!-- This is for a longer description of the purpose of the project -->
 
+  <!-- Uncomment and specify an URL and branch if your project is managed in git.
+  <scmsync>url#branch</scmsync>
+  -->
+
   <person role="maintainer" userid="%(user)s" />
   <person role="bugowner" userid="%(user)s" />
 <!-- remove this block to publish your packages on the mirrors -->
@@ -158,6 +162,10 @@ new_package_templ = """\
   <title></title> <!-- Title of package -->
 
   <description></description> <!-- for long description -->
+
+  <!-- Uncomment and specify an URL and branch if your package is managed in git.
+  <scmsync>url#branch</scmsync>
+  -->
 
 <!-- following roles are inherited from the parent project
   <person role="maintainer" userid="%(user)s"/>
