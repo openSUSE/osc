@@ -111,7 +111,7 @@ class Buildinfo:
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
         self.pacsuffix = 'rpm'
-        if self.buildtype in ('dsc', 'collax', 'deb'):
+        if self.buildtype in ('dsc', 'collax') or self.binarytype == 'deb':
             self.pacsuffix = 'deb'
         if self.buildtype == 'arch':
             self.pacsuffix = 'arch'
