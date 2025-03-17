@@ -1971,7 +1971,7 @@ def get_default_editor():
 def format_diff_line(line):
     # highlight trailing whitespaces
     match = re.search(rb"(\s+)$", line)
-    if match and line != b' ':
+    if match and not re.match(rb"^[+-]+ *$", line):
         line = line[:match.start(1)] + b"\x1b[41m" + line[match.start(1):] + b"\x1b[0m"
 
     if line.startswith(b"+++ ") or line.startswith(b"--- ") or line.startswith(b"Index:"):
