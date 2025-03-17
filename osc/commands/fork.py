@@ -60,6 +60,11 @@ class ForkCommand(osc.commandline.OscCommand):
         gitea_login = gitea_conf.get_login_by_url_user(url=url, user=osc_conf.get_apiurl_usr(args.apiurl))
         gitea_conn = gitea_api.Connection(gitea_login)
 
+        # store the attributes for self.print_gitea_settings()
+        self.gitea_conf = gitea_conf
+        self.gitea_login = gitea_login
+        self.gitea_conn = gitea_conn
+
         self.print_gitea_settings()
         print(f"Forking git repo {owner}/{repo} ...", file=sys.stderr)
 
