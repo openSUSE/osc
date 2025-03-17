@@ -141,9 +141,9 @@ class OscMainCommand(MainCommand):
             # HACK: never ask for credentials when displaying help
             return
 
-        # apiurl hasn't been specified by the user
-        # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
         if args.apiurl is None:
+            # apiurl hasn't been specified by the user
+            # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
             try:
                 # try reading the apiurl from the working copy
                 args.apiurl = osc_store.Store(Path.cwd()).apiurl
@@ -151,6 +151,9 @@ class OscMainCommand(MainCommand):
                 # we can't use conf.config["apiurl"] because it contains the default "https://api.opensuse.org"
                 # let's leave setting the right value to conf.get_config()
                 pass
+        else:
+            # apiurl has been specified by the user, let's ignore OSC_APIURL env
+            os.environ.pop("OSC_APIURL", None)
 
         overrides = {}
         for i in args.setopt:
@@ -872,6 +875,12 @@ class Osc(cmdln.Cmdln):
                 e = ee
             print("Path.cwd() failed: ", e, file=sys.stderr)
             sys.exit(1)
+
+        # prioritize apiurl specified on the command-line
+        if self.options.apiurl:
+            return self.options.apiurl
+
+        # OSC_APIURL env variable seems to be handled correctly even from a checkout, no extra code needed
 
         try:
             store = osc_store.get_store(Path.cwd())
