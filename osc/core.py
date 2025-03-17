@@ -6444,6 +6444,9 @@ class MultibuildFlavorResolver:
         root = xml_fromstring(s)
         for node in root.findall("flavor"):
             result.add(node.text)
+        # <package> is deprecated according to OBS Multibuild.pm, but it is widely used
+        for node in root.findall("package"):
+            result.add(node.text)
         return result
 
     def resolve(self, patterns: List[str]):
