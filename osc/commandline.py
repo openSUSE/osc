@@ -6974,7 +6974,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         of the 'osc repos' output.
 
         usage in package or project directory:
-            osc dependson REPOSITORY ARCH
+            osc dependson REPOSITORY ARCH [-M FLAVOR]
 
         usage:
             osc dependson PROJECT [PACKAGE[:FLAVOR]] REPOSITORY ARCH
@@ -6982,7 +6982,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         self._dependson(False, opts, *args)
 
     @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
-                  help=HELP_MULTIBUILD_ONE)
+                  action="append", default=[], help=HELP_MULTIBUILD_MANY)
     def do_whatdependson(self, subcmd, opts, *args):
         """
         Show the packages that require the specified package during the build
@@ -7007,6 +7007,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
     def _dependson(self, reverse, opts, *args):
         from .core import ET
+        from .core import MultibuildFlavorResolver
         from .core import get_dependson
         from .core import is_package_dir
         from .core import is_project_dir
@@ -7017,7 +7018,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         wd = Path.cwd()
         args = slash_split(args)
-        project = packages = repository = arch = None
+        project = package = repository = arch = None
 
         if len(args) < 2 and (is_package_dir('.') or is_project_dir('.')):
             self.print_repos()
@@ -7029,7 +7030,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 3:  # 2
             if is_package_dir('.'):
-                packages = [store_read_package(wd)]
+                package = store_read_package(wd)
             elif not is_project_dir('.'):
                 raise oscerr.WrongArgs('Project and package is not specified.')
             project = store_read_project(wd)
@@ -7043,12 +7044,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 4:
             project = self._process_project_name(args[0])
-            packages = [args[1]]
+            package = args[1]
             repository = args[2]
             arch = args[3]
 
-        if packages is not None and opts.multibuild_package:
-            packages = [packages[0] + ":" + opts.multibuild_package]
+        if package and opts.multibuild_package:
+            resolver = MultibuildFlavorResolver(apiurl, project, package, use_local=False)
+            packages = resolver.resolve_as_packages(opts.multibuild_package)
+        else:
+            packages = [package]
 
         project_packages = meta_get_packagelist(apiurl, project, deleted=False, expand=False)
         xml = get_dependson(apiurl, project, repository, arch, packages, reverse)
