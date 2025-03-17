@@ -6468,6 +6468,10 @@ class MultibuildFlavorResolver:
         if use_globs:
             multibuild_xml = self.get_multibuild_data()
             all_flavors = self.parse_multibuild_data(multibuild_xml)
+
+            # always add an empty flavor which is implicit
+            all_flavors.add("")
+
             flavors = set()
             for pattern in patterns:
                 # not a glob, use it as it is
