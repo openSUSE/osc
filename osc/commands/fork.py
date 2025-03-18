@@ -31,6 +31,16 @@ class ForkCommand(osc.commandline.OscCommand):
             help="Name of the package",
         )
 
+        self.add_argument(
+            "--target-project",
+            help="Name of the target project (defaults to home:$user:branches)",
+        )
+
+        self.add_argument(
+            "--target-package",
+            help="Name of the package (defaults to $package)",
+        )
+
         self.add_argument_new_repo_name()
 
     def run(self, args):
@@ -97,7 +107,14 @@ class ForkCommand(osc.commandline.OscCommand):
         print()
         print(f"Forking OBS package {args.project}/{args.package} ...")
         print(f" * OBS apiurl: {args.apiurl}")
-        status = obs_api.Package.cmd_fork(args.apiurl, args.project, args.package, scmsync=fork_scmsync)
+        status = obs_api.Package.cmd_fork(
+            args.apiurl,
+            args.project,
+            args.package,
+            scmsync=fork_scmsync,
+            target_project=args.target_project,
+            target_package=args.target_package,
+        )
         target_project = status.data["targetproject"]
         target_package = status.data["targetpackage"]
         # XXX: the current OBS API is not ideal; we don't get any info whether the new package exists already; 404 would be probably nicer
