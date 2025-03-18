@@ -136,12 +136,8 @@ class GitStore:
                 # read project from parent directory that contains a project with .osc metadata
                 self._project = self.project_obs_scm_store.project
             if not self._project:
-                # HACK: guess project from git branch
-                branch = self._run_git(["branch", "--show-current"])
-                if branch == "factory":
-                    self._project = "openSUSE:Factory"
-                else:
-                    raise oscerr.NoWorkingCopy(f"Couldn't map git branch '{branch}' to a project")
+                # HACK: assume openSUSE:Factory project if project metadata is missing
+                self._project = "openSUSE:Factory"
         return self._project
 
     @project.setter
