@@ -49,9 +49,6 @@ class ForkCommand(osc.commandline.OscCommand):
         from osc import obs_api
         from osc.output import tty
 
-        osc_conf.get_config(override_apiurl=args.apiurl)
-        args.apiurl = osc_conf.config.apiurl
-
         # get the package meta from the OBS API first
         package = obs_api.Package.from_api(args.apiurl, args.project, args.package)
         if not package.scmsync:
