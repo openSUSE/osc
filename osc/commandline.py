@@ -3819,6 +3819,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if not tgt_package:
             tgt_package = src_package
 
+        src_project = self._process_project_name(src_project)
+        tgt_project = self._process_project_name(tgt_project)
+
         rev, dummy = parseRevisionOption(opts.revision)
         vrev = None
 
@@ -4662,6 +4665,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         project, package = pop_project_package_from_args(
             args, package_is_optional=True
         )
+        project = self._process_project_name(project)
         ensure_no_remaining_args(args)
 
         msg = opts.message or edit_message()
@@ -8374,6 +8378,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             default_project='.',
             default_package='.',
         )
+        project = self._process_project_name(project)
         ensure_no_remaining_args(args)
 
         if opts.repo:
