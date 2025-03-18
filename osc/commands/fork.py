@@ -7,7 +7,7 @@ import osc.commandline_git
 
 class ForkCommand(osc.commandline.OscCommand):
     """
-    Fork a package with sources managed in Gitea
+    Fork a project or a package with sources managed in Gitea
     """
 
     name = "fork"
@@ -28,6 +28,7 @@ class ForkCommand(osc.commandline.OscCommand):
 
         self.add_argument(
             "package",
+            nargs="?",
             help="Name of the package",
         )
 
@@ -49,15 +50,31 @@ class ForkCommand(osc.commandline.OscCommand):
         from osc import obs_api
         from osc.output import tty
 
-        # get the package meta from the OBS API first
-        package = obs_api.Package.from_api(args.apiurl, args.project, args.package)
-        if not package.scmsync:
-            raise RuntimeError(
-                "Forking is possible only with packages managed in Git (the <scmsync> element must be set in the package meta)"
-            )
+        is_package = args.package is not None
+
+        if not is_package and args.target_package:
+            self.parser.error("The '--target-package' option requires the 'package' argument to be set")
+
+        if is_package:
+            # get the package meta from the OBS API first
+            package = obs_api.Package.from_api(args.apiurl, args.project, args.package)
+            if not package.scmsync:
+                raise RuntimeError(
+                    "Forking is possible only with packages managed in Git (the <scmsync> element must be set in the package meta)"
+                )
+        else:
+            # get the project meta from the OBS API first
+            project = obs_api.Project.from_api(args.apiurl, args.project)
+            if not project.scmsync:
+                raise RuntimeError(
+                    "Forking is possible only with projects managed in Git (the <scmsync> element must be set in the project meta)"
+                )
 
         # parse gitea url, owner, repo and branch from the scmsync url
-        parsed_scmsync_url = urllib.parse.urlparse(package.scmsync, scheme="https")
+        if is_package:
+            parsed_scmsync_url = urllib.parse.urlparse(package.scmsync, scheme="https")
+        else:
+            parsed_scmsync_url = urllib.parse.urlparse(project.scmsync, scheme="https")
         url = urllib.parse.urlunparse((parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, "", "", "", ""))
         owner, repo = parsed_scmsync_url.path.strip("/").split("/")
         branch = parsed_scmsync_url.fragment or None
@@ -102,20 +119,27 @@ class ForkCommand(osc.commandline.OscCommand):
         )
 
         print()
-        print(f"Forking OBS package {args.project}/{args.package} ...")
+        if is_package:
+            print(f"Forking OBS package {args.project}/{args.package} ...")
+        else:
+            print(f"Forking OBS project {args.project} ...")
         print(f" * OBS apiurl: {args.apiurl}")
+        # we use a single API endpoint for forking both projects and packages (project requires setting package to "_project")
         status = obs_api.Package.cmd_fork(
             args.apiurl,
             args.project,
-            args.package,
+            args.package if is_package else "_project",
             scmsync=fork_scmsync,
             target_project=args.target_project,
-            target_package=args.target_package,
+            target_package=args.target_package if is_package else None,
         )
-        target_project = status.data["targetproject"]
-        target_package = status.data["targetpackage"]
         # XXX: the current OBS API is not ideal; we don't get any info whether the new package exists already; 404 would be probably nicer
-        print(f" * Fork created: {target_project}/{target_package}")
+        target_project = status.data["targetproject"]
+        if is_package:
+            target_package = status.data["targetpackage"]
+            print(f" * Fork created: {target_project}/{target_package}")
+        else:
+            print(f" * Fork created: {target_project}")
         print(f" * scmsync URL: {fork_scmsync}")
 
         # check if the scmsync branch exists in the forked repo
