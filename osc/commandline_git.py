@@ -1,4 +1,5 @@
 import argparse
+import glob
 import os
 import subprocess
 import sys
@@ -113,6 +114,10 @@ def complete_login(prefix, parsed_args, **kwargs):
     conf = getattr(parsed_args, "gitea_config", None)
     gitea_conf = gitea_api.Config(conf)
     return [i.name for i in gitea_conf.list_logins()]
+
+
+def complete_ssh_key_path(prefix, parsed_args, **kwargs):
+    return glob.glob(os.path.expanduser("~/.ssh/*.pub"))
 
 
 class GitObsMainCommand(osc.commandline_common.MainCommand):
