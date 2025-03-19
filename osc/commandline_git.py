@@ -136,6 +136,27 @@ def complete_pr(prefix, parsed_args, **kwargs):
     return [f"{entry['repository']['full_name']}#{entry['number']}" for entry in data]
 
 
+def complete_checkout_pr(prefix, parsed_args, **kwargs):
+    from . import gitea_api
+
+    git = gitea_api.Git(".")
+    owner, repo = git.get_owner_repo()
+
+    conf = getattr(parsed_args, "gitea_config", None)
+    login = getattr(parsed_args, "gitea_login", None)
+    gitea_conf = gitea_api.Config(conf)
+    gitea_login = gitea_conf.get_login(name=login)
+    gitea_conn = gitea_api.Connection(gitea_login)
+    data = gitea_api.PullRequest.list(
+        gitea_conn,
+        owner=owner,
+        repo=repo,
+        state="open",
+    ).json()
+    data.sort(key=gitea_api.PullRequest.cmp)
+    return [f"{entry['number']}" for entry in data]
+
+
 class GitObsMainCommand(osc.commandline_common.MainCommand):
     name = "git-obs"
 
