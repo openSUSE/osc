@@ -96,6 +96,8 @@ class Package(XmlModel):
         package: str,
         *,
         scmsync: str,
+        target_project: Optional[str] = None,
+        target_package: Optional[str] = None,
     ):
         """
         POST /source/{project}/{package}?cmd=fork&scmsync={scmsync}
@@ -105,12 +107,16 @@ class Package(XmlModel):
         :param project: Project name.
         :param package: Package name.
         :param scmsync: Checkout Git URL. Example: https://src.example.com/owner/repo#branch
+        :param target_project: Target project name (defaults to home:$user:branches)
+        :param target_package: Target package name (defaults to $package)
         """
 
         url_path = ["source", project, package]
         url_query = {
             "cmd": "fork",
             "scmsync": scmsync,
+            "target_project": target_project,
+            "target_package": target_package,
         }
         response = cls.xml_request("POST", apiurl, url_path, url_query)
         return Status.from_file(response, apiurl=apiurl)
