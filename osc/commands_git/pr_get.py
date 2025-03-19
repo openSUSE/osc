@@ -13,7 +13,9 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
     parent = "PullRequestCommand"
 
     def init_arguments(self):
-        self.add_argument_owner_repo_pull(nargs="+")
+        from osc.commandline_git import complete_pr
+
+        self.add_argument_owner_repo_pull(nargs="+").completer = complete_pr
         self.add_argument(
             "-p",
             "--patch",

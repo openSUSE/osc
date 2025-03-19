@@ -120,6 +120,22 @@ def complete_ssh_key_path(prefix, parsed_args, **kwargs):
     return glob.glob(os.path.expanduser("~/.ssh/*.pub"))
 
 
+def complete_pr(prefix, parsed_args, **kwargs):
+    from . import gitea_api
+
+    conf = getattr(parsed_args, "gitea_config", None)
+    login = getattr(parsed_args, "gitea_login", None)
+    gitea_conf = gitea_api.Config(conf)
+    gitea_login = gitea_conf.get_login(name=login)
+    gitea_conn = gitea_api.Connection(gitea_login)
+    data = gitea_api.PullRequest.search(
+        gitea_conn,
+        state="open",
+    ).json()
+    data.sort(key=gitea_api.PullRequest.cmp)
+    return [f"{entry['repository']['full_name']}#{entry['number']}" for entry in data]
+
+
 class GitObsMainCommand(osc.commandline_common.MainCommand):
     name = "git-obs"
 
