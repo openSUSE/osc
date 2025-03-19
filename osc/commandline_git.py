@@ -107,6 +107,14 @@ class GitObsCommand(osc.commandline_common.Command):
         )
 
 
+def complete_login(prefix, parsed_args, **kwargs):
+    from . import gitea_api
+
+    conf = getattr(parsed_args, "gitea_config", None)
+    gitea_conf = gitea_api.Config(conf)
+    return [i.name for i in gitea_conf.list_logins()]
+
+
 class GitObsMainCommand(osc.commandline_common.MainCommand):
     name = "git-obs"
 
@@ -131,7 +139,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             "-G",
             "--gitea-login",
             help="Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file.",
-        )
+        ).completer = complete_login
 
     def post_parse_args(self, args):
         if not args.gitea_config:
