@@ -85,7 +85,7 @@ class GitObsCommand(osc.commandline_common.Command):
         print("", file=sys.stderr)
 
     def add_argument_owner_repo(self, **kwargs):
-        self.add_argument(
+        return self.add_argument(
             "owner_repo",
             action=OwnerRepoAction,
             help="Owner and repo: (format: <owner>/<repo>)",
@@ -93,7 +93,7 @@ class GitObsCommand(osc.commandline_common.Command):
         )
 
     def add_argument_owner_repo_pull(self, **kwargs):
-        self.add_argument(
+        return self.add_argument(
             "owner_repo_pull",
             action=OwnerRepoPullAction,
             help="Owner, repo and pull request number (format: <owner>/<repo>#<pull-request-number>)",
@@ -101,7 +101,7 @@ class GitObsCommand(osc.commandline_common.Command):
         )
 
     def add_argument_new_repo_name(self):
-        self.add_argument(
+        return self.add_argument(
             "--new-repo-name",
             help="Name of the newly forked repo",
         )

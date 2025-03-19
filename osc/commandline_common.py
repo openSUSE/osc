@@ -27,8 +27,9 @@ class OscArgumentParser(argparse.ArgumentParser):
         # remember added arguments so we can add them to subcommands easily
         if not hasattr(self, "_added_arguments"):
             self._added_arguments = []
-        self._added_arguments.append((args, kwargs))
-        super().add_argument(*args, **kwargs)
+        argument = super().add_argument(*args, **kwargs)
+        self._added_arguments.append((argument, args, kwargs))
+        return argument
 
 
 class Command:
@@ -75,7 +76,7 @@ class Command:
             )
 
         if self.parent:
-            for arg_args, arg_kwargs in self.parent.parser._added_arguments:
+            for arg, arg_args, arg_kwargs in self.parent.parser._added_arguments:
                 if not arg_args:
                     continue
                 if not arg_args[0].startswith("-"):
@@ -86,7 +87,8 @@ class Command:
                 arg_kwargs = arg_kwargs.copy()
                 arg_kwargs["help"] = argparse.SUPPRESS
                 arg_kwargs["default"] = argparse.SUPPRESS
-                self.parser.add_argument(*arg_args, **arg_kwargs)
+                new_arg = self.parser.add_argument(*arg_args, **arg_kwargs)
+                new_arg.completer = getattr(arg, "completer", None)
 
         self.init_arguments()
 
@@ -150,7 +152,7 @@ class Command:
         Add a new argument to the command's argument parser.
         See `argparse <https://docs.python.org/3/library/argparse.html>`_ documentation for allowed parameters.
         """
-        self.parser.add_argument(*args, **kwargs)
+        return self.parser.add_argument(*args, **kwargs)
 
     def init_arguments(self):
         """
