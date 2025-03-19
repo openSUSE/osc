@@ -11,6 +11,8 @@ class SSHKeyAddCommand(osc.commandline_git.GitObsCommand):
     parent = "SSHKeyCommand"
 
     def init_arguments(self):
+        from osc.commandline_git import complete_ssh_key_path
+
         group = self.parser.add_mutually_exclusive_group(required=True)
         group.add_argument(
             "--key",
@@ -20,7 +22,7 @@ class SSHKeyAddCommand(osc.commandline_git.GitObsCommand):
             "--key-path",
             metavar="PATH",
             help="Path to the SSH public key",
-        )
+        ).completer = complete_ssh_key_path
 
     def run(self, args):
         from osc import gitea_api

@@ -12,11 +12,13 @@ class PullRequestCheckoutCommand(osc.commandline_git.GitObsCommand):
     parent = "PullRequestCommand"
 
     def init_arguments(self):
+        from osc.commandline_git import complete_checkout_pr
+
         self.add_argument(
             "pull",
             type=int,
             help="Number of the pull request",
-        )
+        ).completer = complete_checkout_pr
         self.add_argument(
             "-f",
             "--force",

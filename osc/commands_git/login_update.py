@@ -13,12 +13,14 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
     parent = "LoginCommand"
 
     def init_arguments(self):
+        from osc.commandline_git import complete_ssh_key_path
+
         self.parser.add_argument("name")
         self.parser.add_argument("--new-name")
         self.parser.add_argument("--new-url")
         self.parser.add_argument("--new-user")
         self.parser.add_argument("--new-token", help="Set to '-' to invoke a secure interactive prompt.")
-        self.parser.add_argument("--new-ssh-key")
+        self.parser.add_argument("--new-ssh-key").completer = complete_ssh_key_path
         self.parser.add_argument("--set-as-default", action="store_true")
 
     def run(self, args):

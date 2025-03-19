@@ -1,4 +1,5 @@
 import argparse
+import glob
 import os
 import subprocess
 import sys
@@ -85,7 +86,7 @@ class GitObsCommand(osc.commandline_common.Command):
         print("", file=sys.stderr)
 
     def add_argument_owner_repo(self, **kwargs):
-        self.add_argument(
+        return self.add_argument(
             "owner_repo",
             action=OwnerRepoAction,
             help="Owner and repo: (format: <owner>/<repo>)",
@@ -93,7 +94,7 @@ class GitObsCommand(osc.commandline_common.Command):
         )
 
     def add_argument_owner_repo_pull(self, **kwargs):
-        self.add_argument(
+        return self.add_argument(
             "owner_repo_pull",
             action=OwnerRepoPullAction,
             help="Owner, repo and pull request number (format: <owner>/<repo>#<pull-request-number>)",
@@ -101,10 +102,59 @@ class GitObsCommand(osc.commandline_common.Command):
         )
 
     def add_argument_new_repo_name(self):
-        self.add_argument(
+        return self.add_argument(
             "--new-repo-name",
             help="Name of the newly forked repo",
         )
+
+
+def complete_login(prefix, parsed_args, **kwargs):
+    from . import gitea_api
+
+    conf = getattr(parsed_args, "gitea_config", None)
+    gitea_conf = gitea_api.Config(conf)
+    return [i.name for i in gitea_conf.list_logins()]
+
+
+def complete_ssh_key_path(prefix, parsed_args, **kwargs):
+    return glob.glob(os.path.expanduser("~/.ssh/*.pub"))
+
+
+def complete_pr(prefix, parsed_args, **kwargs):
+    from . import gitea_api
+
+    conf = getattr(parsed_args, "gitea_config", None)
+    login = getattr(parsed_args, "gitea_login", None)
+    gitea_conf = gitea_api.Config(conf)
+    gitea_login = gitea_conf.get_login(name=login)
+    gitea_conn = gitea_api.Connection(gitea_login)
+    data = gitea_api.PullRequest.search(
+        gitea_conn,
+        state="open",
+    ).json()
+    data.sort(key=gitea_api.PullRequest.cmp)
+    return [f"{entry['repository']['full_name']}#{entry['number']}" for entry in data]
+
+
+def complete_checkout_pr(prefix, parsed_args, **kwargs):
+    from . import gitea_api
+
+    git = gitea_api.Git(".")
+    owner, repo = git.get_owner_repo()
+
+    conf = getattr(parsed_args, "gitea_config", None)
+    login = getattr(parsed_args, "gitea_login", None)
+    gitea_conf = gitea_api.Config(conf)
+    gitea_login = gitea_conf.get_login(name=login)
+    gitea_conn = gitea_api.Connection(gitea_login)
+    data = gitea_api.PullRequest.list(
+        gitea_conn,
+        owner=owner,
+        repo=repo,
+        state="open",
+    ).json()
+    data.sort(key=gitea_api.PullRequest.cmp)
+    return [f"{entry['number']}" for entry in data]
 
 
 class GitObsMainCommand(osc.commandline_common.MainCommand):
@@ -131,7 +181,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             "-G",
             "--gitea-login",
             help="Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file.",
-        )
+        ).completer = complete_login
 
     def post_parse_args(self, args):
         if not args.gitea_config:
@@ -154,6 +204,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         """
         cmd = cls()
         cmd.load_commands()
+        cmd.enable_autocomplete()
         if run:
             args = cmd.parse_args(args=argv)
             exit_code = cmd.run(args)
