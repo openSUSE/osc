@@ -90,6 +90,9 @@ Requires:       %{use_python_pkg}-rpm
 Requires:       %{use_python_pkg}-urllib3
 Requires:       %{ruamel_yaml_pkg}
 
+# needed for git-obs completion
+Recommends:     %{use_python_pkg}-argcomplete
+
 # needed for showing download progressbars
 Recommends:     %{use_python_pkg}-progressbar
 
@@ -184,12 +187,17 @@ ln -s %{_bindir}/git-obs %{buildroot}%{_libexecdir}/git/obs
 install -d %{buildroot}%{osc_plugin_dir}
 install -d %{buildroot}%{_sharedstatedir}/osc-plugins
 
-# install completions
+# install completions for osc
 install -Dm0755 contrib/osc.complete %{buildroot}%{_datadir}/osc/complete
 install -Dm0644 contrib/complete.csh %{buildroot}%{completion_dir_csh}/osc.csh
 install -Dm0644 contrib/complete.sh %{buildroot}%{completion_dir_bash}/osc.bash
 install -Dm0644 contrib/osc.fish %{buildroot}%{completion_dir_fish}/osc.fish
 install -Dm0644 contrib/osc.zsh %{buildroot}%{completion_dir_zsh}/osc.zsh
+
+# install completions for git-obs
+install -Dm0644 contrib/git-obs-complete.bash %{buildroot}%{completion_dir_bash}/git-obs.bash
+install -Dm0644 contrib/git-obs-complete.fish %{buildroot}%{completion_dir_fish}/git-obs.fish
+install -Dm0644 contrib/git-obs-complete.zsh %{buildroot}%{completion_dir_zsh}/git-obs.zsh
 
 # install rpm macros
 install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
@@ -206,6 +214,10 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %endif
 
 %python3_fix_shebang
+
+# inject argcomplete marker to the generated git-obs executable
+sed -i '3i # PYTHON_ARGCOMPLETE_OK'  %{buildroot}%{_bindir}/git-obs
+
 
 %check
 %{use_python} -m unittest
