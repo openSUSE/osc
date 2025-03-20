@@ -142,7 +142,9 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         # remote git repo - target
         target_owner, target_repo = source_repo_data["parent"]["full_name"].split("/")
 
-        if source_branch.startswith("for/"):
+        if args.target_branch:
+            target_branch = args.target_branch
+        elif source_branch.startswith("for/"):
             # source branch name format: for/<target-branch>/<what-the-branch-name-would-normally-be>
             target_branch = source_branch.split("/")[1]
         else:
