@@ -1,3 +1,31 @@
+- 1.14.0
+  - Command-line:
+    - Improve 'osc fork' command to support also forking projects managed in git
+    - Extend 'osc fork' command with '--target-project' and '--target-package' options
+    - Enable shell completion of various 'git-obs' arguments and options
+    - Fix 'git-obs pr create --target-branch'
+    - Fix 'osc fork' crash in print_gitea_settings()
+    - Use -A/--apiurl specified on the command-line even if running from a checkout
+    - Assume openSUSE:Factory if project cannot be determined in 'osc build' command
+    - Change 'osc whatdependson' command to take multiple '-M' options incl. wildcards
+    - Fix diff highlighting
+  - Library:
+    - Set pacsuffix='deb' if binarytype=='deb'
+    - Add scmsync element to meta template
+    - Add missing project_separator substitutions
+    - Fix call os.userexpand() on gitea_api.Config() path argument
+    - Fix adding arguments to the argument parser so they work with argcomplete
+    - Fix MultibuildFlavorResolver to consider an empty flavor during glob match
+    - Fix MultibuildFlavorResolver to work with <package> _multibuild elements
+    - Remove superfluous setting of apiurl from 'osc fork'
+    - Mute mypy errors on field property assignment
+    - Add type hint to XmlModel.XML_TAG
+    - Support new 'X | None' union syntax in field types
+  - Other:
+    - Fix 'git-obs login add' command invocation in git-obs-quickstart documentation
+  - Spec:
+    - Recommends: python3-argcomplete for git-obs
+
 - 1.13.0
   - Command-line:
     - Add 'osc fork' command for forking a package with sources managed in Gitea
