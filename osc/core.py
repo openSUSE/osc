@@ -1333,7 +1333,7 @@ def show_package_trigger_reason(apiurl: str, prj: str, pac: str, repo: str, arch
         raise
 
 
-def show_package_meta(apiurl: str, prj: str, pac: str, meta=False, blame=None):
+def show_package_meta(apiurl: str, prj: str, pac: str, meta=False, blame=None) -> List[bytes]:
     query: Dict[str, Union[str, int]] = {}
     if meta:
         query['meta'] = 1
@@ -2362,7 +2362,7 @@ def get_request_collection(
     package=None,
     states=None,
     review_states=None,
-    types: List[str] = None,
+    types: Optional[List[str]] = None,
     ids=None,
     withfullhistory=False
 ):
@@ -2910,12 +2910,12 @@ def get_source_file_diff(dir, filename, rev, oldfilename=None, olddir=None, orig
 
 def server_diff(
     apiurl: str,
-    old_project: str,
-    old_package: str,
-    old_revision: str,
+    old_project: Optional[str],
+    old_package: Optional[str],
+    old_revision: Optional[str],
     new_project: str,
     new_package: str,
-    new_revision: str,
+    new_revision: Optional[str],
     unified=False,
     missingok=False,
     meta=False,
@@ -2923,7 +2923,7 @@ def server_diff(
     onlyissues=False,
     full=True,
     xml=False,
-    files: list = None,
+    files: Optional[list] = None,
 ):
     query: Dict[str, Union[str, int]] = {"cmd": "diff"}
     if expand:
@@ -2976,19 +2976,19 @@ def server_diff(
 
 def server_diff_noex(
     apiurl: str,
-    old_project: str,
-    old_package: str,
-    old_revision: str,
+    old_project: Optional[str],
+    old_package: Optional[str],
+    old_revision: Optional[str],
     new_project: str,
     new_package: str,
-    new_revision: str,
+    new_revision: Optional[str],
     unified=False,
     missingok=False,
     meta=False,
     expand=True,
     onlyissues=False,
     xml=False,
-    files: list = None,
+    files: Optional[list] = None,
 ):
     try:
         return server_diff(apiurl,
@@ -3143,7 +3143,7 @@ def checkout_package(
     pathname=None,
     prj_obj=None,
     expand_link=False,
-    prj_dir: Path=None,
+    prj_dir: Optional[Path] = None,
     server_service_files=None,
     service_files=None,
     native_obs_package=False,
@@ -3264,9 +3264,9 @@ def checkout_package(
 
 
 def replace_pkg_meta(
-    pkgmeta, new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False,
+    pkgmeta: List[bytes], new_name: str, new_prj: str, keep_maintainers=False, dst_userid=None, keep_develproject=False,
     keep_lock: bool = False, keep_scmsync: bool = True,
-):
+) -> str:
     """
     update pkgmeta with new new_name and new_prj and set calling user as the
     only maintainer (unless keep_maintainers is set). Additionally remove the
@@ -3509,7 +3509,7 @@ def aggregate_pac(
 
     if meta_change:
         src_meta = show_package_meta(apiurl, src_project, src_package_meta)
-        dst_meta = replace_pkg_meta(src_meta, dst_package_meta, dst_project)
+        dst_meta = replace_pkg_meta(src_meta, dst_package_meta, dst_project).split("\n")
         meta_change = True
 
     if disable_publish:
@@ -3867,7 +3867,7 @@ def copy_pac(
         return 'Done.'
 
 
-def lock(apiurl: str, project: str, package: str, msg: str = None):
+def lock(apiurl: str, project: str, package: str, msg: Optional[str] = None):
     url_path = ["source", project]
     if package:
         url_path += [package]
@@ -4815,25 +4815,26 @@ def get_commitlog(
             # revision is srcmd5
             revision_list = [i for i in revision_list if i.srcmd5 == revision]
         else:
-            revision = int(revision)
+            assert revision is not None
+            revision_int = int(revision)
             if revision_is_empty(revision_upper):
-                revision_list = [i for i in revision_list if i.rev == revision]
+                revision_list = [i for i in revision_list if i.rev == revision_int]
             else:
-                revision_upper = int(revision_upper)
-                revision_list = [i for i in revision_list if i.rev <= revision_upper and i.rev >= revision]
+                revision_upper_int = int(revision_upper)
+                revision_list = [i for i in revision_list if i.rev <= revision_upper_int and i.rev >= revision_int]
 
     if format == "csv":
         f = io.StringIO()
         writer = csv.writer(f, dialect="unix")
-        for revision in reversed(revision_list):
+        for i in reversed(revision_list):
             writer.writerow(
                 (
-                    revision.rev,
-                    revision.user,
-                    revision.get_time_str(),
-                    revision.srcmd5,
-                    revision.comment,
-                    revision.requestid,
+                    i.rev,
+                    i.user,
+                    i.get_time_str(),
+                    i.srcmd5,
+                    i.comment,
+                    i.requestid,
                 )
             )
         f.seek(0)
@@ -4842,42 +4843,42 @@ def get_commitlog(
 
     if format == "xml":
         root = ET.Element("log")
-        for revision in reversed(revision_list):
+        for i in reversed(revision_list):
             entry = ET.SubElement(root, "logentry")
-            entry.attrib["revision"] = str(revision.rev)
-            entry.attrib["srcmd5"] = revision.srcmd5
-            ET.SubElement(entry, "author").text = revision.user
-            ET.SubElement(entry, "date").text = revision.get_time_str()
-            ET.SubElement(entry, "requestid").text = str(revision.requestid) if revision.requestid else ""
-            ET.SubElement(entry, "msg").text = revision.comment or ""
+            entry.attrib["revision"] = str(i.rev)
+            entry.attrib["srcmd5"] = i.srcmd5
+            ET.SubElement(entry, "author").text = i.user
+            ET.SubElement(entry, "date").text = i.get_time_str()
+            ET.SubElement(entry, "requestid").text = str(i.requestid) if i.requestid else ""
+            ET.SubElement(entry, "msg").text = i.comment or ""
         xmlindent(root)
         yield from ET.tostring(root, encoding="utf-8").decode("utf-8").splitlines()
         return
 
     if format == "text":
-        for revision in reversed(revision_list):
+        for i in reversed(revision_list):
             entry = (
-                f"r{revision.rev}",
-                revision.user,
-                revision.get_time_str(),
-                revision.srcmd5,
-                revision.version,
-                f"rq{revision.requestid}" if revision.requestid else ""
+                f"r{i.rev}",
+                i.user,
+                i.get_time_str(),
+                i.srcmd5,
+                i.version,
+                f"rq{i.requestid}" if i.requestid else ""
             )
             yield 76 * "-"
             yield " | ".join(entry)
             yield ""
-            yield revision.comment or "<no message>"
+            yield i.comment or "<no message>"
             yield ""
             if patch:
                 rdiff = server_diff_noex(
                     apiurl,
                     prj,
                     package,
-                    revision.rev - 1,
+                    str(i.rev - 1),
                     prj,
                     package,
-                    revision.rev,
+                    str(i.rev),
                     meta=meta,
                 )
                 yield highlight_diff(rdiff).decode("utf-8", errors="replace")
@@ -5217,7 +5218,7 @@ def owner(
     return res
 
 
-def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: str=None, vrev: str=None):
+def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: Optional[str] = None, vrev: Optional[str] = None):
     url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
@@ -5238,7 +5239,7 @@ def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=Fa
     return revision
 
 
-def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", expand=False, setvrev: str=None):
+def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", expand=False, setvrev: Optional[str] = None):
     """
     Updates the rev attribute of the _link xml. If revision is set to None
     the rev and vrev attributes are removed from the _link xml.
