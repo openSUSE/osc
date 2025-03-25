@@ -118,6 +118,9 @@ Recommends:     sudo
 Recommends:     git-core
 Recommends:     git-lfs
 
+# needed for osc co of a git package
+Recommends:     obs-scm-bridge
+
 # needed for `osc add <URL>`
 Recommends:     obs-service-recompress
 Recommends:     obs-service-download_files
