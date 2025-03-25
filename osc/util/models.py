@@ -21,6 +21,7 @@ from xml.etree import ElementTree as ET
 from enum import Enum
 from typing import Any
 from typing import Dict
+from typing import Iterable
 from typing import List
 from typing import NewType
 from typing import Optional
@@ -61,6 +62,7 @@ __all__ = (
     "FromParent",
     "Enum",
     "Dict",
+    "Iterable",
     "List",
     "NewType",
     "Optional",
