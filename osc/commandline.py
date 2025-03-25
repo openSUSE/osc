@@ -8032,7 +8032,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         ### run all commands ###
         # 1.) rsync sources
-        rsync_source_cmd = ['rsync', '-az', '--delete', '-e', 'ssh', cwd, f"{hostname}:{hostpath}"]
+        rsync_source_cmd = ['rsync', '-az', '--delete', '-e', 'ssh', str(cwd), f"{hostname}:{hostpath}"]
         print(f"Run: {' '.join(rsync_source_cmd)}")
         ret = run_external(rsync_source_cmd[0], *rsync_source_cmd[1:])
         if ret != 0:
