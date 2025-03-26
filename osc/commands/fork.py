@@ -103,9 +103,6 @@ class ForkCommand(osc.commandline.OscCommand):
             branch = repo_data["default_branch"]
             fork_branch = branch
 
-        # check if the scmsync branch exists in the source repo
-        parent_branch_data = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch).json()
-
         try:
             repo_data = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name).json()
             fork_owner = repo_data["owner"]["login"]
@@ -145,15 +142,34 @@ class ForkCommand(osc.commandline.OscCommand):
             print(f" * Fork created: {target_project}")
         print(f" * scmsync URL: {fork_scmsync}")
 
-        # check if the scmsync branch exists in the forked repo
-        fork_branch_data = gitea_api.Branch.get(gitea_conn, fork_owner, fork_repo, fork_branch).json()
 
-        parent_commit = parent_branch_data["commit"]["id"]
-        fork_commit = fork_branch_data["commit"]["id"]
-        if parent_commit != fork_commit:
+        # check if the scmsync branch exists in the source repo
+        try:
+            parent_branch_data = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch).json()
+        except gitea_api.BranchDoesNotExist:
+            parent_branch_data = None
+
+
+        if parent_branch_data:
+            # check if the scmsync branch exists in the forked repo
+            fork_branch_data = gitea_api.Branch.get(gitea_conn, fork_owner, fork_repo, fork_branch).json()
+
+            parent_commit = parent_branch_data["commit"]["id"]
+            fork_commit = fork_branch_data["commit"]["id"]
+            if parent_commit != fork_commit:
+                print()
+                print(f"{tty.colorize('ERROR', 'red,bold')}: The branch in the forked repo is out of sync with the parent")
+                print(f" * Fork: {fork_owner}/{fork_repo}#{fork_branch}, commit: {fork_commit}")
+                print(f" * Parent: {owner}/{repo}#{fork_branch}, commit: {parent_commit}")
+                print(" * If this is not intentional, please clone the fork and fix the branch manually")
+                sys.exit(1)
+        else:
+            # ``branch`` is not a branch, it is a commit hash in this case
+            commit = branch
             print()
-            print(f"{tty.colorize('ERROR', 'red,bold')}: The branch in the forked repo is out of sync with the parent")
-            print(f" * Fork: {fork_owner}/{fork_repo}#{fork_branch}, commit: {fork_commit}")
-            print(f" * Parent: {owner}/{repo}#{fork_branch}, commit: {parent_commit}")
-            print(" * If this is not intentional, please clone the fork and fix the branch manually")
-            sys.exit(1)
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: The branch is not known, the OBS package points to a commit")
+            print(f" * Fork: {fork_owner}/{fork_repo}, commit: {commit}")
+            print(f" * Parent: {owner}/{repo}")
+            print(" * Clone the fork, and run:")
+            print(f"   * git fetch <parent-origin> {tty.colorize('(download objects and refs from the parent repo)', 'dim')}")
+            print(f"   * git checkout -b <branch-name> {commit} {tty.colorize('(create a local branch from the commit)', 'dim')}")
