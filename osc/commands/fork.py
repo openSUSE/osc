@@ -76,7 +76,10 @@ class ForkCommand(osc.commandline.OscCommand):
         else:
             parsed_scmsync_url = urllib.parse.urlparse(project.scmsync, scheme="https")
         url = urllib.parse.urlunparse((parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, "", "", "", ""))
-        owner, repo = parsed_scmsync_url.path.strip("/").split("/")
+        owner, repo = parsed_scmsync_url.path.strip("/").split("/")[-2:]
+        if repo.endswith(".git"):
+            repo = repo[:-4]
+
         branch = parsed_scmsync_url.fragment or None
 
         # find a credentials entry for url and OBS user (there can be multiple users configured for a single URL in the config file)
