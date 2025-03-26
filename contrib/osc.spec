@@ -1,10 +1,9 @@
-%define use_python python3
-%define use_python_pkg python3
-
 %if 0%{?suse_version} && 0%{?suse_version} < 1500
 # use python36 on SLE 12 and older
-%define use_python python3.6
+%define %__python3 python3.6
 %define use_python_pkg python36
+%else
+%define use_python_pkg python3
 %endif
 
 %define completion_dir_bash %{_datadir}/bash-completion/completions
@@ -13,7 +12,7 @@
 %define completion_dir_zsh %{_datadir}/zsh/functions/Completion
 %define osc_plugin_dir %{_prefix}/lib/osc-plugins
 # need to override python_sitelib because it is not set as we would expect on many distros
-%define python_sitelib %(RPM_BUILD_ROOT= %{use_python} -Ic "import sysconfig; print(sysconfig.get_path('purelib'))")
+%define python_sitelib %(RPM_BUILD_ROOT= %__python3 -Ic "import sysconfig; print(sysconfig.get_path('purelib'))")
 
 # generate manpages on distros where argparse-manpage >= 3 and python3-Sphinx are available
 # please note that RHEL build requires packages from CRB and EPEL repositories
@@ -156,7 +155,7 @@ for a general introduction.
 %autosetup -p1
 
 %build
-%{use_python} setup.py build
+%__python3 setup.py build
 
 # write rpm macros
 cat << EOF > macros.osc
@@ -180,7 +179,7 @@ sphinx-build -b man doc .
 %endif
 
 %install
-%{use_python} setup.py install -O1 --skip-build --force --root %{buildroot} --prefix %{_prefix}
+%__python3 setup.py install -O1 --skip-build --force --root %{buildroot} --prefix %{_prefix}
 
 # symlink /usr/bin/git-obs to /usr/libexec/git/obs
 mkdir -p %{buildroot}%{_libexecdir}/git
@@ -223,7 +222,7 @@ sed -i '3i # PYTHON_ARGCOMPLETE_OK'  %{buildroot}%{_bindir}/git-obs
 
 
 %check
-%{use_python} -m unittest
+%__python3 -m unittest
 
 %files
 %defattr(-,root,root,-)
