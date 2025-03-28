@@ -77,7 +77,12 @@ class ForkCommand(osc.commandline.OscCommand):
             parsed_scmsync_url = urllib.parse.urlparse(project.scmsync, scheme="https")
         url = urllib.parse.urlunparse((parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, "", "", "", ""))
         owner, repo = parsed_scmsync_url.path.strip("/").split("/")
-        branch = parsed_scmsync_url.fragment or None
+        # temporary hack to allow people using fork atm at all, when packages
+        # are managed via git project.
+        # fallback always to default branch for now, but we actually need to 
+        # parse the right branch instead from .gitmodules
+        #branch = parsed_scmsync_url.fragment or None
+        branch = None
 
         # find a credentials entry for url and OBS user (there can be multiple users configured for a single URL in the config file)
         gitea_conf = gitea_api.Config(args.gitea_config)
