@@ -739,6 +739,16 @@ class Osc(cmdln.Cmdln):
             return project.replace(conf.config['project_separator'], ':')
         return project
 
+    def modified_wc_dialog(self, package):
+        from .core import raw_input
+
+        modified = [i for i in package.filenamelist if package.status(i) != " " and package.status(i) != "?"]
+        if len(modified) > 0:
+            print("Your working copy has local modifications.")
+            repl = raw_input("Proceed without committing the local changes? (y|N) ")
+            if repl != "y":
+                raise oscerr.UserAbort()
+
     def add_global_options(self, parser, suppress=False):
 
         def _add_parser_arguments_from_data(argument_parser, data):
@@ -2211,12 +2221,8 @@ class Osc(cmdln.Cmdln):
                 sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                          'Please provide it the target via commandline arguments.' % p.name)
 
-            modified = [i for i in p.filenamelist if not p.status(i) in (' ', '?', 'S')]
-            if len(modified) > 0 and not opts.yes:
-                print('Your working copy has local modifications.')
-                repl = raw_input('Proceed without committing the local changes? (y|N) ')
-                if repl != 'y':
-                    raise oscerr.UserAbort()
+            if not opts.yes:
+                self.modified_wc_dialog(p)
         elif len(args) >= 3:
             # get the arguments from the commandline
             src_project, src_package, dst_project = args[0:3]
@@ -2433,12 +2439,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                          'Please provide it the target via commandline arguments.' % p.name)
 
-            modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
-            if len(modified) > 0:
-                print('Your working copy has local modifications.')
-                repl = raw_input('Proceed without committing the local changes? (y|N) ')
-                if repl != 'y':
-                    sys.exit(1)
+            self.modified_wc_dialog(p)
         elif len(args) >= 3:
             # get the arguments from the commandline
             src_project, src_package, dst_project = args[0:3]
