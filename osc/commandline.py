@@ -4228,11 +4228,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         source_project = target_project = release_project = opt_sourceupdate = None
         source_packages = []
+        local_package = None
 
         if len(args) == 0 and (is_project_dir(Path.cwd()) or is_package_dir(Path.cwd())):
             source_project = store_read_project(Path.cwd())
             if is_package_dir(Path.cwd()):
                 source_packages = [store_read_package(Path.cwd())]
+                local_package = Package(Path.cwd())
         elif len(args) == 0:
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
@@ -4240,8 +4242,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if is_package_dir(Path.cwd()):
                     source_project = store_read_project(Path.cwd())
                     source_packages = [store_read_package(Path.cwd())]
-                    p = Package(Path.cwd())
-                    release_project = p.linkinfo.project
+                    local_package = Package(Path.cwd())
+                    release_project = local_package.linkinfo.project
                 else:
                     raise oscerr.WrongArgs('No package directory')
             else:
@@ -4258,6 +4260,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             default_branch = f'home:{conf.get_apiurl_usr(apiurl)}:branches:'
             if source_project.startswith(default_branch):
                 opt_sourceupdate = 'cleanup'
+
+        if local_package is not None:
+            self.modified_wc_dialog(local_package)
 
         if opts.release_project:
             release_project = opts.release_project
