@@ -129,12 +129,76 @@ class GitStore:
     def apiurl(self, value):
         self._apiurl = value
 
+    def _get_build_project(self):
+        """
+        Get the project we use for building from _ObsPrj git repo.
+        The _ObsPrj is located under the same owner as the repo with the package.
+        They share the same branch.
+        """
+        import tempfile
+
+        from osc import gitea_api
+
+        # read the origin url and parse it
+
+        origin = self._run_git(["remote", "get-url", "origin"])
+        scheme, netloc, path, params, query, fragment = urllib.parse.urlparse(origin)
+
+        # scheme + host
+        gitea_host = urllib.parse.urlunparse((scheme, netloc, "", None, None, None))
+
+        # OBS and Gitea usernames are identical
+        # XXX: we're using the configured apiurl; it would be great to have a mapping from -G/--gitea-login to -A/--apiurl so we don't have to provide -A on the command-line
+        apiurl = osc_conf.config["apiurl"]
+        gitea_user = osc_conf.get_apiurl_usr(apiurl)
+
+        # remove trailing ".git" from path
+        if path.endswith(".git"):
+            path = path[:-4]
+
+        gitea_owner, gitea_repo = path.strip("/").split("/")[-2:]
+
+        # replace gitea_repo with _ObsPrj
+        gitea_repo = "_ObsPrj"
+
+        # XXX: we assume that the _ObsPrj project has the same branch as the package
+        gitea_branch = fragment
+
+        gitea_conf = gitea_api.Config()
+        try:
+            gitea_login = gitea_conf.get_login_by_url_user(url=gitea_host, user=gitea_user)
+        except gitea_api.Login.DoesNotExist:
+            # matching login entry doesn't exist in git-obs config
+            return None
+
+        gitea_conn = gitea_api.Connection(gitea_login)
+
+        with tempfile.TemporaryDirectory(prefix="osc_devel_project_git") as tmp_dir:
+            try:
+                gitea_api.Repo.clone(gitea_conn, gitea_owner, gitea_repo, branch=gitea_branch, quiet=True, directory=tmp_dir)
+                project_build_path = os.path.join(tmp_dir, "project.build")
+                with open(project_build_path, "r", encoding="utf-8") as f:
+                    project_build = f.readline().strip()
+                    return project_build
+            except gitea_api.GiteaException:
+                # "_ObsPrj" repo doesn't exist
+                return None
+            except subprocess.CalledProcessError:
+                # branch doesn't exist
+                return None
+            except FileNotFoundError:
+                # "project.build" file doesn't exist
+                return None
+
     @property
     def project(self):
         if not self._project:
             if self.is_package and self.project_obs_scm_store:
                 # read project from parent directory that contains a project with .osc metadata
                 self._project = self.project_obs_scm_store.project
+            if not self._project:
+                # read project from Gitea (identical owner, repo: _ObsPrj, file: project.build)
+                self._project = self._get_build_project()
             if not self._project:
                 # HACK: assume openSUSE:Factory project if project metadata is missing
                 self._project = "openSUSE:Factory"
