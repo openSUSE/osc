@@ -1,5 +1,6 @@
 import io
 import os
+import urllib.parse
 from typing import Any
 from typing import Dict
 from typing import List
@@ -121,9 +122,31 @@ class Config:
         """
         Return ``Login`` object for the given ``url`` and ``user``.
         """
+        # exact match
         for login in self.list_logins():
             if (login.url, login.user) == (url, user):
                 return login
+
+        def url_to_hostname(value):
+            if "://" not in value:
+                value = f"https://{value}"
+            netloc = urllib.parse.urlparse(value).netloc
+
+            # remove user from hostname
+            if "@" in netloc:
+                netloc = netloc.split("@")[-1]
+
+            # remove port from hostname
+            if ":" in netloc:
+                netloc = netloc.split(":")[0]
+
+            return netloc
+
+        # match only hostname (netloc without 'user@' and ':port') + user
+        for login in self.list_logins():
+            if (url_to_hostname(login.url), login.user) == (url_to_hostname(url), user):
+                return login
+
         raise Login.DoesNotExist(url=url, user=user)
 
     def add_login(self, login: Login):
