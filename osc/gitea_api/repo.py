@@ -44,6 +44,8 @@ class Repo:
         owner: str,
         repo: str,
         *,
+        branch: Optional[str] = None,
+        quiet: bool = False,
         directory: Optional[str] = None,
         cwd: Optional[str] = None,
         anonymous: bool = False,
@@ -111,6 +113,13 @@ class Repo:
 
         # clone
         cmd = ["git", "clone", clone_url, directory]
+
+        if branch:
+            cmd += ["--branch", branch]
+
+        if quiet:
+            cmd += ["--quiet"]
+
         subprocess.run(cmd, cwd=cwd, env=env, check=True)
 
         # setup remotes
