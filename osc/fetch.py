@@ -162,7 +162,7 @@ class Fetcher:
 
     def move_package(self, tmpfile, destdir, pac_obj=None):
         canonname = None
-        if pac_obj and pac_obj.name.startswith('container:'):
+        if pac_obj and (pac_obj.name.startswith('container:') or pac_obj.binary == 'updateinfo.xml' or pac_obj.binary == '_modulemd.yaml'):
             canonname = pac_obj.canonname
         if canonname is None:
             pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
@@ -221,7 +221,7 @@ class Fetcher:
                 cached_is_valid = True
 
                 if i.hdrmd5:
-                    if i.name.startswith('container:'):
+                    if i.name.startswith('container:') or i.binary == 'updateinfo.xml' or i.binary == '_modulemd.yaml':
                         hdrmd5 = dgst(i.fullfilename)
                         if hdrmd5 != i.hdrmd5:
                             cached_is_valid = False
