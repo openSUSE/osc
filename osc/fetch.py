@@ -172,7 +172,7 @@ class Fetcher:
                 if pac_obj is None:
                     print('Unsupported file type: ', tmpfile, file=sys.stderr)
                     sys.exit(1)
-                canonname = pac_obj.binary
+                canonname = bytes(pac_obj.binary, 'utf-8')
         decoded_canonname = decode_it(canonname)
         if b'/' in canonname or '/' in decoded_canonname:
             raise oscerr.OscIOError(None, 'canonname contains a slash')
