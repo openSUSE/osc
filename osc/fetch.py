@@ -167,17 +167,16 @@ class Fetcher:
         if canonname is None:
             pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
             if pkgq:
-                canonname = pkgq.canonname()
+                canonname = decode_it(pkgq.canonname())
             else:
                 if pac_obj is None:
                     print('Unsupported file type: ', tmpfile, file=sys.stderr)
                     sys.exit(1)
                 canonname = pac_obj.binary
-        decoded_canonname = decode_it(canonname)
-        if b'/' in canonname or '/' in decoded_canonname:
+        if '/' in canonname:
             raise oscerr.OscIOError(None, 'canonname contains a slash')
 
-        fullfilename = os.path.join(destdir, decoded_canonname)
+        fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
             pac_obj.canonname = canonname
             pac_obj.fullfilename = fullfilename
