@@ -1,6 +1,5 @@
 import io
 import os
-import urllib.parse
 from typing import Any
 from typing import Dict
 from typing import List
@@ -122,15 +121,15 @@ class Config:
         """
         Return ``Login`` object for the given ``url`` and ``user``.
         """
+        from .git import Git
+
         # exact match
         for login in self.list_logins():
             if (login.url, login.user) == (url, user):
                 return login
 
         def url_to_hostname(value):
-            if "://" not in value:
-                value = f"https://{value}"
-            netloc = urllib.parse.urlparse(value).netloc
+            netloc = Git.urlparse(value).netloc
 
             # remove user from hostname
             if "@" in netloc:

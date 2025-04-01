@@ -142,7 +142,7 @@ class GitStore:
         # read the origin url and parse it
 
         origin = self._run_git(["remote", "get-url", "origin"])
-        scheme, netloc, path, params, query, fragment = urllib.parse.urlparse(origin)
+        scheme, netloc, path, params, query, fragment = gitea_api.Git.urlparse(origin)
 
         # scheme + host
         gitea_host = urllib.parse.urlunparse((scheme, netloc, "", None, None, None))
