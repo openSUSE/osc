@@ -162,22 +162,21 @@ class Fetcher:
 
     def move_package(self, tmpfile, destdir, pac_obj=None):
         canonname = None
-        if pac_obj and pac_obj.name.startswith('container:'):
+        if pac_obj and (pac_obj.name.startswith('container:') or pac_obj.binary == 'updateinfo.xml' or pac_obj.binary == '_modulemd.yaml'):
             canonname = pac_obj.canonname
         if canonname is None:
             pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
             if pkgq:
-                canonname = pkgq.canonname()
+                canonname = decode_it(pkgq.canonname())
             else:
                 if pac_obj is None:
                     print('Unsupported file type: ', tmpfile, file=sys.stderr)
                     sys.exit(1)
                 canonname = pac_obj.binary
-        decoded_canonname = decode_it(canonname)
-        if b'/' in canonname or '/' in decoded_canonname:
+        if '/' in canonname:
             raise oscerr.OscIOError(None, 'canonname contains a slash')
 
-        fullfilename = os.path.join(destdir, decoded_canonname)
+        fullfilename = os.path.join(destdir, canonname)
         if pac_obj is not None:
             pac_obj.canonname = canonname
             pac_obj.fullfilename = fullfilename
@@ -219,29 +218,26 @@ class Fetcher:
                         i.makeurls(self.cachedir, urllist)
 
             if os.path.exists(i.fullfilename):
-                cached += 1
-                if not i.name.startswith('container:') and i.pacsuffix != 'rpm':
-                    continue
+                cached_is_valid = True
 
-                hdrmd5_is_valid = True
                 if i.hdrmd5:
-                    if i.name.startswith('container:'):
+                    if i.name.startswith('container:') or i.binary == 'updateinfo.xml' or i.binary == '_modulemd.yaml':
                         hdrmd5 = dgst(i.fullfilename)
                         if hdrmd5 != i.hdrmd5:
-                            hdrmd5_is_valid = False
-                    else:
+                            cached_is_valid = False
+                    elif i.pacsuffix == 'rpm':
                         hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
                         if hdrmd5 != i.hdrmd5:
                             if conf.config["api_host_options"][apiurl]["disable_hdrmd5_check"]:
                                 print(f"Warning: Ignoring a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
-                                hdrmd5_is_valid = True
                             else:
                                 print(f"The file will be redownloaded from the API due to a hdrmd5 mismatch for {i.fullfilename}: {hdrmd5} (actual) != {i.hdrmd5} (expected)")
-                                hdrmd5_is_valid = False
+                                cached_is_valid = False
 
-                    if not hdrmd5_is_valid:
-                        os.unlink(i.fullfilename)
-                        cached -= 1
+                if cached_is_valid:
+                    cached += 1
+                else:
+                    os.unlink(i.fullfilename)
 
         miss = 0
         needed = all - cached

@@ -272,8 +272,14 @@ class Pac:
         else:
             release = self.mp['release'].encode()
 
-        if self.mp['binary'] == 'updateinfo.xml':
+        if self.mp['binary'] and self.mp['binary'] == 'updateinfo.xml':
             canonname = 'updateinfo.xml'
+            if self.mp['repopackage'] != '_repository':
+                canonname = self.mp['repopackage'] + '.' + self.mp['repoarch'] + '.updateinfo.xml'
+        elif self.mp['binary'] and self.mp['binary'] == '_modulemd.yaml':
+            canonname = '_modulemd.yaml'
+            if self.mp['repopackage'] != '_repository':
+                canonname = self.mp['repopackage'] + '.' + self.mp['repoarch'] + '.modulemd.yaml'
         elif self.mp['name'].startswith('container:'):
             canonname = self.mp['name'] + '.tar.xz'
         elif pacsuffix == 'deb':
@@ -284,8 +290,10 @@ class Pac:
             canonname = rpmquery.RpmQuery.filename(self.mp['name'].encode(), epoch, self.mp['version'].encode(), release or b'0', self.mp['arch'].encode())
 
         self.mp['canonname'] = decode_it(canonname)
+        if not self.mp['binary']:
+            self.mp['binary'] = self.mp['canonname']
         # maybe we should rename filename key to binary
-        self.mp['filename'] = node.get('binary') or decode_it(canonname)
+        self.mp['filename'] = self.mp['binary']
         if self.mp['repopackage'] == '_repository':
             self.mp['repofilename'] = self.mp['name']
         else:
@@ -1294,12 +1302,13 @@ def main(apiurl, store, opts, argv):
             rdir = str(i.extrepository).replace(':/', ':')
             # arch
             adir = i.repoarch
+            if i.binary == 'updateinfo.xml':
+                adir = 'updateinfo'
+            elif i.binary == '_modulemd.yaml':
+                adir = 'modulemd'
             # source fullfilename
             sffn = i.fullfilename
             filename = sffn.split("/")[-1]
-            if i.name == 'updateinfo.xml':
-                adir = 'updateinfo'
-                filename = i.package + ':' + i.repoarch + ':updateinfo.xml'
             # project/repo
             if i.name.startswith("container:"):
                 prdir = "containers/" + pdir + "/" + rdir
@@ -1450,12 +1459,12 @@ def main(apiurl, store, opts, argv):
 
     for i in bi.deps:
         if i.hdrmd5:
-            if not i.name.startswith('container:') and not i.fullfilename.endswith(".rpm"):
-                continue
-            if i.name.startswith('container:'):
+            if i.name.startswith('container:') or i.binary == 'updateinfo.xml' or i.binary == '_modulemd.yaml':
                 hdrmd5 = dgst(i.fullfilename)
-            else:
+            elif i.fullfilename.endswith(".rpm"):
                 hdrmd5 = packagequery.PackageQuery.queryhdrmd5(i.fullfilename)
+            else:
+                continue
             if not hdrmd5:
                 print("Error: cannot get hdrmd5 for %s" % i.fullfilename)
                 sys.exit(1)
