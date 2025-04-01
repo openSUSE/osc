@@ -739,6 +739,16 @@ class Osc(cmdln.Cmdln):
             return project.replace(conf.config['project_separator'], ':')
         return project
 
+    def modified_wc_dialog(self, package):
+        from .core import raw_input
+
+        modified = [i for i in package.filenamelist if package.status(i) != " " and package.status(i) != "?"]
+        if len(modified) > 0:
+            print("Your working copy has local modifications.")
+            repl = raw_input("Proceed without committing the local changes? (y|N) ")
+            if repl != "y":
+                raise oscerr.UserAbort()
+
     def add_global_options(self, parser, suppress=False):
 
         def _add_parser_arguments_from_data(argument_parser, data):
@@ -2211,12 +2221,8 @@ class Osc(cmdln.Cmdln):
                 sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                          'Please provide it the target via commandline arguments.' % p.name)
 
-            modified = [i for i in p.filenamelist if not p.status(i) in (' ', '?', 'S')]
-            if len(modified) > 0 and not opts.yes:
-                print('Your working copy has local modifications.')
-                repl = raw_input('Proceed without committing the local changes? (y|N) ')
-                if repl != 'y':
-                    raise oscerr.UserAbort()
+            if not opts.yes:
+                self.modified_wc_dialog(p)
         elif len(args) >= 3:
             # get the arguments from the commandline
             src_project, src_package, dst_project = args[0:3]
@@ -2433,12 +2439,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 sys.exit('Package \'%s\' is not a source link, so I cannot guess the submit target.\n'
                          'Please provide it the target via commandline arguments.' % p.name)
 
-            modified = [i for i in p.filenamelist if p.status(i) != ' ' and p.status(i) != '?']
-            if len(modified) > 0:
-                print('Your working copy has local modifications.')
-                repl = raw_input('Proceed without committing the local changes? (y|N) ')
-                if repl != 'y':
-                    sys.exit(1)
+            self.modified_wc_dialog(p)
         elif len(args) >= 3:
             # get the arguments from the commandline
             src_project, src_package, dst_project = args[0:3]
@@ -4227,11 +4228,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         source_project = target_project = release_project = opt_sourceupdate = None
         source_packages = []
+        local_package = None
 
         if len(args) == 0 and (is_project_dir(Path.cwd()) or is_package_dir(Path.cwd())):
             source_project = store_read_project(Path.cwd())
             if is_package_dir(Path.cwd()):
                 source_packages = [store_read_package(Path.cwd())]
+                local_package = Package(Path.cwd())
         elif len(args) == 0:
             raise oscerr.WrongArgs('Too few arguments.')
         if len(args) > 0:
@@ -4239,8 +4242,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if is_package_dir(Path.cwd()):
                     source_project = store_read_project(Path.cwd())
                     source_packages = [store_read_package(Path.cwd())]
-                    p = Package(Path.cwd())
-                    release_project = p.linkinfo.project
+                    local_package = Package(Path.cwd())
+                    release_project = local_package.linkinfo.project
                 else:
                     raise oscerr.WrongArgs('No package directory')
             else:
@@ -4257,6 +4260,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             default_branch = f'home:{conf.get_apiurl_usr(apiurl)}:branches:'
             if source_project.startswith(default_branch):
                 opt_sourceupdate = 'cleanup'
+
+        if local_package is not None:
+            self.modified_wc_dialog(local_package)
 
         if opts.release_project:
             release_project = opts.release_project
