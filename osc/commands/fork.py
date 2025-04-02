@@ -1,3 +1,4 @@
+import re
 import sys
 import urllib.parse
 
@@ -44,27 +45,58 @@ class ForkCommand(osc.commandline.OscCommand):
 
         self.add_argument_new_repo_name()
 
+        self.add_argument(
+            "--no-devel-project",
+            action="store_true",
+            help="Fork the specified package instead the package from the devel project (which is the place where the package is developed)",
+        )
+
     def run(self, args):
         from osc import conf as osc_conf
         from osc import gitea_api
         from osc import obs_api
+        from osc.git_scm import GitStore
         from osc.output import tty
 
-        is_package = args.package is not None
+        # make a copy of project, package; if we change them, the original values remain in args
+        project = args.project
+        package = args.package
+
+        is_package = package is not None
+        use_devel_project = False
 
         if not is_package and args.target_package:
             self.parser.error("The '--target-package' option requires the 'package' argument to be set")
 
+        if not is_package and args.no_devel_project:
+            self.parser.error("The '--no-devel-project' option can be used only when forking a package")
+
         if is_package:
             # get the package meta from the OBS API first
-            package = obs_api.Package.from_api(args.apiurl, args.project, args.package)
-            if not package.scmsync:
+            pkg = obs_api.Package.from_api(args.apiurl, project, package)
+
+            if not args.no_devel_project:
+                # devel project is not set in package meta as usual but we parse it from "OBS:RejectBranch" attribute
+                attributes = obs_api.Attributes.from_api(args.apiurl, project, package, attr="OBS:RejectBranch").attribute_list
+                if attributes:
+                    attribute = attributes[0].value
+                    # the pattern starts with a non-greedy match so we capture the first url
+                    match = re.match(r".*?(https://[^ ]+).*", attribute)
+                    if match:
+                        devel_project_url = match.group(1)
+                        build_project = GitStore.get_build_project(devel_project_url)
+                        # override the package we're cloning with the one from the devel project
+                        use_devel_project = True
+                        project = build_project
+                        pkg = obs_api.Package.from_api(args.apiurl, project, package)
+
+            if not pkg.scmsync:
                 raise RuntimeError(
                     "Forking is possible only with packages managed in Git (the <scmsync> element must be set in the package meta)"
                 )
         else:
             # get the project meta from the OBS API first
-            project = obs_api.Project.from_api(args.apiurl, args.project)
+            project = obs_api.Project.from_api(args.apiurl, project)
             if not project.scmsync:
                 raise RuntimeError(
                     "Forking is possible only with projects managed in Git (the <scmsync> element must be set in the project meta)"
@@ -72,11 +104,16 @@ class ForkCommand(osc.commandline.OscCommand):
 
         # parse gitea url, owner, repo and branch from the scmsync url
         if is_package:
-            parsed_scmsync_url = urllib.parse.urlparse(package.scmsync, scheme="https")
+            parsed_scmsync_url = urllib.parse.urlparse(pkg.scmsync, scheme="https")
         else:
             parsed_scmsync_url = urllib.parse.urlparse(project.scmsync, scheme="https")
         url = urllib.parse.urlunparse((parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, "", "", "", ""))
         owner, repo = parsed_scmsync_url.path.strip("/").split("/")
+
+        # remove trailing ".git" from repo
+        if repo.endswith(".git"):
+            repo = repo[:-4]
+
         # temporary hack to allow people using fork atm at all, when packages
         # are managed via git project.
         # fallback always to default branch for now, but we actually need to 
@@ -125,15 +162,17 @@ class ForkCommand(osc.commandline.OscCommand):
 
         print()
         if is_package:
-            print(f"Forking OBS package {args.project}/{args.package} ...")
+            print(f"Forking OBS package {project}/{package} ...")
+            if use_devel_project:
+                print(f" * {tty.colorize('NOTE', 'bold')}: Forking from the devel project instead of the specified {args.project}/{args.package}")
         else:
-            print(f"Forking OBS project {args.project} ...")
+            print(f"Forking OBS project {project} ...")
         print(f" * OBS apiurl: {args.apiurl}")
         # we use a single API endpoint for forking both projects and packages (project requires setting package to "_project")
         status = obs_api.Package.cmd_fork(
             args.apiurl,
-            args.project,
-            args.package if is_package else "_project",
+            project,
+            package if is_package else "_project",
             scmsync=fork_scmsync,
             target_project=args.target_project,
             target_package=args.target_package if is_package else None,
