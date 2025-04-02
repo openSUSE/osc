@@ -9,6 +9,38 @@ from typing import Tuple
 
 
 class Git:
+    @staticmethod
+    def urlparse(url) -> urllib.parse.ParseResult:
+        """
+        Parse git url.
+
+        Supported formats:
+            - https://example.com/owner/repo.git
+            - https://example.com:1234/owner/repo.git
+            - example.com/owner/repo.git
+            - user@example.com:owner/repo.git
+            - user@example.com:1234:owner/repo.git"
+        """
+        # try ssh clone url first
+        pattern = r"(?P<netloc>[^@:]+@[^@:]+(:[0-9]+)?):(?P<path>.+)"
+        match = re.match(pattern, url)
+        if match:
+            scheme = ""
+            netloc = match.groupdict()["netloc"]
+            path = match.groupdict()["path"]
+            params = ''
+            query = ''
+            fragment = ''
+            result = urllib.parse.ParseResult(scheme, netloc, path, params, query, fragment)
+            return result
+
+        result = urllib.parse.urlparse(url)
+        if not result.netloc:
+            # empty netloc is most likely an error, prepend and then discard scheme to trick urlparse()
+            result = urllib.parse.urlparse("https://" + url)
+            result = urllib.parse.ParseResult("", *list(result)[1:])
+        return result
+
     def __init__(self, workdir):
         self.abspath = os.path.abspath(workdir)
 
