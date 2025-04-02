@@ -1,3 +1,4 @@
+from .attributes import Attributes
 from .keyinfo import Keyinfo
 from .package import Package
 from .package_sources import PackageSources
