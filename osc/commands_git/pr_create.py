@@ -64,6 +64,7 @@ NEW_PULL_REQUEST_TEMPLATE = """
 #
 # Creating {source_owner}/{source_repo}#{source_branch} -> {target_owner}/{target_repo}#{target_branch}
 #
+{git_status}
 """.lstrip()
 
 
@@ -174,6 +175,12 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
 
         if not title or not description:
             # TODO: add list of commits and list of changed files to the template; requires local git repo
+            if use_local_git:
+                git_status = git.status(untracked_files=True)
+                git_status = "\n".join([f"# {i}" for i in git_status.splitlines()])
+            else:
+                git_status = "#"
+
             message = edit_message(template=NEW_PULL_REQUEST_TEMPLATE.format(**locals()))
 
             # remove comments

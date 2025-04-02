@@ -178,3 +178,11 @@ class Git:
                 if not chunk:
                     break
                 yield chunk
+
+    def status(self, *, porcelain: bool = False, untracked_files: bool = False):
+        cmd = ["status", "--renames"]
+        if untracked_files:
+            cmd += ["--untracked-files"]
+        if porcelain:
+            cmd += ["--porcelain"]
+        return self._run_git(cmd)
