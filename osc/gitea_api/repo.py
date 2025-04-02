@@ -78,7 +78,8 @@ class Repo:
             if repo_data["owner"]["login"] == user["login"]:
                 # we're cloning our own repo, setting remote to the parent (if exists)
                 parent = repo_data["parent"]
-                remotes["parent"] = parent["clone_url"] if anonymous else parent["ssh_url"]
+                if parent:
+                    remotes["parent"] = parent["clone_url"] if anonymous else parent["ssh_url"]
             else:
                 # we're cloning someone else's repo, setting remote to our fork (if exists)
                 from . import Fork
