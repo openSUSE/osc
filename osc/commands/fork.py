@@ -91,9 +91,9 @@ class ForkCommand(osc.commandline.OscCommand):
                         pkg = obs_api.Package.from_api(args.apiurl, project, package)
 
             if not pkg.scmsync:
-                raise RuntimeError(
-                    "Forking is possible only with packages managed in Git (the <scmsync> element must be set in the package meta)"
-                )
+                print(f"{tty.colorize('ERROR', 'red,bold')}: Forking is possible only with packages managed in Git (the <scmsync> element must be set in the package meta)")
+                sys.exit(1)
+
         else:
             # get the project meta from the OBS API first
             project = obs_api.Project.from_api(args.apiurl, project)
