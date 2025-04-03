@@ -1,6 +1,7 @@
 import re
 import sys
 import urllib.parse
+from urllib.error import HTTPError
 
 import osc.commandline
 import osc.commandline_git
@@ -77,7 +78,12 @@ class ForkCommand(osc.commandline.OscCommand):
 
             if not args.no_devel_project:
                 # devel project is not set in package meta as usual but we parse it from "OBS:RejectBranch" attribute
-                attributes = obs_api.Attributes.from_api(args.apiurl, project, package, attr="OBS:RejectBranch").attribute_list
+                try:
+                    attributes = obs_api.Attributes.from_api(args.apiurl, project, package, attr="OBS:RejectBranch").attribute_list
+                except HTTPError as e:
+                    if e.code != 404:
+                        raise
+                    attributes = []
                 if attributes:
                     attribute = attributes[0].value
                     # the pattern starts with a non-greedy match so we capture the first url
