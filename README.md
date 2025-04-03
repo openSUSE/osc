@@ -18,7 +18,7 @@ RPM packages are available in the [openSUSE:Tools](http://download.opensuse.org/
     zypper addrepo --repo http://download.opensuse.org/repositories/openSUSE:/Tools/openSUSE_Tumbleweed/openSUSE:Tools.repo
     zypper install osc
 
-**Unstable** RPM packages are available in the [OBS:Server:Unstable](http://download.opensuse.org/repositories/OBS:/Server:/Unstable/) repository.
+**Unstable** RPM packages built from the master branch are available in the [OBS:Server:Unstable](http://download.opensuse.org/repositories/OBS:/Server:/Unstable/) repository.
 
     zypper addrepo --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/openSUSE_Factory/OBS:Server:Unstable.repo
     zypper install osc
