@@ -280,11 +280,14 @@ class OscMainCommand(MainCommand):
             self.load_command(cls, "osc.commands.old")
 
     @classmethod
-    def main(cls, argv=None, run=True):
+    def main(cls, argv=None, run=True, argparse_manpage=False):
         """
         Initialize OscMainCommand, load all commands and run the selected command.
         """
         cmd = cls()
+        # argparse-manpage splits command's help text to help and description
+        # we normally use both in the --help output, but want to change that for argparse-manpage
+        cmd.argparse_manpage = argparse_manpage
         cmd.load_commands()
         cmd.load_legacy_commands()
         if run:
@@ -300,7 +303,7 @@ def get_parser():
     """
     Needed by argparse-manpage to generate man pages from the argument parser.
     """
-    main, _ = OscMainCommand.main(run=False)
+    main, _ = OscMainCommand.main(run=False, argparse_manpage=True)
     return main.parser
 
 

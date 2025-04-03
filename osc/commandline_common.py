@@ -126,12 +126,13 @@ class Command:
         if not help_lines:
             return ""
 
-        # skip the first line that contains help text
-        help_lines.pop(0)
-
-        # remove any leading empty lines
-        while help_lines and not help_lines[0]:
+        if getattr(self.main_command, "argparse_manpage", False):
+            # skip the first line that contains help text
             help_lines.pop(0)
+
+            # remove any leading empty lines
+            while help_lines and not help_lines[0]:
+                help_lines.pop(0)
 
         result = "\n".join(help_lines)
         result = textwrap.dedent(result)

@@ -158,6 +158,10 @@ def complete_checkout_pr(prefix, parsed_args, **kwargs):
 
 
 class GitObsMainCommand(osc.commandline_common.MainCommand):
+    """
+    git-obs is a command-line client for interacting with Git repositories within a Gitea instance that is part of an Open Build Service (OBS).
+    """
+
     name = "git-obs"
 
     MODULES = (
@@ -198,11 +202,14 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
 
 
     @classmethod
-    def main(cls, argv=None, run=True):
+    def main(cls, argv=None, run=True, argparse_manpage=False):
         """
         Initialize OscMainCommand, load all commands and run the selected command.
         """
         cmd = cls()
+        # argparse-manpage splits command's help text to help and description
+        # we normally use both in the --help output, but want to change that for argparse-manpage
+        cmd.argparse_manpage = argparse_manpage
         cmd.load_commands()
         cmd.enable_autocomplete()
         if run:
@@ -253,7 +260,7 @@ def get_parser():
     """
     Needed by argparse-manpage to generate man pages from the argument parser.
     """
-    main, _ = GitObsMainCommand.main(run=False)
+    main, _ = GitObsMainCommand.main(run=False, argparse_manpage=True)
     return main.parser
 
 
