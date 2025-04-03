@@ -256,7 +256,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         self._gitea_conn = value
 
 
-def get_parser():
+def argparse_manpage_get_parser():
     """
     Needed by argparse-manpage to generate man pages from the argument parser.
     """

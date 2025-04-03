@@ -299,7 +299,7 @@ class OscMainCommand(MainCommand):
         return cmd, args
 
 
-def get_parser():
+def argparse_manpage_get_parser():
     """
     Needed by argparse-manpage to generate man pages from the argument parser.
     """
