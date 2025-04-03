@@ -102,7 +102,7 @@ class GitStore:
                 pbuild_path = os.path.join(path, "_pbuild")
                 subdirs_path = os.path.join(path, "_subdirs")
 
-                if os.path.isdir(osc_path) and os.path.isdir(git_path) and (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
+                if (os.path.isdir(osc_path) or os.path.isdir(git_path)) and (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
                     if os.path.isfile(subdirs_path):
                         # the _subdirs file contains a list of project subdirs that contain packages
                         yaml = ruamel.yaml.YAML()
