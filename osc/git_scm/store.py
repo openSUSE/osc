@@ -107,8 +107,24 @@ class GitStore:
                         # the _subdirs file contains a list of project subdirs that contain packages
                         yaml = ruamel.yaml.YAML()
                         with open(subdirs_path, "r") as f:
-                            subdirs = yaml.load(f).get("subdirs", [])
+                            data = yaml.load(f)
+
+                            # ``subdirs`` is a list of directories, which have subdirectories which are packages
+                            subdirs = data.get("subdirs", [])
+
+                            # if set to "include", then all top-level directories are packages in addition to ``subdirs``
+                            toplevel = data.get("toplevel", "")
+
+                        if toplevel == "include":
+                            subdirs.append(".")
+
                         subdirs_abspath = [os.path.abspath(os.path.join(path, subdir)) for subdir in subdirs]
+
+                        # paths listed in ``subdirs`` are never packages, their subdirs are
+                        if self.abspath in subdirs_abspath:
+                            break
+
+                        # we're outside paths specified in subdirs -> not a package
                         if os.path.abspath(os.path.join(self.abspath, "..")) not in subdirs_abspath:
                             break
                     else:
