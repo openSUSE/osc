@@ -172,7 +172,18 @@ PYTHONPATH=. argparse-manpage \
     --function=get_parser \
     --project-name=osc \
     --prog=osc \
-    --description="openSUSE Commander" \
+    --description="Command-line client for Open Build Service" \
+    --author="Contributors to the osc project. See the project's GIT history for the complete list." \
+    --url="https://github.com/openSUSE/osc/"
+
+PYTHONPATH=. argparse-manpage \
+    --output=git-obs.1 \
+    --format=single-commands-section \
+    --module=osc.commandline_git \
+    --function=get_parser \
+    --project-name=osc \
+    --prog=git-obs \
+    --description="Git based command-line client for Open Build Service" \
     --author="Contributors to the osc project. See the project's GIT history for the complete list." \
     --url="https://github.com/openSUSE/osc/"
 
@@ -209,6 +220,7 @@ install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
 %if %{with man}
 install -Dm0644 git-obs-quickstart.1 %{buildroot}%{_mandir}/man1/git-obs-quickstart.1
 install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
+install -Dm0644 git-obs.1 %{buildroot}%{_mandir}/man1/git-obs.1
 install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 %endif
 
