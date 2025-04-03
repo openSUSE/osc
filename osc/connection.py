@@ -734,6 +734,7 @@ class SignatureAuthHandler(AuthHandlerBase):
 
         if not self.ssh_keygen_path:
             output.print_msg("Skipping signature auth because ssh-keygen is not available", print_to="warning")
+            output.print_msg("This can be ignored if you are not using SSH keys for authentication", print_to="warning")
             return False
 
         if not self.sshkey_known():
