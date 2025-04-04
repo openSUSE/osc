@@ -1,3 +1,36 @@
+- 1.15.0
+  - Command-line:
+    - Improve 'osc fork' to follow the devel package specified in the 'OBS:RejectBranch' attribute
+    - Hotfix 'osc fork' failures of devel project users
+    - Change 'osc fork' to print an error rather than raising an exception
+    - Fix setting parent remote in 'git-obs repo clone'
+    - Extend 'osc build' to read build project from Gitea: <owner>/_ObsPrj, project.build file
+    - Fix 'osc build' when working with sources from git, when .osc is not available
+    - Fix crash in 'osc build --host'
+    - Fix rendering help output by adding the complete docstring of the commands
+    - Add commented git status to the 'git-obs pr create' message
+    - When doing an mr from a working copy check for unchecked modifications
+    - Consolidate working copy modification check dialog into a function
+  - Connection:
+    - Change a debug message to a warning if ssh-keygen is not available
+    - Add explanatory message to ignore the signature auth warning when not using SSH keys for auth
+  - Library:
+    - Implement handling of updateinfo.xml and _modulemd.yaml files
+    - Fix working with _subdirs when detecting packages that are subdirectories in a git project
+    - Fix canonname handling when querying a downloaded package
+    - Add obs_api.Attributes model
+    - Add 'quiet' and 'branch' options to gitea_api.Repo.clone()
+    - Fix GitStore by parsing git urls with obs_api.Git.urlparse()
+    - Add gitea_api.Git.urlparse() for parsing git urls
+    - Change gitea_api.Config.url_to_hostname() to also try matching only a hostname instead of full Gitea URL
+    - Rename get_parser() functions to argparse_manpage_get_parser() to clarify their purpose
+    - Refactor the validity check of cached binaries
+  - Other:
+    - Update git-obs-quickstart doc with more detailed info on creating tokens
+  - Spec:
+    - Recommend obs-scm-bridge
+    - Build git-obs man page
+
 - 1.14.0
   - Command-line:
     - Improve 'osc fork' command to support also forking projects managed in git
