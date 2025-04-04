@@ -78,7 +78,7 @@ class Fetcher:
                         if n.startswith(b'container:'):
                             n = re.sub(br'\.tar\.(zst|.z)$', b'.tar', hdr.filename)
                             pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
-                            pac.canonname = hdr.filename
+                            pac.canonname = decode_it(hdr.filename)
                         else:
                             pac = pkgs[decode_it(n.rsplit(b'.', 1)[0])]
                     else:
@@ -163,7 +163,7 @@ class Fetcher:
     def move_package(self, tmpfile, destdir, pac_obj=None):
         canonname = None
         if pac_obj and (pac_obj.name.startswith('container:') or pac_obj.binary in ('updateinfo.xml', '_modulemd.yaml')):
-            canonname = decode_it(pac_obj.canonname)
+            canonname = pac_obj.canonname
         if canonname is None:
             pkgq = packagequery.PackageQuery.query(tmpfile, extra_rpmtags=(1044, 1051, 1052))
             if pkgq:
