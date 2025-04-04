@@ -180,4 +180,4 @@ to the [osc](https://github.com/openSUSE/osc/issues) project on GitHub.
 
 Unit tests can be run from a git checkout by executing
 
-    ./setup.py test
+    python3 -m unittest -b
