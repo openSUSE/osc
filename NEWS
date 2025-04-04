@@ -1,3 +1,7 @@
+- 1.15.1
+  - Library:
+    - Revert "Run decode_it also in the other case"
+
 - 1.15.0
   - Command-line:
     - Improve 'osc fork' to follow the devel package specified in the 'OBS:RejectBranch' attribute
