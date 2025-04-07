@@ -35,6 +35,10 @@ jobs:
           cd behave
           ./container-build.sh --squash  --label="org.opencontainers.image.source=https://github.com/$REPO"
 
+      - name: "Show info about the built image"
+        run: |
+          podman images
+
       - name: "Push image to ghcr.io"
         env:
           GHCR_USER: ${{ secrets.GHCR_USER }}
