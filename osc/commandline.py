@@ -8274,6 +8274,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             remoterun   rr trigger a re-run on the server side
             merge          commits all server side generated files and drops the _service definition
             wait           waits until the service finishes and returns with an error if it failed
+            precommit      run the services exactly as would be before a commit, for use from the git hook
 
             Not for common usage anymore:
             localrun    lr the same as "run" but services with mode "serveronly" are also executed
@@ -8299,7 +8300,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             self.argparse_error("Please specify a command")
 
         command = args.pop(0)
-        if command not in ("runall", "ra", "run", "localrun", "manualrun", "disabledrun", "remoterun", "lr", "dr", "mr", "r", "rr", "merge", "wait"):
+        if command not in (
+            "runall",
+            "ra",
+            "run",
+            "localrun",
+            "precommit",
+            "manualrun",
+            "disabledrun",
+            "remoterun",
+            "lr",
+            "dr",
+            "mr",
+            "r",
+            "rr",
+            "merge",
+            "wait",
+        ):
             self.argparse_error(f"Invalid command: {command}")
 
         if command in ("localrun", "lr"):
@@ -8333,9 +8350,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         store = osc_store.get_store(Path.cwd(), print_warnings=True)
         store.assert_is_package()
 
-        if command in ('runall', 'ra', 'run', 'localrun', 'manualrun', 'disabledrun', 'lr', 'mr', 'dr', 'r'):
+        if command in (
+            "runall",
+            "ra",
+            "run",
+            "localrun",
+            "precommit",
+            "manualrun",
+            "disabledrun",
+            "lr",
+            "mr",
+            "dr",
+            "r",
+        ):
             if command  in ("localrun", "lr"):
                 mode = "local"
+            elif command in ("precommit"):
+                mode = "trylocal"
             elif command in ("manualrun", "mr"):
                 mode = "manual"
             elif command in ("disabledrun", "dr"):
