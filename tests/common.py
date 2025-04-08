@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from unittest.mock import patch
 from urllib.request import HTTPHandler, addinfourl, build_opener
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import unquote, urlparse, parse_qs
 from xml.etree import ElementTree as ET
 
 import urllib3.response
@@ -74,7 +74,7 @@ class RequestWrongOrder(Exception):
         self.exp_method = exp_method
 
     def __str__(self):
-        return '%s, %s, %s, %s' % (self.url, self.exp_url, self.method, self.exp_method)
+        return f"Request doesn't match the expected request:\n  - Actual:   {self.method} {unquote(self.url)}\n  - Expected: {self.exp_method} {unquote(self.exp_url)}"
 
 
 class RequestDataMismatch(Exception):
@@ -109,7 +109,7 @@ class MockHTTPConnectionPool:
         url = f"http://localhost{url}"
 
         if not urlcompare(request["url"], url) or request["method"] != method:
-            raise RequestWrongOrder(request["url"], url, request["method"], method)
+            raise RequestWrongOrder(url, request["url"], method, request["method"])
 
         if method in ("POST", "PUT"):
             if 'exp' not in request and 'expfile' in request:
