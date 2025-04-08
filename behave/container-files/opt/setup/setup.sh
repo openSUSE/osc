@@ -20,8 +20,11 @@ sed -i 's!^OBS_WORKER_INSTANCES=.*!OBS_WORKER_INSTANCES="1"!' /etc/sysconfig/obs
 # enable xforward
 sed -i 's!^#use_xforward:.*!use_xforward: true!' /srv/www/obs/api/config/options.yml
 
+# determine required ruby interpreter from an installed RPM
+RUBY_PATH=$(rpm -q obs-bundled-gems --requires | grep /usr/bin/ruby)
+
 # configure passenger
-sed -i -E 's!^(\s*)PassengerRuby .*!\1PassengerRuby "/usr/bin/ruby.ruby3.1"!' /etc/apache2/conf.d/mod_passenger.conf
+sed -i -E "s!^(\s*)PassengerRuby .*!\1PassengerRuby \"$RUBY_PATH\"!" /etc/apache2/conf.d/mod_passenger.conf
 
 # enable apache SSL server flag
 sed -i 's!^APACHE_SERVER_FLAGS=.*!APACHE_SERVER_FLAGS="SSL"!' /etc/sysconfig/apache2

@@ -16,6 +16,7 @@ FIXTURES_DIR="$TOPDIR/fixtures"
 OSC="osc -A https://localhost"
 
 # create additional users
+# NOTE: if the following command ends with 500, it might be due to an incorrect interpreter version in /etc/apache2/conf.d/mod_passenger.conf
 $OSC person register --login=alice --realname='' --email='alice@example.com' --password='opensuse'
 $OSC person register --login=bob --realname='' --email='bob@example.com' --password='opensuse'
 
