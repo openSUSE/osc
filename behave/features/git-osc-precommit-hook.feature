@@ -3,6 +3,7 @@ Feature: `git-osc-precommit-hook` command
 
 Background:
    Given I set working directory to "{context.osc.temp}"
+     And I defined git-osc-precommit-hook
      And I execute git-obs with args "repo fork pool/test-GitPkgA"
      And I execute git-obs with args "repo clone Admin/test-GitPkgA --no-ssh-strict-host-key-checking"
      And I set working directory to "{context.osc.temp}/test-GitPkgA"
