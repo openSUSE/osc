@@ -6,8 +6,9 @@ class KeyValueTable:
     class NewLine:
         pass
 
-    def __init__(self):
+    def __init__(self, min_key_length: int = 0):
         self.rows = []
+        self.min_key_length = min_key_length
 
     def add(self, key, value, color=None, key_color=None, indent=0):
         if value is None:
@@ -21,7 +22,7 @@ class KeyValueTable:
             lines = [""]
 
         # add the first line with the key
-        self.rows.append((key, lines[0], color, key_color, indent))
+        self.rows.append((key.ljust(self.min_key_length), lines[0], color, key_color, indent))
 
         # then add the continuation lines without the key
         for line in lines[1:]:
