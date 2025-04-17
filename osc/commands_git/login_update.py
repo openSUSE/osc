@@ -15,13 +15,13 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         from osc.commandline_git import complete_ssh_key_path
 
-        self.parser.add_argument("name")
-        self.parser.add_argument("--new-name")
-        self.parser.add_argument("--new-url")
-        self.parser.add_argument("--new-user")
-        self.parser.add_argument("--new-token", help="Set to '-' to invoke a secure interactive prompt.")
-        self.parser.add_argument("--new-ssh-key").completer = complete_ssh_key_path
-        self.parser.add_argument("--set-as-default", action="store_true")
+        self.parser.add_argument("name", help="The name of the login entry to be updated")
+        self.parser.add_argument("--new-name", help="New name of the login entry")
+        self.parser.add_argument("--new-url", metavar="URL", help="New Gitea URL, for example https://example.com",)
+        self.parser.add_argument("--new-user", metavar="USER", help="Gitea username")
+        self.parser.add_argument("--new-token", metavar="TOKEN", help="Gitea access token; set to '-' to invoke a secure interactive prompt")
+        self.parser.add_argument("--new-ssh-key", metavar="PATH", help="Path to a private SSH key").completer = complete_ssh_key_path
+        self.parser.add_argument("--set-as-default", action="store_true", help="Set the login entry as default")
 
     def run(self, args):
         print(f"Updating a Gitea credentials entry with name '{args.name}' ...", file=sys.stderr)

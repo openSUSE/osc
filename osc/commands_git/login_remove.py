@@ -14,7 +14,7 @@ class LoginRemoveCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         from osc.commandline_git import complete_login
 
-        self.parser.add_argument("name").completer = complete_login
+        self.parser.add_argument("name", help="The name of the login entry to be removed").completer = complete_login
 
     def run(self, args):
         print(f"Removing a Gitea credentials entry with name '{args.name}' ...", file=sys.stderr)
