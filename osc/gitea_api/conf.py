@@ -5,9 +5,8 @@ from typing import Dict
 from typing import List
 from typing import Optional
 
-import ruamel.yaml
-
 from osc import oscerr
+from osc.util import yaml as osc_yaml
 from osc.util.models import BaseModel
 from osc.util.models import Field
 
@@ -93,22 +92,14 @@ class Config:
     def _read(self) -> Dict[str, Any]:
         try:
             with open(self.path, "r") as f:
-                yaml = ruamel.yaml.YAML()
-                return yaml.load(f)
+                return osc_yaml.yaml_load(f)
         except FileNotFoundError:
             return {}
 
     def _write(self, data):
-        yaml = ruamel.yaml.YAML()
-        yaml.default_flow_style = False
-        buf = io.StringIO()
-        yaml.dump(data, buf)
-        buf.seek(0)
-        text = buf.read()
-
         os.makedirs(os.path.dirname(self.path), mode=0o700, exist_ok=True)
         with open(self.path, "w") as f:
-            f.write(text)
+            osc_yaml.yaml_dump(data, f)
 
     def list_logins(self) -> List[Login]:
         data = self._read()
