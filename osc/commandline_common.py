@@ -165,6 +165,9 @@ class Command:
             because it disables argument intermixing.
         """
 
+    def post_parse_args(self, args):
+        pass
+
     def run(self, args):
         """
         Override to implement the command functionality.
@@ -214,6 +217,7 @@ class MainCommand(Command):
         if not cmd:
             self.parser.error("Please specify a command")
         self.post_parse_args(args)
+        cmd.post_parse_args(args)
         return cmd.run(args)
 
     def load_command(self, cls, module_prefix):
