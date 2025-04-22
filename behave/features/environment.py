@@ -81,15 +81,16 @@ def before_all(context):
         context.podman = podman.ThreadedPodman(context, container_name_prefix="osc-behave-", max_containers=podman_max_containers)
     else:
         context.podman = podman.Podman(context, container_name="osc-behave")
-    context.osc = osc.Osc(context)
     context.git_obs = osc.GitObs(context)
     context.git_osc_precommit_hook = osc.GitOscPrecommitHook(context)
+    # we reference git_obs here, so initialize osc after it
+    context.osc = osc.Osc(context)
 
 
 def after_all(context):
+    del context.osc
     del context.git_osc_precommit_hook
     del context.git_obs
-    del context.osc
     context.podman.kill()
     del context.podman
     del context.fixtures
