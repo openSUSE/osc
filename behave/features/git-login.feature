@@ -24,7 +24,7 @@ Background:
 
 
 Scenario: Add a credentials login entry
-    When I execute git-obs with args "login add example1 --url https://gitea.example.com --user Admin --token 1234 --set-as-default"
+    When I execute git-obs with args "login add example1 --url https://gitea.example.com --user Admin --token 123456789012345678901234567890abcdefabcd --set-as-default"
     Then the exit code is 0
      And stderr is
          """
@@ -97,7 +97,7 @@ Scenario: Remove a credentials login entry
 
 
 Scenario: Update a credentials login entry
-    When I execute git-obs with args "login update alice --new-name=NEW_NAME --new-url=NEW_URL --new-user=NEW_USER --new-token=NEW_TOKEN --new-ssh-key= --set-as-default"
+    When I execute git-obs with args "login update alice --new-name=NEW_NAME --new-url=NEW_URL --new-user=NEW_USER --new-token=1234567890123456789012345678901234567890 --new-ssh-key= --set-as-default"
     Then the exit code is 0
      And stderr is
          """
