@@ -1,4 +1,5 @@
 import getpass
+import re
 import sys
 
 import osc.commandline_git
@@ -15,13 +16,13 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         from osc.commandline_git import complete_ssh_key_path
 
-        self.parser.add_argument("name")
-        self.parser.add_argument("--new-name")
-        self.parser.add_argument("--new-url")
-        self.parser.add_argument("--new-user")
-        self.parser.add_argument("--new-token", help="Set to '-' to invoke a secure interactive prompt.")
-        self.parser.add_argument("--new-ssh-key").completer = complete_ssh_key_path
-        self.parser.add_argument("--set-as-default", action="store_true")
+        self.parser.add_argument("name", help="The name of the login entry to be updated")
+        self.parser.add_argument("--new-name", help="New name of the login entry")
+        self.parser.add_argument("--new-url", metavar="URL", help="New Gitea URL, for example https://example.com",)
+        self.parser.add_argument("--new-user", metavar="USER", help="Gitea username")
+        self.parser.add_argument("--new-token", metavar="TOKEN", help="Gitea access token; set to '-' to invoke a secure interactive prompt")
+        self.parser.add_argument("--new-ssh-key", metavar="PATH", help="Path to a private SSH key").completer = complete_ssh_key_path
+        self.parser.add_argument("--set-as-default", action="store_true", help="Set the login entry as default")
 
     def run(self, args):
         print(f"Updating a Gitea credentials entry with name '{args.name}' ...", file=sys.stderr)
@@ -38,6 +39,9 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             print(file=sys.stderr)
             while not args.new_token or args.new_token == "-":
                 args.new_token = getpass.getpass(prompt=f"Enter a new Gitea token for user '{args.new_user or original_login.user}': ")
+
+        if not re.match(r"^[0-9a-f]{40}$", args.new_token):
+            self.parser.error("Invalid token format, 40 hexadecimal characters expected")
 
         updated_login = self.gitea_conf.update_login(
             args.name,

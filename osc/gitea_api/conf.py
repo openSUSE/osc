@@ -53,14 +53,14 @@ class Login(BaseModel):
     def to_human_readable_string(self, *, show_token: bool = False):
         from osc.output import KeyValueTable
 
-        table = KeyValueTable()
+        table = KeyValueTable(min_key_length=20)
         table.add("Name", self.name, color="bold")
         if self.default:
             table.add("Default", "true", color="bold")
         table.add("URL", self.url)
         table.add("User", self.user)
         if self.ssh_key:
-            table.add("SSH Key", self.ssh_key)
+            table.add("Private SSH key path", self.ssh_key)
         if show_token:
             # tokens are stored in the plain text, there's not reason to protect them too much
             # let's only hide them from the output by default
