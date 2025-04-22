@@ -84,6 +84,9 @@ class ForkCommand(osc.commandline.OscCommand):
                     if e.code != 404:
                         raise
                     attributes = []
+                except TypeError:
+                    # empty <attributes/> element, unable to instantiate Attributes model
+                    attributes = []
                 if attributes:
                     attribute = attributes[0].value
                     # the pattern starts with a non-greedy match so we capture the first url
