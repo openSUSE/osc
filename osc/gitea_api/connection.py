@@ -49,7 +49,14 @@ class Connection:
         self.host = parsed_url.hostname
         assert self.host is not None
         self.port = alternative_port if alternative_port else parsed_url.port
-        self.conn = ConnectionClass(host=self.host, port=self.port)
+
+        conn_kwargs = {}
+
+        if urllib3.__version__.startswith("1."):
+            # workaround for urllib3 v1: TypeError: 'object' object cannot be interpreted as an integer
+            conn_kwargs["timeout"] = 60
+
+        self.conn = ConnectionClass(host=self.host, port=self.port, **conn_kwargs)
 
         # retries; variables are named according to urllib3
         self.retry_count = 3
