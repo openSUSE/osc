@@ -25,12 +25,7 @@ class Branch:
         :param branch: Name of the branch.
         """
         url = conn.makeurl("repos", owner, repo, "branches", branch)
-        try:
-            return conn.request("GET", url)
-        except GiteaException as e:
-            if e.status == 404:
-                raise BranchDoesNotExist(e.response, owner, repo, branch) from None
-            raise
+        return conn.request("GET", url, context={"owner": owner, "repo": repo})
 
     @classmethod
     def list(
@@ -77,10 +72,8 @@ class Branch:
         }
         url = conn.makeurl("repos", owner, repo, "branches")
         try:
-            return conn.request("POST", url, json_data=json_data)
-        except GiteaException as e:
-            if e.status == 409:
-                if exist_ok:
-                    return cls.get(conn, owner, repo, new_branch_name)
-                raise BranchExists(e.response, owner, repo, new_branch_name) from None
-            raise
+            return conn.request("POST", url, json_data=json_data, context={"owner": owner, "repo": repo, "branch": new_branch_name})
+        except BranchExists as e:
+            if not exist_ok:
+                raise
+            return cls.get(conn, owner, repo, new_branch_name)
