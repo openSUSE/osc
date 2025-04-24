@@ -50,6 +50,12 @@
 %define ruamel_yaml_pkg %{use_python_pkg}-ruamel.yaml
 %endif
 
+%if 0%{?suse_version} < 1600
+# ruamel.yaml is not available on SLE 15, use PyYAML instead
+%define use_pyyaml 1
+%define ruamel_yaml_pkg %{use_python_pkg}-PyYAML
+%endif
+
 Name:           osc
 Version:        1.15.1
 Release:        0
@@ -156,6 +162,12 @@ for a general introduction.
 %autosetup -p1
 
 %build
+
+%if 0%{?use_pyyaml}
+    # replace ruamel.yaml with PyYAML
+    sed -i 's/ruamel\.yaml/PyYAML/g' setup.cfg
+%endif
+
 %{use_python} setup.py build
 
 # write rpm macros
