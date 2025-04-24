@@ -138,6 +138,11 @@ class GitObs(CommandBase):
         return cmd
 
 
+@behave.step("I defined git-osc-precommit-hook")
+def step_impl(context):
+    if not context.config.userdata.get("git-osc-precommit-hook"):
+        context.scenario.skip()
+
 @behave.step("I execute osc with args \"{args}\"")
 def step_impl(context, args):
     args = args.format(context=context)
