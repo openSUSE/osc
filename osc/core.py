@@ -2362,7 +2362,7 @@ def get_request_collection(
     package=None,
     states=None,
     review_states=None,
-    types: List[str] = None,
+    types: Optional[List[str]] = None,
     ids=None,
     withfullhistory=False
 ):
@@ -2923,7 +2923,7 @@ def server_diff(
     onlyissues=False,
     full=True,
     xml=False,
-    files: list = None,
+    files: Optional[list] = None,
 ):
     query: Dict[str, Union[str, int]] = {"cmd": "diff"}
     if expand:
@@ -2988,7 +2988,7 @@ def server_diff_noex(
     expand=True,
     onlyissues=False,
     xml=False,
-    files: list = None,
+    files: Optional[list] = None,
 ):
     try:
         return server_diff(apiurl,
@@ -3143,7 +3143,7 @@ def checkout_package(
     pathname=None,
     prj_obj=None,
     expand_link=False,
-    prj_dir: Path=None,
+    prj_dir: Optional[Path] = None,
     server_service_files=None,
     service_files=None,
     native_obs_package=False,
@@ -3867,7 +3867,7 @@ def copy_pac(
         return 'Done.'
 
 
-def lock(apiurl: str, project: str, package: str, msg: str = None):
+def lock(apiurl: str, project: str, package: str, msg: Optional[str] = None):
     url_path = ["source", project]
     if package:
         url_path += [package]
@@ -5216,8 +5216,15 @@ def owner(
         pass
     return res
 
-
-def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=False, msg: str=None, vrev: str=None):
+def set_link_rev(
+    apiurl: str,
+    project: str,
+    package: str,
+    revision="",
+    expand=False,
+    msg: Optional[str] = None,
+    vrev: Optional[str] = None,
+):
     url = makeurl(apiurl, ["source", project, package, "_link"])
     try:
         f = http_GET(url)
@@ -5238,7 +5245,9 @@ def set_link_rev(apiurl: str, project: str, package: str, revision="", expand=Fa
     return revision
 
 
-def _set_link_rev(apiurl: str, project: str, package: str, root, revision="", expand=False, setvrev: str=None):
+def _set_link_rev(
+    apiurl: str, project: str, package: str, root, revision="", expand=False, setvrev: Optional[str] = None
+):
     """
     Updates the rev attribute of the _link xml. If revision is set to None
     the rev and vrev attributes are removed from the _link xml.
