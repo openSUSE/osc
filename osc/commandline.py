@@ -2315,7 +2315,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.supersede:
                 from .obs_api import Request
                 req = Request.from_api(apiurl, opts.supersede)
-                msg = req.description + "\n"
+                msg = (req.description or "") + "\n"
 
             difflines = []
             doappend = False
