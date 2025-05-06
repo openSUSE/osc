@@ -23,7 +23,7 @@ from functools import cmp_to_key
 from operator import itemgetter
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import List, NoReturn
+from typing import Optional, List, NoReturn
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
 
@@ -322,12 +322,12 @@ HELP_MULTIBUILD_ONE = "Only work with the specified flavor of a multibuild packa
 
 def pop_args(
     args,
-    arg1_name: str = None,
+    arg1_name: Optional[str] = None,
     arg1_is_optional: bool = False,
-    arg1_default: str = None,
-    arg2_name: str = None,
+    arg1_default: Optional[str] = None,
+    arg2_name: Optional[str] = None,
     arg2_is_optional: bool = False,
-    arg2_default: str = None,
+    arg2_default: Optional[str] = None,
 ):
     """
     Pop 2 arguments from `args`.
@@ -399,9 +399,9 @@ def pop_args(
 def pop_project_package_from_args(
     args: List[str],
     project_is_optional: bool = False,
-    default_project: str = None,
+    default_project: Optional[str] = None,
     package_is_optional: bool = False,
-    default_package: str = None,
+    default_package: Optional[str] = None,
 ):
     """
     Pop project and package from given `args`.
@@ -472,9 +472,9 @@ def pop_project_package_from_args(
 def pop_repository_arch_from_args(
     args: List[str],
     repository_is_optional: bool = False,
-    default_repository: str = None,
+    default_repository: Optional[str] = None,
     arch_is_optional: bool = False,
-    default_arch: str = None,
+    default_arch: Optional[str] = None,
 ):
     """
     Pop repository and arch from given `args`.
@@ -511,13 +511,13 @@ def pop_repository_arch_from_args(
 def pop_project_package_repository_arch_from_args(
     args: List[str],
     project_is_optional: bool = False,
-    default_project: str = None,
+    default_project: Optional[str] = None,
     package_is_optional: bool = False,
-    default_package: str = None,
+    default_package: Optional[str] = None,
     repository_is_optional: bool = False,
-    default_repository: str = None,
+    default_repository: Optional[str] = None,
     arch_is_optional: bool = False,
-    default_arch: str = None,
+    default_arch: Optional[str] = None,
 ):
     """
     Pop project, package, repository and arch from given `args`.
@@ -597,13 +597,13 @@ def pop_project_package_repository_arch_from_args(
 def pop_project_package_targetproject_targetpackage_from_args(
     args: List[str],
     project_is_optional: bool = False,
-    default_project: str = None,
+    default_project: Optional[str] = None,
     package_is_optional: bool = False,
-    default_package: str = None,
+    default_package: Optional[str] = None,
     target_project_is_optional: bool = False,
-    default_target_project: str = None,
+    default_target_project: Optional[str] = None,
     target_package_is_optional: bool = False,
-    default_target_package: str = None,
+    default_target_package: Optional[str] = None,
 ):
     """
     Pop project, package, target project and target package from given `args`.
