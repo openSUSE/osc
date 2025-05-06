@@ -96,9 +96,13 @@ class Connection:
         url_query_str = urllib.parse.urlencode(query, doseq=True)
         return urllib.parse.urlunsplit(("", "", url_path_str, url_query_str, ""))
 
-    def request(self, method, url, json_data: Optional[dict] = None) -> GiteaHTTPResponse:
+    def request(
+        self, method, url, json_data: Optional[dict] = None, *, context: Optional[dict] = None
+    ) -> GiteaHTTPResponse:
         """
         Make a request and return ``GiteaHTTPResponse``.
+
+        :param context: Additional parameters passed as **kwargs to an exception if raised
         """
         headers = {
             "Content-Type": "application/json",
@@ -134,18 +138,18 @@ class Connection:
             self.conn.close()
 
         if isinstance(response, http.client.HTTPResponse):
-            result = GiteaHTTPResponse(urllib3.response.HTTPResponse.from_httplib(response))
+            response = GiteaHTTPResponse(urllib3.response.HTTPResponse.from_httplib(response))
         else:
-            result = GiteaHTTPResponse(response)
+            response = GiteaHTTPResponse(response)
 
         if not hasattr(response, "status"):
             from .exceptions import GiteaException  # pylint: disable=import-outside-toplevel,cyclic-import
 
-            raise GiteaException(result)
+            raise GiteaException(response)
 
         if response.status // 100 != 2:
-            from .exceptions import GiteaException  # pylint: disable=import-outside-toplevel,cyclic-import
+            from .exceptions import response_to_exception
 
-            raise GiteaException(result)
+            raise response_to_exception(response, context=context)
 
-        return result
+        return response

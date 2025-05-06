@@ -3,7 +3,6 @@ from typing import Optional
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .exceptions import ForkExists
-from .exceptions import GiteaException
 
 
 class Fork:
@@ -54,12 +53,9 @@ class Fork:
         url = conn.makeurl("repos", owner, repo, "forks")
         try:
             return conn.request("POST", url, json_data=json_data)
-        except GiteaException as e:
-            # use ForkExists exception to parse fork_owner and fork_repo from the response
-            if e.status == 409:
-                fork_exists_exception = ForkExists(e.response, owner, repo)
-                if exist_ok:
-                    from . import Repo
-                    return Repo.get(conn, fork_exists_exception.fork_owner, fork_exists_exception.fork_repo)
-                raise fork_exists_exception from None
-            raise
+        except ForkExists as e:
+            if not exist_ok:
+                raise
+
+            from . import Repo  # pylint: disable=import-outside-toplevel
+            return Repo.get(conn, e.fork_owner, e.fork_repo)
