@@ -18,7 +18,7 @@ def response_to_exception(response: GiteaHTTPResponse, *, context: Optional[dict
       for example: ``conn.request("GET", url, context={"owner": owner, "repo": repo})``
     """
     data = response.json()
-    messages = [data["message"]] + data.get("errors", [])
+    messages = [data["message"]] + (data.get("errors", None) or [])
 
     for cls in EXCEPTION_CLASSES:
         if cls.RESPONSE_STATUS is not None and cls.RESPONSE_STATUS != response.status:
