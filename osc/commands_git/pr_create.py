@@ -3,12 +3,14 @@ import re
 import subprocess
 import sys
 from typing import Optional
+from typing import List
 
 import osc.commandline_git
 
 
-def get_editor() -> str:
+def get_editor() -> List[str]:
     import shutil
+    import shlex
 
     editor = os.getenv("EDITOR", None)
     if editor:
@@ -17,20 +19,35 @@ def get_editor() -> str:
         candidates = ["vim", "vi"]
 
     editor_path = None
+    args = None
     for i in candidates:
-        editor_path = shutil.which(i)
+        i, *args = shlex.split(i)
+        if i.startswith("/"):
+            editor_path = i
+        else:
+            editor_path = shutil.which(i)
+
         if editor_path:
             break
 
     if not editor_path:
         raise RuntimeError(f"Unable to start editor '{candidates[0]}'")
 
-    return editor_path
+    res = [editor_path]
+    if args:
+        res += args
+
+    return res
+
+
+def get_editor_command(file_path: str) -> List[str]:
+    res = get_editor()
+    res.append(file_path)
+    return res
 
 
 def run_editor(file_path: str):
-    cmd = [get_editor(), file_path]
-    subprocess.run(cmd)
+    subprocess.run(get_editor_command(file_path))
 
 
 def edit_message(template: Optional[str] = None) -> str:
