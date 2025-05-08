@@ -184,7 +184,11 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         self.add_argument(
             "-G",
             "--gitea-login",
-            help="Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file.",
+            help=(
+                "Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file. "
+                "Alternatively, you can omit this argument and set GIT_OBS_GITEA_URL, GIT_OBS_GITEA_USER, and GIT_OBS_GITEA_TOKEN environmental variables instead. "
+                "Optional variables: GIT_OBS_GITEA_SSH_KEY"
+            ),
         ).completer = complete_login
 
     def post_parse_args(self, args):

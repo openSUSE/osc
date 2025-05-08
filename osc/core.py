@@ -2615,7 +2615,7 @@ def check_existing_requests(
         if len(reqs) > 1:
             open_request_string = "The following submit requests are already open:"
             supersede_request_string = "Supersede the old requests?"
-        print(f"{open_request_string} {', '.join([i.reqid for i in reqs])}.")
+        print(f"{open_request_string} {' '.join([i.reqid for i in reqs])}")
         repl = raw_input(f'{supersede_request_string} (y/n/c) ')
         while repl.lower() not in ['c', 'y', 'n']:
             print(f'{repl} is not a valid option.')

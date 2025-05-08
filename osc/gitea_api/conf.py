@@ -13,6 +13,9 @@ from osc.util.models import Field
 
 
 class Login(BaseModel):
+    # Any time the fields change, make corresponding changes in the ENV variables in the following places:
+    # * Config.get_login() in this file - update ENV variables passed to Login()
+    # * GitObsMainCommand.init_arguments in ../commandline_git.py - update help
     name: str = Field()  # type: ignore[assignment]
     url: str = Field()  # type: ignore[assignment]
     user: str = Field()  # type: ignore[assignment]
@@ -114,6 +117,22 @@ class Config:
         Return ``Login`` object for the given ``name``.
         If ``name`` equals to ``None``, return the default ``Login``.
         """
+
+        if name is None:
+            # if login name was not explicitly specified, check if there are credentials specified in env
+            env_gitea_url = os.environ.get("GIT_OBS_GITEA_URL", None)
+            env_gitea_user = os.environ.get("GIT_OBS_GITEA_USER", None)
+            env_gitea_token = os.environ.get("GIT_OBS_GITEA_TOKEN", None)
+            env_ssh_key = os.environ.get("GIT_OBS_GITEA_SSH_KEY", None)
+            if env_gitea_url and env_gitea_user and env_gitea_token:
+                return Login(
+                    name="<ENV>",
+                    url=env_gitea_url,
+                    user=env_gitea_user,
+                    token=env_gitea_token,
+                    ssh_key=env_ssh_key,
+                )
+
         for login in self.list_logins():
             if name is None and login.default:
                 return login
