@@ -20,62 +20,62 @@ class TestVC(unittest.TestCase):
         config["apiurl"] = host_options["apiurl"]
         self.host_options = host_options
 
-
-    @patch.dict(os.environ, {}, clear=True)
     def test_vc_export_env_conf(self):
         self.host_options.realname = "<REALNAME>"
         self.host_options.email = "<EMAIL>"
-        vc_export_env("http://localhost")
-        expected = {
-            "VC_REALNAME": "<REALNAME>",
-            "VC_MAILADDR": "<EMAIL>",
-            "mailaddr": "<EMAIL>",
-        }
-        self.assertEqual(os.environ, expected)
 
-    @patch.dict(os.environ, {}, clear=True)
+        with patch.dict(os.environ, {}, clear=True):
+            vc_export_env("http://localhost")
+            expected = {
+                "VC_REALNAME": "<REALNAME>",
+                "VC_MAILADDR": "<EMAIL>",
+                "mailaddr": "<EMAIL>",
+            }
+            self.assertEqual(os.environ, expected)
+
     @GET(
         "http://localhost/person/Admin",
         text="<person><login>Admin</login><email>root@localhost</email><realname>OBS Instance Superuser</realname></person>",
     )
     def test_vc_export_env_conf_realname(self):
         self.host_options.realname = "<REALNAME>"
-        vc_export_env("http://localhost")
-        expected = {
-            "VC_REALNAME": "<REALNAME>",
-            "VC_MAILADDR": "root@localhost",
-            "mailaddr": "root@localhost",
-        }
-        self.assertEqual(os.environ, expected)
+        with patch.dict(os.environ, {}, clear=True):
+            vc_export_env("http://localhost")
+            expected = {
+                "VC_REALNAME": "<REALNAME>",
+                "VC_MAILADDR": "root@localhost",
+                "mailaddr": "root@localhost",
+            }
+            self.assertEqual(os.environ, expected)
 
-    @patch.dict(os.environ, {}, clear=True)
     @GET(
         "http://localhost/person/Admin",
         text="<person><login>Admin</login><email>root@localhost</email><realname>OBS Instance Superuser</realname></person>",
     )
     def test_vc_export_env_conf_email(self):
         self.host_options.email = "<EMAIL>"
-        vc_export_env("http://localhost")
-        expected = {
-            "VC_REALNAME": "OBS Instance Superuser",
-            "VC_MAILADDR": "<EMAIL>",
-            "mailaddr": "<EMAIL>",
-        }
-        self.assertEqual(os.environ, expected)
+        with patch.dict(os.environ, {}, clear=True):
+            vc_export_env("http://localhost")
+            expected = {
+                "VC_REALNAME": "OBS Instance Superuser",
+                "VC_MAILADDR": "<EMAIL>",
+                "mailaddr": "<EMAIL>",
+            }
+            self.assertEqual(os.environ, expected)
 
-    @patch.dict(os.environ, {}, clear=True)
     @GET(
         "http://localhost/person/Admin",
         text="<person><login>Admin</login><email>root@localhost</email><realname>OBS Instance Superuser</realname></person>",
     )
     def test_vc_export_env_api_call(self):
-        vc_export_env("http://localhost")
-        expected = {
-            "VC_REALNAME": "OBS Instance Superuser",
-            "VC_MAILADDR": "root@localhost",
-            "mailaddr": "root@localhost",
-        }
-        self.assertEqual(os.environ, expected)
+        with patch.dict(os.environ, {}, clear=True):
+            vc_export_env("http://localhost")
+            expected = {
+                "VC_REALNAME": "OBS Instance Superuser",
+                "VC_MAILADDR": "root@localhost",
+                "mailaddr": "root@localhost",
+            }
+            self.assertEqual(os.environ, expected)
 
 
 if __name__ == "__main__":
