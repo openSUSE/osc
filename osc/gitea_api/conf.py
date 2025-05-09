@@ -38,13 +38,16 @@ class Login(BaseModel):
 
         def __str__(self):
             if self.kwargs == {"name": None}:
-                return \
-                    "Could not find a default Gitea config entry\n" \
-                    " * either set the default entry by running `git-obs login edit <login> --set-as-default`\n" \
+                return (
+                    "Could not find a default Gitea config entry\n"
+                    " * either set the default entry by running `git-obs login update <login> --set-as-default`\n"
                     " * or run the command with `-G/--gitea-login <login>` option"
+                )
             kwargs_str = ", ".join([f"{key}={value}" for key, value in self.kwargs.items()])
-            return f"Could not find a matching Gitea config entry: {kwargs_str}\n" \
+            return (
+                f"Could not find a matching Gitea config entry: {kwargs_str}\n"
                 " * see `git-obs login list` for valid entries"
+            )
 
     def __init__(self, **kwargs):
         # ignore extra fields

@@ -47,6 +47,9 @@ class Osc(CommandBase):
     def write_config(self, username=None, password=None):
         with open(self.config, "w") as f:
             f.write("[general]\n")
+            # this doesn't work and as workaround initialize environment variable in steps/common.py
+            if self.context.git_obs.config:
+                f.write(f"gitea_config={self.context.git_obs.config}\n")
             f.write("\n")
             f.write(f"[https://localhost:{self.context.podman.container.ports['obs_https']}]\n")
             f.write(f"user={username or 'Admin'}\n")
