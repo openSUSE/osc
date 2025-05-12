@@ -4,10 +4,9 @@ import subprocess
 import urllib.parse
 from pathlib import Path
 
-import ruamel.yaml
-
 from .. import conf as osc_conf
 from .. import oscerr
+from ..util import yaml as osc_yaml
 
 
 class GitStore:
@@ -105,9 +104,8 @@ class GitStore:
                 if (os.path.isdir(osc_path) or os.path.isdir(git_path)) and (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
                     if os.path.isfile(subdirs_path):
                         # the _subdirs file contains a list of project subdirs that contain packages
-                        yaml = ruamel.yaml.YAML()
                         with open(subdirs_path, "r") as f:
-                            data = yaml.load(f)
+                            data = osc_yaml.yaml_load(f)
 
                             # ``subdirs`` is a list of directories, which have subdirectories which are packages
                             subdirs = data.get("subdirs", [])
