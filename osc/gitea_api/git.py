@@ -77,10 +77,21 @@ class Git:
             cmd += ["-q"]
         self._run_git(cmd, mute_stderr=mute_stderr)
 
-    def clone(self, url, directory: Optional[str] = None, quiet: bool = True):
+    def clone(self,
+        url: str,
+        *,
+        directory: Optional[str] = None,
+        reference: Optional[str] = None,
+        reference_if_able: Optional[str] = None,
+        quiet: bool = True
+    ):
         cmd = ["clone", url]
         if directory:
             cmd += [directory]
+        if reference:
+            cmd += ["--reference", reference]
+        if reference_if_able:
+            cmd += ["--reference-if-able", reference_if_able]
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd)
@@ -94,7 +105,20 @@ class Git:
         except subprocess.CalledProcessError:
             return None
 
-    def get_branch_head(self, branch: str) -> str:
+    def branch_contains_commit(self, commit: str, branch: Optional[str] = None) -> bool:
+        if not branch:
+            branch = self.current_branch
+
+        try:
+            stdout = self._run_git(["branch", branch, "--contains", commit, "--format", "%(objectname) %(objecttype) %(refname)"])
+            return stdout.strip() == f"{commit} commit refs/heads/{branch}"
+        except subprocess.CalledProcessError:
+            return False
+
+    def get_branch_head(self, branch: Optional[str] = None) -> str:
+        if not branch:
+            branch = self.current_branch
+
         return self._run_git(["rev-parse", f"refs/heads/{branch}"])
 
     def branch_exists(self, branch: str) -> bool:
