@@ -86,6 +86,8 @@ class Repo:
         cwd: Optional[str] = None,
         anonymous: bool = False,
         add_remotes: bool = False,
+        reference: Optional[str] = None,
+        reference_if_able: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
         ssh_strict_host_key_checking: bool = True,
     ) -> str:
@@ -99,6 +101,8 @@ class Repo:
         :param cwd: Working directory. Defaults to the current working directory.
         :param anonymous: Whether to use``clone_url`` for an anonymous access or use authenticated ``ssh_url``.
         :param add_remotes: Determine and add 'parent' or 'fork' remotes to the cloned repo.
+        :param reference: Reuse objects from the specified local repository, error out if the repository doesn't exist.
+        :param reference_if_able: Reuse objects from the specified local repository, only print warning if the repository doesn't exist.
         """
         import shlex
 
@@ -154,6 +158,12 @@ class Repo:
 
         if branch:
             cmd += ["--branch", branch]
+
+        if reference:
+            cmd += ["--reference", reference]
+
+        if reference_if_able:
+            cmd += ["--reference-if-able", reference_if_able]
 
         if quiet:
             cmd += ["--quiet"]
