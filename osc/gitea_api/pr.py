@@ -28,9 +28,12 @@ class PullRequest:
         return match.group(1), match.group(2), int(match.group(3))
 
     @classmethod
-    def to_human_readable_string(cls, entry: dict):
-        from osc.output import KeyValueTable
+    def to_human_readable_string(cls, entry: dict, output_format=None):
         from . import User
+        if output_format and output_format == "json":
+            from osc.output import KeyValueTableJson
+        else:
+            from osc.output import KeyValueTable
 
         def yes_no(value):
             return "yes" if value else "no"
@@ -48,7 +51,10 @@ class PullRequest:
         entry_url = entry["url"]
         entry_url = re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", entry_url)
 
-        table = KeyValueTable()
+        if output_format and output_format == "json":
+            table = KeyValueTableJson()
+        else:
+            table = KeyValueTable()
         table.add("ID", entry_id, color="bold")
         table.add("URL", f"{entry_url}")
         table.add("Title", f"{entry['title']}")
@@ -65,12 +71,12 @@ class PullRequest:
         return str(table)
 
     @classmethod
-    def list_to_human_readable_string(cls, entries: List, sort: bool = False):
+    def list_to_human_readable_string(cls, entries: List, sort: bool = False, output_format=None):
         if sort:
             entries = sorted(entries, key=cls.cmp)
         result = []
         for entry in entries:
-            result.append(cls.to_human_readable_string(entry))
+            result.append(cls.to_human_readable_string(entry, output_format))
         return "\n\n".join(result)
 
     @classmethod

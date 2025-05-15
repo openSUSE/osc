@@ -1,4 +1,5 @@
 from .key_value_table import KeyValueTable
+from .key_value_table_json import KeyValueTableJson
 from .input import get_user_input
 from .output import get_default_pager
 from .output import pipe_to_pager
