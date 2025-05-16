@@ -59,7 +59,7 @@ class PullRequestSearchCommand(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
-        data = gitea_api.PullRequest.search(
+        pr_obj_list = gitea_api.PullRequest.search(
             self.gitea_conn,
             state=args.state,
             title=args.title,
@@ -69,11 +69,12 @@ class PullRequestSearchCommand(osc.commandline_git.GitObsCommand):
             created=args.created,
             mentioned=args.mentioned,
             review_requested=args.review_requested,
-        ).json()
+        )
 
-        text = gitea_api.PullRequest.list_to_human_readable_string(data, sort=True)
-        if text:
-            print(text)
-            print("", file=sys.stderr)
+        if pr_obj_list:
+            pr_obj_list.sort()
+            for pr_obj in pr_obj_list:
+                print(pr_obj.to_human_readable_string())
+                print()
 
-        print(f"Total entries: {len(data)}", file=sys.stderr)
+        print(f"Total entries: {len(pr_obj_list)}", file=sys.stderr)

@@ -1,3 +1,4 @@
+import functools
 import re
 from typing import List
 from typing import Optional
@@ -5,17 +6,20 @@ from typing import Tuple
 
 from .connection import Connection
 from .connection import GiteaHTTPResponse
+from .user import User
 
 
+@functools.total_ordering
 class PullRequest:
-    @classmethod
-    def cmp(cls, entry: dict):
-        if "base" in entry:
-            # a proper pull request
-            return entry["base"]["repo"]["full_name"], entry["number"]
-        else:
-            # an issue without pull request details
-            return entry["repository"]["full_name"], entry["number"]
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    def __eq__(self, other):
+        (self.base_owner, self.base_repo, self.number) == (other.base_owner, other.base_repo, other.number)
+
+    def __lt__(self, other):
+        (self.base_owner, self.base_repo, self.number) < (other.base_owner, other.base_repo, other.number)
 
     @classmethod
     def split_id(cls, pr_id: str) -> Tuple[str, str, int]:
@@ -27,51 +31,148 @@ class PullRequest:
             raise ValueError(f"Invalid pull request id: {pr_id}")
         return match.group(1), match.group(2), int(match.group(3))
 
-    @classmethod
-    def to_human_readable_string(cls, entry: dict):
+    @property
+    def is_pull_request(self):
+        # determine if we're working with a proper pull request or an issue without pull request details
+        return "base" in self._data
+
+    @property
+    def id(self) -> str:
+        return f"{self.base_owner}/{self.base_repo}#{self.number}"
+
+    @property
+    def number(self) -> int:
+        return self._data["number"]
+
+    @property
+    def title(self) -> str:
+        return self._data["title"]
+
+    @property
+    def body(self) -> str:
+        return self._data["body"]
+
+    @property
+    def state(self) -> str:
+        return self._data["state"]
+
+    @property
+    def user(self) -> str:
+        return self._data["user"]["login"]
+
+    @property
+    def user_obj(self) -> User:
+        return User(self._data["user"])
+
+    @property
+    def draft(self) -> Optional[bool]:
+        if not self.is_pull_request:
+            return None
+        return self._data["draft"]
+
+    @property
+    def merged(self) -> Optional[bool]:
+        if not self.is_pull_request:
+            return None
+        return self._data["merged"]
+
+    @property
+    def allow_maintainer_edit(self) -> Optional[bool]:
+        if not self.is_pull_request:
+            return None
+        return self._data["allow_maintainer_edit"]
+
+    @property
+    def base_owner(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return self._data["repository"]["owner"]
+        return self._data["base"]["repo"]["owner"]["login"]
+
+    @property
+    def base_repo(self) -> str:
+        if not self.is_pull_request:
+            return self._data["repository"]["name"]
+        return self._data["base"]["repo"]["name"]
+
+    @property
+    def base_branch(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["base"]["ref"]
+
+    @property
+    def base_commit(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["base"]["sha"]
+
+    @property
+    def base_ssh_url(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["base"]["repo"]["ssh_url"]
+
+    @property
+    def head_owner(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["head"]["repo"]["owner"]["login"]
+
+    @property
+    def head_repo(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["head"]["repo"]["name"]
+
+    @property
+    def head_branch(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["head"]["ref"]
+
+    @property
+    def head_commit(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["head"]["sha"]
+
+    @property
+    def head_ssh_url(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["head"]["repo"]["ssh_url"]
+
+    @property
+    def url(self) -> str:
+        # HACK: search API returns issues, the URL needs to be transformed to a pull request URL
+        return re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", self._data["url"])
+
+    def to_human_readable_string(self):
         from osc.output import KeyValueTable
-        from . import User
 
         def yes_no(value):
             return "yes" if value else "no"
 
-        if "base" in entry:
-            # a proper pull request
-            entry_id = f"{entry['base']['repo']['full_name']}#{entry['number']}"
-            is_pull_request = True
-        else:
-            # an issue without pull request details
-            entry_id = f"{entry['repository']['full_name']}#{entry['number']}"
-            is_pull_request = False
-
-        # HACK: search API returns issues, the URL needs to be transformed to a pull request URL
-        entry_url = entry["url"]
-        entry_url = re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", entry_url)
-
         table = KeyValueTable()
-        table.add("ID", entry_id, color="bold")
-        table.add("URL", f"{entry_url}")
-        table.add("Title", f"{entry['title']}")
-        table.add("State", entry["state"])
-        if is_pull_request:
-            table.add("Draft", yes_no(entry["draft"]))
-            table.add("Merged", yes_no(entry["merged"]))
-            table.add("Allow edit", yes_no(entry["allow_maintainer_edit"]))
-        table.add("Author", f"{User.to_login_full_name_email_string(entry['user'])}")
-        if is_pull_request:
-            table.add("Source", f"{entry['head']['repo']['full_name']}, branch: {entry['head']['ref']}, commit: {entry['head']['sha']}")
-        table.add("Description", entry["body"])
+        table.add("ID", self.id, color="bold")
+        table.add("URL", self.url)
+        table.add("Title", self.title)
+        table.add("State", self.state)
+        if self.is_pull_request:
+            table.add("Draft", yes_no(self.draft))
+            table.add("Merged", yes_no(self.merged))
+            table.add("Allow edit", yes_no(self.allow_maintainer_edit))
+        table.add("Author", f"{self.user_obj.login_full_name_email}")
+        if self.is_pull_request:
+            table.add(
+                "Source", f"{self.head_owner}/{self.head_repo}, branch: {self.head_branch}, commit: {self.head_commit}"
+            )
+            table.add(
+                "Target", f"{self.base_owner}/{self.base_repo}, branch: {self.base_branch}, commit: {self.base_commit}"
+            )
+        table.add("Description", self.body)
 
         return str(table)
-
-    @classmethod
-    def list_to_human_readable_string(cls, entries: List, sort: bool = False):
-        if sort:
-            entries = sorted(entries, key=cls.cmp)
-        result = []
-        for entry in entries:
-            result.append(cls.to_human_readable_string(entry))
-        return "\n\n".join(result)
 
     @classmethod
     def create(
@@ -85,7 +186,7 @@ class PullRequest:
         source_branch: str,
         title: str,
         description: Optional[str] = None,
-    ) -> GiteaHTTPResponse:
+    ) -> "PullRequest":
         """
         Create a pull request to ``owner``/``repo`` to the ``base`` branch.
         The pull request comes from a fork. The fork repo name is determined from gitea database.
@@ -106,7 +207,9 @@ class PullRequest:
             "title": title,
             "body": description,
         }
-        return conn.request("POST", url, json_data=data)
+        response = conn.request("POST", url, json_data=data)
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
     def get(
@@ -115,7 +218,7 @@ class PullRequest:
         owner: str,
         repo: str,
         number: int,
-    ) -> GiteaHTTPResponse:
+    ) -> "PullRequest":
         """
         Get a pull request.
 
@@ -125,7 +228,9 @@ class PullRequest:
         :param number: Number of the pull request in the repo.
         """
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
     def set(
@@ -138,7 +243,7 @@ class PullRequest:
         title: Optional[str] = None,
         description: Optional[str] = None,
         allow_maintainer_edit: Optional[bool] = None,
-    ) -> GiteaHTTPResponse:
+    ) -> "PullRequest":
         """
         Change a pull request.
 
@@ -156,7 +261,9 @@ class PullRequest:
             "allow_maintainer_edit": allow_maintainer_edit,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
-        return conn.request("PATCH", url, json_data=json_data)
+        response = conn.request("PATCH", url, json_data=json_data)
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
     def list(
@@ -166,7 +273,7 @@ class PullRequest:
         repo: str,
         *,
         state: Optional[str] = "open",
-    ) -> GiteaHTTPResponse:
+    ) -> List["PullRequest"]:
         """
         List pull requests in a repo.
 
@@ -183,7 +290,9 @@ class PullRequest:
             "limit": -1,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
 
     @classmethod
     def search(
@@ -198,7 +307,7 @@ class PullRequest:
         created: bool = False,
         mentioned: bool = False,
         review_requested: bool = False,
-    ) -> GiteaHTTPResponse:
+    ) -> List["PullRequest"]:
         """
         Search pull requests.
         :param conn: Gitea ``Connection`` instance.
@@ -225,7 +334,9 @@ class PullRequest:
             "limit": 10**6,
         }
         url = conn.makeurl("repos", "issues", "search", query=q)
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
 
     @classmethod
     def get_patch(
@@ -234,7 +345,7 @@ class PullRequest:
         owner: str,
         repo: str,
         number: int,
-    ) -> GiteaHTTPResponse:
+    ) -> "bytes":
         """
         Get a patch associated with a pull request.
 
@@ -244,7 +355,8 @@ class PullRequest:
         :param number: Number of the pull request in the repo.
         """
         url = conn.makeurl("repos", owner, repo, "pulls", f"{number}.patch")
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        return response.data
 
     @classmethod
     def add_comment(

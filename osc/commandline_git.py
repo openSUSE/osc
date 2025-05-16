@@ -128,12 +128,12 @@ def complete_pr(prefix, parsed_args, **kwargs):
     gitea_conf = gitea_api.Config(conf)
     gitea_login = gitea_conf.get_login(name=login)
     gitea_conn = gitea_api.Connection(gitea_login)
-    data = gitea_api.PullRequest.search(
+    pr_obj_list = gitea_api.PullRequest.search(
         gitea_conn,
         state="open",
-    ).json()
-    data.sort(key=gitea_api.PullRequest.cmp)
-    return [f"{entry['repository']['full_name']}#{entry['number']}" for entry in data]
+    )
+    pr_obj_list.sort()
+    return [pr_obj.id for pr_obj in pr_obj_list]
 
 
 def complete_checkout_pr(prefix, parsed_args, **kwargs):
@@ -147,14 +147,14 @@ def complete_checkout_pr(prefix, parsed_args, **kwargs):
     gitea_conf = gitea_api.Config(conf)
     gitea_login = gitea_conf.get_login(name=login)
     gitea_conn = gitea_api.Connection(gitea_login)
-    data = gitea_api.PullRequest.list(
+    pr_obj_list = gitea_api.PullRequest.list(
         gitea_conn,
         owner=owner,
         repo=repo,
         state="open",
-    ).json()
-    data.sort(key=gitea_api.PullRequest.cmp)
-    return [f"{entry['number']}" for entry in data]
+    )
+    pr_obj_list.sort()
+    return [str(pr_obj.number) for pr_obj in pr_obj_list]
 
 
 class GitObsMainCommand(osc.commandline_common.MainCommand):

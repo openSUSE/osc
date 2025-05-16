@@ -23,8 +23,8 @@ class SSHKeyRemoveCommand(osc.commandline_git.GitObsCommand):
         self.print_gitea_settings()
 
         print(f"Removing ssh key with id='{args.id}' ...", file=sys.stderr)
-        response = gitea_api.SSHKey.get(self.gitea_conn, args.id)
+        ssh_key_obj = gitea_api.SSHKey.get(self.gitea_conn, args.id)
         gitea_api.SSHKey.delete(self.gitea_conn, args.id)
 
         print("Removed entry:")
-        print(gitea_api.SSHKey.to_human_readable_string(response.json()))
+        print(ssh_key_obj.to_human_readable_string())

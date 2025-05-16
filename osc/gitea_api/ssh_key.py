@@ -1,3 +1,4 @@
+from typing import List
 from typing import Optional
 
 from .connection import Connection
@@ -5,8 +6,24 @@ from .connection import GiteaHTTPResponse
 
 
 class SSHKey:
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    @property
+    def id(self) -> int:
+        return self._data["id"]
+
+    @property
+    def key(self) -> str:
+        return self._data["key"]
+
+    @property
+    def title(self) -> str:
+        return self._data["title"]
+
     @classmethod
-    def get(cls, conn: Connection, id: int) -> GiteaHTTPResponse:
+    def get(cls, conn: Connection, id: int) -> "SSHKey":
         """
         Get an authenticated user's public key by its ``id``.
 
@@ -14,10 +31,12 @@ class SSHKey:
         :param id: key numeric id
         """
         url = conn.makeurl("user", "keys", str(id))
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
-    def list(cls, conn: Connection) -> GiteaHTTPResponse:
+    def list(cls, conn: Connection) -> List["SSHKey"]:
         """
         List the authenticated user's public keys.
 
@@ -27,11 +46,14 @@ class SSHKey:
             "limit": -1,
         }
         url = conn.makeurl("user", "keys", query=q)
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
 
     @classmethod
     def _split_key(cls, key):
         import re
+
         return re.split(" +", key, maxsplit=2)
 
     @classmethod
@@ -61,7 +83,7 @@ class SSHKey:
             raise InvalidSshPublicKey()
 
     @classmethod
-    def create(cls, conn: Connection, key: str, title: Optional[str] = None) -> GiteaHTTPResponse:
+    def create(cls, conn: Connection, key: str, title: Optional[str] = None) -> "SSHKey":
         """
         Create a public key.
 
@@ -80,10 +102,12 @@ class SSHKey:
             "key": key,
             "title": title,
         }
-        return conn.request("POST", url, json_data=data)
+        response = conn.request("POST", url, json_data=data)
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
-    def delete(cls, conn: Connection, id: int):
+    def delete(cls, conn: Connection, id: int) -> GiteaHTTPResponse:
         """
         Delete a public key
 
@@ -94,11 +118,11 @@ class SSHKey:
         url = conn.makeurl("user", "keys", str(id))
         return conn.request("DELETE", url)
 
-    @classmethod
-    def to_human_readable_string(cls, data):
+    def to_human_readable_string(self) -> str:
         from osc.output import KeyValueTable
+
         table = KeyValueTable()
-        table.add("ID", f"{data['id']}", color="bold")
-        table.add("Title", f"{data['title']}")
-        table.add("Key", f"{data['key']}")
+        table.add("ID", f"{self.id}", color="bold")
+        table.add("Title", f"{self.title}")
+        table.add("Key", f"{self.key}")
         return str(table)

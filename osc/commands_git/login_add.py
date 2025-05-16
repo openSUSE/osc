@@ -38,8 +38,15 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         if not re.match(r"^[0-9a-f]{40}$", args.token):
             self.parser.error("Invalid token format, 40 hexadecimal characters expected")
 
-        login = gitea_api.Login(name=args.name, url=args.url, user=args.user, token=args.token, ssh_key=args.ssh_key, default=args.set_as_default)
-        self.gitea_conf.add_login(login)
+        login_obj = gitea_api.Login(
+            name=args.name,
+            url=args.url,
+            user=args.user,
+            token=args.token,
+            ssh_key=args.ssh_key,
+            default=args.set_as_default,
+        )
+        self.gitea_conf.add_login(login_obj)
 
         print("Added entry:")
-        print(login.to_human_readable_string())
+        print(login_obj.to_human_readable_string())

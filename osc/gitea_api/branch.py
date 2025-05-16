@@ -1,13 +1,24 @@
+from typing import List
 from typing import Optional
 
 from .connection import Connection
 from .connection import GiteaHTTPResponse
-from .exceptions import BranchDoesNotExist
 from .exceptions import BranchExists
-from .exceptions import GiteaException
 
 
 class Branch:
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    @property
+    def commit(self) -> str:
+        return self._data["commit"]["id"]
+
+    @property
+    def name(self) -> str:
+        return self._data["name"]
+
     @classmethod
     def get(
         cls,
@@ -15,7 +26,7 @@ class Branch:
         owner: str,
         repo: str,
         branch: str,
-    ) -> GiteaHTTPResponse:
+    ) -> "Branch":
         """
         Retrieve details about a repository branch.
 
@@ -25,7 +36,9 @@ class Branch:
         :param branch: Name of the branch.
         """
         url = conn.makeurl("repos", owner, repo, "branches", branch)
-        return conn.request("GET", url, context={"owner": owner, "repo": repo})
+        response = conn.request("GET", url, context={"owner": owner, "repo": repo})
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
     def list(
@@ -33,7 +46,7 @@ class Branch:
         conn: Connection,
         owner: str,
         repo: str,
-    ) -> GiteaHTTPResponse:
+    ) -> List["Branch"]:
         """
         Retrieve details about all repository branches.
 
@@ -46,7 +59,9 @@ class Branch:
         }
         url = conn.makeurl("repos", owner, repo, "branches", query=q)
         # XXX: returns 'null' when there are no branches; an empty list would be a better API
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json() or []]
+        return obj_list
 
     @classmethod
     def create(
@@ -58,7 +73,7 @@ class Branch:
         old_ref_name: Optional[str] = None,
         new_branch_name: str,
         exist_ok: bool = False,
-    ) -> GiteaHTTPResponse:
+    ) -> "Branch":
         """
         Create a new branch in a repository.
 
@@ -75,8 +90,10 @@ class Branch:
         }
         url = conn.makeurl("repos", owner, repo, "branches")
         try:
-            return conn.request("POST", url, json_data=json_data, context={"owner": owner, "repo": repo, "branch": new_branch_name})
-        except BranchExists as e:
+            response = conn.request("POST", url, json_data=json_data, context={"owner": owner, "repo": repo, "branch": new_branch_name})
+            obj = cls(response.json(), response=response)
+            return obj
+        except BranchExists:
             if not exist_ok:
                 raise
             return cls.get(conn, owner, repo, new_branch_name)

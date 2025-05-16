@@ -16,6 +16,7 @@ class SSHKeyListCommand(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
-        for i in gitea_api.SSHKey.list(self.gitea_conn).json():
-            print(gitea_api.SSHKey.to_human_readable_string(i))
+        ssh_key_obj_list = gitea_api.SSHKey.list(self.gitea_conn)
+        for ssh_key_obj in ssh_key_obj_list:
+            print(ssh_key_obj.to_human_readable_string())
             print()

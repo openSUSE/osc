@@ -147,17 +147,17 @@ class ForkCommand(osc.commandline.OscCommand):
         if branch:
             fork_branch = branch
         else:
-            repo_data = gitea_api.Repo.get(gitea_conn, owner, repo).json()
-            branch = repo_data["default_branch"]
+            repo_obj = gitea_api.Repo.get(gitea_conn, owner, repo)
+            branch = repo_obj.default_branch
             fork_branch = branch
 
         # check if the scmsync branch exists in the source repo
-        parent_branch_data = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch).json()
+        parent_branch_obj = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch)
 
         try:
-            repo_data = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name).json()
-            fork_owner = repo_data["owner"]["login"]
-            fork_repo = repo_data["name"]
+            repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name)
+            fork_owner = repo_obj.owner
+            fork_repo = repo_obj.repo
             print(f" * Fork created: {fork_owner}/{fork_repo}")
         except gitea_api.ForkExists as e:
             fork_owner = e.fork_owner
@@ -196,10 +196,10 @@ class ForkCommand(osc.commandline.OscCommand):
         print(f" * scmsync URL: {fork_scmsync}")
 
         # check if the scmsync branch exists in the forked repo
-        fork_branch_data = gitea_api.Branch.get(gitea_conn, fork_owner, fork_repo, fork_branch).json()
+        fork_branch_obj = gitea_api.Branch.get(gitea_conn, fork_owner, fork_repo, fork_branch)
 
-        parent_commit = parent_branch_data["commit"]["id"]
-        fork_commit = fork_branch_data["commit"]["id"]
+        parent_commit = parent_branch_obj.commit
+        fork_commit = fork_branch_obj.commit
         if parent_commit != fork_commit:
             print()
             print(f"{tty.colorize('ERROR', 'red,bold')}: The branch in the forked repo is out of sync with the parent")
