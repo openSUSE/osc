@@ -1,4 +1,5 @@
 import inspect
+import json
 import re
 from typing import Optional
 
@@ -17,8 +18,11 @@ def response_to_exception(response: GiteaHTTPResponse, *, context: Optional[dict
     - in some cases, it's required to provide additional context to the request, that is passed to the raised exception,
       for example: ``conn.request("GET", url, context={"owner": owner, "repo": repo})``
     """
-    data = response.json()
-    messages = [data["message"]] + (data.get("errors", None) or [])
+    try:
+        data = response.json()
+        messages = [data["message"]] + (data.get("errors", None) or [])
+    except json.JSONDecodeError:
+        messages = [response.data.decode("utf-8")]
 
     for cls in EXCEPTION_CLASSES:
         if cls.RESPONSE_STATUS is not None and cls.RESPONSE_STATUS != response.status:
@@ -54,6 +58,25 @@ class GiteaException(oscerr.OscBaseError):
         result = f"{self.status} {self.reason}"
         if self.response.data:
             result += f": {self.response.data}"
+        return result
+
+
+class MovedPermanently(GiteaException):
+    RESPONSE_STATUS = 301
+    RESPONSE_MESSAGE_RE = [
+        re.compile(r"(?P<message>.*)"),
+    ]
+
+    def __init__(self, response: GiteaHTTPResponse, message: str):
+        super().__init__(response)
+        self.message = message
+
+    def __str__(self):
+        result = (
+            f"{self.RESPONSE_STATUS} Moved Permanently: {self.message}\n"
+            " * Change Gitea URL to the actual location of the service\n"
+            " * Check Gitea URL for errors and typos such as https:// vs http://"
+        )
         return result
 
 
