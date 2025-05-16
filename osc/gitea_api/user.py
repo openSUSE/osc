@@ -1,29 +1,47 @@
+from typing import Optional
+
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 
 
 class User:
-    @classmethod
-    def to_full_name_email_string(cls, data):
-        full_name = data["full_name"]
-        email = data["email"]
-        if full_name:
-            return f"{full_name} <{email}>"
-        return email
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
 
-    @classmethod
-    def to_login_full_name_email_string(cls, data):
-        return f"{data['login']} ({cls.to_full_name_email_string(data)})"
+    @property
+    def login(self) -> str:
+        return self._data["login"]
+
+    @property
+    def full_name(self) -> str:
+        return self._data["full_name"]
+
+    @property
+    def email(self) -> str:
+        return self._data["email"]
+
+    @property
+    def full_name_email(self) -> str:
+        if self.full_name:
+            return f"{self.full_name} <{self.email}>"
+        return self.email
+
+    @property
+    def login_full_name_email(self) -> str:
+        return f"{self.login} ({self.full_name_email})"
 
     @classmethod
     def get(
         cls,
         conn: Connection,
-    ) -> GiteaHTTPResponse:
+    ) -> "Self":
         """
         Retrieve details about the current user.
 
         :param conn: Gitea ``Connection`` instance.
         """
         url = conn.makeurl("user")
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj = cls(response.json(), response=response)
+        return obj

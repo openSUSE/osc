@@ -29,10 +29,9 @@ class RepoForkCommand(osc.commandline_git.GitObsCommand):
         for owner, repo in args.owner_repo:
             print(f"Forking git repo {owner}/{repo} ...", file=sys.stderr)
             try:
-                response = gitea_api.Fork.create(self.gitea_conn, owner, repo, new_repo_name=args.new_repo_name)
-                repo = response.json()
-                fork_owner = repo["owner"]["login"]
-                fork_repo = repo["name"]
+                repo_obj = gitea_api.Fork.create(self.gitea_conn, owner, repo, new_repo_name=args.new_repo_name)
+                fork_owner = repo_obj.owner
+                fork_repo = repo_obj.repo
                 print(f" * Fork created: {fork_owner}/{fork_repo}", file=sys.stderr)
                 num_entries += 1
             except gitea_api.ForkExists as e:

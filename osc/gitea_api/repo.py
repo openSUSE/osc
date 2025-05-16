@@ -10,6 +10,40 @@ from .user import User
 
 
 class Repo:
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    @property
+    def owner(self) -> str:
+        return self._data["owner"]["login"]
+
+    @property
+    def owner_obj(self) -> User:
+        return User(self._data["owner"])
+
+    @property
+    def repo(self) -> str:
+        return self._data["name"]
+
+    @property
+    def parent_obj(self) -> Optional["Repo"]:
+        if not self._data["parent"]:
+            return None
+        return Repo(self._data["parent"])
+
+    @property
+    def clone_url(self) -> str:
+        return self._data["clone_url"]
+
+    @property
+    def ssh_url(self) -> str:
+        return self._data["ssh_url"]
+
+    @property
+    def default_branch(self) -> str:
+        return self._data["default_branch"]
+
     @classmethod
     def split_id(cls, repo_id: str) -> Tuple[str, str]:
         """
@@ -26,7 +60,7 @@ class Repo:
         conn: Connection,
         owner: str,
         repo: str,
-    ) -> GiteaHTTPResponse:
+    ) -> "Repo":
         """
         Retrieve details about a repository.
 
@@ -35,7 +69,9 @@ class Repo:
         :param repo: Name of the repo.
         """
         url = conn.makeurl("repos", owner, repo)
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj = cls(response.json(), response=response)
+        return obj
 
     @classmethod
     def clone(
@@ -71,26 +107,27 @@ class Repo:
         # it's perfectly fine to use os.path.join() here because git can take an absolute path
         directory_abspath = os.path.join(cwd, directory)
 
-        repo_data = cls.get(conn, owner, repo).json()
-        clone_url = repo_data["clone_url"] if anonymous else repo_data["ssh_url"]
+        repo_obj = cls.get(conn, owner, repo)
+
+        clone_url = repo_obj.clone_url if anonymous else repo_obj.ssh_url
 
         remotes = {}
         if add_remotes:
-            user = User.get(conn).json()
-            if repo_data["owner"]["login"] == user["login"]:
+            user_obj = User.get(conn)
+            if repo_obj.owner == user_obj.login:
                 # we're cloning our own repo, setting remote to the parent (if exists)
-                parent = repo_data["parent"]
-                if parent:
-                    remotes["parent"] = parent["clone_url"] if anonymous else parent["ssh_url"]
+                if repo_obj.parent_obj:
+                    remotes["parent"] = repo_obj.parent_obj.clone_url if anonymous else repo_obj.parent_obj.ssh_url
             else:
                 # we're cloning someone else's repo, setting remote to our fork (if exists)
                 from . import Fork
-                forks = Fork.list(conn, owner, repo).json()
-                forks = [i for i in forks if i["owner"]["login"] == user["login"]]
-                if forks:
-                    assert len(forks) == 1
-                    fork = forks[0]
-                    remotes["fork"] = fork["clone_url"] if anonymous else fork["ssh_url"]
+
+                fork_obj_list = Fork.list(conn, owner, repo)
+                fork_obj_list = [fork_obj for fork_obj in fork_obj_list if fork_obj.owner == user_obj.login]
+                if fork_obj_list:
+                    assert len(fork_obj_list) == 1
+                    fork_obj = fork_obj_list[0]
+                    remotes["fork"] = fork_obj.clone_url if anonymous else fork_obj.ssh_url
 
         ssh_args = []
         env = os.environ.copy()
@@ -131,7 +168,14 @@ class Repo:
         # store used ssh args (GIT_SSH_COMMAND) in the local git config
         # to allow seamlessly running ``git push`` and other commands
         if ssh_args:
-            cmd = ["git", "-C", directory_abspath, "config", "core.sshCommand", f"echo 'Using core.sshCommand: {env['GIT_SSH_COMMAND']}' >&2; {env['GIT_SSH_COMMAND']}"]
+            cmd = [
+                "git",
+                "-C",
+                directory_abspath,
+                "config",
+                "core.sshCommand",
+                f"echo 'Using core.sshCommand: {env['GIT_SSH_COMMAND']}' >&2; {env['GIT_SSH_COMMAND']}",
+            ]
             subprocess.run(cmd, cwd=cwd, check=True)
 
         return directory_abspath
