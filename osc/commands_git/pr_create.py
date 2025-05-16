@@ -142,7 +142,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             git = gitea_api.Git(".")
             local_owner, local_repo = git.get_owner_repo()
             local_branch = git.current_branch
-            local_rev = git.get_branch_head(local_branch)
+            local_commit = git.get_branch_head(local_branch)
 
         # remote git repo - source
         if use_local_git:
@@ -153,12 +153,12 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             source_owner = args.source_owner
             source_repo = args.source_repo
             source_branch = args.source_branch
-        source_repo_data = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo).json()
-        source_branch_data = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch).json()
-        source_rev = source_branch_data["commit"]["id"]
+        source_repo_obj = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo)
+        source_branch_obj = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch)
 
         # remote git repo - target
-        target_owner, target_repo = source_repo_data["parent"]["full_name"].split("/")
+        target_owner = source_repo_obj.parent_obj.owner
+        target_repo = source_repo_obj.parent_obj.repo
 
         if args.target_branch:
             target_branch = args.target_branch
@@ -168,21 +168,20 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         else:
             target_branch = source_branch
 
-        target_branch_data = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch).json()
-        target_rev = target_branch_data["commit"]["id"]
+        target_branch_obj = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch)
 
         print("Creating a pull request ...", file=sys.stderr)
         if use_local_git:
-            print(f" * Local git: branch: {local_branch}, rev: {local_rev}", file=sys.stderr)
-        print(f" * Source: {source_owner}/{source_repo}, branch: {source_branch}, rev: {source_rev}", file=sys.stderr)
-        print(f" * Target: {target_owner}/{target_repo}, branch: {target_branch}, rev: {target_rev}", file=sys.stderr)
+            print(f" * Local git: branch: {local_branch}, commit: {local_commit}", file=sys.stderr)
+        print(f" * Source: {source_owner}/{source_repo}, branch: {source_branch_obj.name}, commit: {source_branch_obj.commit}", file=sys.stderr)
+        print(f" * Target: {target_owner}/{target_repo}, branch: {target_branch_obj.name}, commit: {target_branch_obj.commit}", file=sys.stderr)
 
-        if use_local_git and local_rev != source_rev:
+        if use_local_git and local_commit != source_branch_obj.commit:
             from osc.output import tty
             print(f"{tty.colorize('ERROR', 'red,bold')}: Local commit doesn't correspond with the latest commit in the remote source branch")
             sys.exit(1)
 
-        if source_rev == target_rev:
+        if source_branch_obj.commit == target_branch_obj.commit:
             from osc.output import tty
             print(f"{tty.colorize('ERROR', 'red,bold')}: Source and target are identical, make and push changes to the remote source repo first")
             sys.exit(1)
@@ -221,7 +220,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             title = title.strip()
             description = description.strip()
 
-        pull = gitea_api.PullRequest.create(
+        pr_obj = gitea_api.PullRequest.create(
             self.gitea_conn,
             target_owner=target_owner,
             target_repo=target_repo,
@@ -231,8 +230,8 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             source_branch=source_branch,
             title=title,
             description=description,
-        ).json()
+        )
 
         print("", file=sys.stderr)
         print("Pull request created:", file=sys.stderr)
-        print(gitea_api.PullRequest.to_human_readable_string(pull))
+        print(pr_obj.to_human_readable_string())

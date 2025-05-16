@@ -27,12 +27,13 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
 
         total_entries = 0
         for owner, repo in args.owner_repo:
-            data = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state).json()
-            total_entries += len(data)
+            pr_obj_list = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state)
 
-            text = gitea_api.PullRequest.list_to_human_readable_string(data, sort=True)
-            if text:
-                print(text)
-                print("", file=sys.stderr)
+            if pr_obj_list:
+                total_entries += len(pr_obj_list)
+                pr_obj_list.sort()
+                for pr_obj in pr_obj_list:
+                    print(pr_obj.to_human_readable_string())
+                    print("", file=sys.stderr)
 
         print(f"Total entries: {total_entries}", file=sys.stderr)

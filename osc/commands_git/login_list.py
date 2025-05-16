@@ -13,6 +13,6 @@ class LoginListCommand(osc.commandline_git.GitObsCommand):
         self.parser.add_argument("--show-tokens", action="store_true", help="Show tokens in the output")
 
     def run(self, args):
-        for login in self.gitea_conf.list_logins():
-            print(login.to_human_readable_string(show_token=args.show_tokens))
+        for login_obj in self.gitea_conf.list_logins():
+            print(login_obj.to_human_readable_string(show_token=args.show_tokens))
             print()

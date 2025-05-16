@@ -21,7 +21,7 @@ class LoginRemoveCommand(osc.commandline_git.GitObsCommand):
         print(f" * Config path: {self.gitea_conf.path}", file=sys.stderr)
         print("", file=sys.stderr)
 
-        login = self.gitea_conf.remove_login(args.name)
+        login_obj = self.gitea_conf.remove_login(args.name)
 
         print("Removed entry:")
-        print(login.to_human_readable_string())
+        print(login_obj.to_human_readable_string())

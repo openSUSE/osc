@@ -35,6 +35,6 @@ class SSHKeyAddCommand(osc.commandline_git.GitObsCommand):
             with open(os.path.expanduser(args.key_path)) as f:
                 key = f.read().strip()
 
-        response = gitea_api.SSHKey.create(self.gitea_conn, key)
+        ssh_key_obj = gitea_api.SSHKey.create(self.gitea_conn, key)
         print("Added entry:")
-        print(gitea_api.SSHKey.to_human_readable_string(response.json()))
+        print(ssh_key_obj.to_human_readable_string())

@@ -37,13 +37,12 @@ class PullRequestSetCommand(osc.commandline_git.GitObsCommand):
         from osc.output import tty
 
         self.print_gitea_settings()
-        print(args)
 
         num_entries = 0
         failed_entries = []
         for owner, repo, pull in args.owner_repo_pull:
             try:
-                pr = gitea_api.PullRequest.set(
+                pr_obj = gitea_api.PullRequest.set(
                     self.gitea_conn,
                     owner,
                     repo,
@@ -51,7 +50,7 @@ class PullRequestSetCommand(osc.commandline_git.GitObsCommand):
                     title=args.title,
                     description=args.description,
                     allow_maintainer_edit=args.allow_maintainer_edit,
-                ).json()
+                )
                 num_entries += 1
             except gitea_api.GiteaException as e:
                 if e.status == 404:
@@ -59,7 +58,7 @@ class PullRequestSetCommand(osc.commandline_git.GitObsCommand):
                     continue
                 raise
 
-            print(gitea_api.PullRequest.to_human_readable_string(pr))
+            print(pr_obj.to_human_readable_string())
             print()
 
         print(f"Total modified entries: {num_entries}", file=sys.stderr)
