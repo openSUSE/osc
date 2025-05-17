@@ -262,6 +262,17 @@ class PullRequest:
         return conn.request("POST", url, json_data=json_data)
 
     @classmethod
+    def get_reviews(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ):
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
+        return conn.request("GET", url)
+
+    @classmethod
     def approve_review(
         cls,
         conn: Connection,
