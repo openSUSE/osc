@@ -32,6 +32,11 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             choices=("REQUEST_REVIEW", "APPROVED"),
             help="Filter by review state. Needs to be used with ``--reviewer``.",
         )
+        self.add_argument(
+            "--no-draft",
+            action="store_true",
+            help="Filter by draft flag. Exclude pull requests with draft flag set.",
+        )
 
     def run(self, args):
         from osc import gitea_api
@@ -41,6 +46,9 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
         total_entries = 0
         for owner, repo in args.owner_repo:
             data = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state).json()
+
+            if args.no_draft:
+                data = [i for i in data if not i["draft"]]
 
             review_states = args.review_states or ["REQUEST_REVIEW"]
 
