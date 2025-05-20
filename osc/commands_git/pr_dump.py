@@ -107,7 +107,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                 review_list.append(
                     {
                         "state": state_map[review_data["state"]],
-                        "who": review_data["user"]["login"],
+                        "who": review_data["user"]["login"] if review_data["user"] else f"@{review_data['team']['name']}",
                         "created": review_data["submitted_at"],
                         "when": review_data["updated_at"],
                         "comment": review_data["body"],
