@@ -64,11 +64,16 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
     if hasattr(context.scenario, "working_dir") and 'cwd' not in run_args:
         run_args['cwd'] = context.scenario.working_dir
 
+    env = os.environ.copy()
+    # let's temporarily pass GIT_OBS_CONFIG through environment variable until other methods work
+    if not env.get("GIT_OBS_CONFIG"):
+        env["GIT_OBS_CONFIG"] = context.git_obs.config
+
     if hasattr(context.scenario, "PATH"):
-        env = os.environ.copy()
         path = context.scenario.PATH
         env["PATH"] = path.replace("$PATH", env["PATH"])
-        run_args["env"] = env
+
+    run_args["env"] = env
 
     debug(context, "Running command:", cmd)
 
