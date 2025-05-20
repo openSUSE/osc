@@ -1,4 +1,5 @@
 from .attributes import Attributes
+from .comment import RequestComments
 from .keyinfo import Keyinfo
 from .package import Package
 from .package_sources import PackageSources
