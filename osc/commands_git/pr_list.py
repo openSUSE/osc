@@ -51,20 +51,19 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
 
         total_entries = 0
         for owner, repo in args.owner_repo:
-            data = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state).json()
+            pr_obj_list = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state)
 
             if args.no_draft:
-                data = [i for i in data if not i["draft"]]
+                pr_obj_list = [i for i in pr_obj_list if not i.draft]
 
             if args.target_branches:
-                data = [i for i in data if i["base"]["ref"] in args.target_branches]
-
-            review_states = args.review_states or ["REQUEST_REVIEW"]
+                pr_obj_list = [i for i in pr_obj_list if i.base_branch in args.target_branches]
 
             if args.reviewers:
-                new_data = []
-                for entry in data:
-                    all_reviews = gitea_api.PullRequest.get_reviews(self.gitea_conn, owner, repo, entry["number"]).json()
+                review_states = args.review_states or ["REQUEST_REVIEW"]
+                new_pr_obj_list = []
+                for pr_obj in pr_obj_list:
+                    all_reviews = gitea_api.PullRequest.get_reviews(self.gitea_conn, owner, repo, pr_obj.number).json()
                     user_reviews = {i["user"]["login"]: i["state"] for i in all_reviews if i["user"] and i["state"] in review_states}
                     team_reviews = {i["team"]["name"]: i["state"] for i in all_reviews if i["team"] and i["state"] in review_states}
 
@@ -72,16 +71,15 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
                     team_reviewers = [i[1:] for i in args.reviewers if i.startswith("@")]
 
                     if set(user_reviews) & set(user_reviewers) or set(team_reviews) & set(team_reviewers):
-                        print(set(user_reviews) & set(user_reviewers), set(team_reviews) & set(team_reviewers))
-                        new_data.append(entry)
+                        new_pr_obj_list.append(pr_obj)
 
-                data = new_data
+                pr_obj_list = new_pr_obj_list
 
-            total_entries += len(data)
-
-            text = gitea_api.PullRequest.list_to_human_readable_string(data, sort=True)
-            if text:
-                print(text)
-                print("", file=sys.stderr)
+            if pr_obj_list:
+                total_entries += len(pr_obj_list)
+                pr_obj_list.sort()
+                for pr_obj in pr_obj_list:
+                    print(pr_obj.to_human_readable_string())
+                    print()
 
         print(f"Total entries: {total_entries}", file=sys.stderr)

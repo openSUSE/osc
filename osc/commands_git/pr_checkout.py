@@ -34,20 +34,16 @@ class PullRequestCheckoutCommand(osc.commandline_git.GitObsCommand):
         git = gitea_api.Git(".")
         owner, repo = git.get_owner_repo()
 
-        pr = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, args.pull).json()
-
-        head_ssh_url = pr["head"]["repo"]["ssh_url"]
-        head_owner = pr["head"]["repo"]["owner"]["login"]
-        head_branch = pr["head"]["ref"]
+        pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, args.pull)
 
         try:
-            git.add_remote(head_owner, head_ssh_url)
+            git.add_remote(pr_obj.head_owner, pr_obj.head_ssh_url)
         except subprocess.CalledProcessError as e:
             # TODO: check if the remote url matches
             if e.returncode != 3:
                 # returncode 3 means that the remote exists; see `man git-remote`
                 raise
-        git.fetch(head_owner)
+        git.fetch(pr_obj.head_owner)
 
         local_branch = git.fetch_pull_request(args.pull, force=args.force)
 
@@ -55,9 +51,9 @@ class PullRequestCheckoutCommand(osc.commandline_git.GitObsCommand):
         git.set_config("lfs.remote.searchall", "1")
 
         # configure branch for `git push`
-        git.set_config(f"branch.{local_branch}.remote", head_owner)
-        git.set_config(f"branch.{local_branch}.pushRemote", head_owner)
-        git.set_config(f"branch.{local_branch}.merge", f"refs/heads/{head_branch}")
+        git.set_config(f"branch.{local_branch}.remote", pr_obj.head_owner)
+        git.set_config(f"branch.{local_branch}.pushRemote", pr_obj.head_owner)
+        git.set_config(f"branch.{local_branch}.merge", f"refs/heads/{pr_obj.head_branch}")
 
         # allow `git push` with no arguments to push to a remote branch that is named differently than the local branch
         git.set_config("push.default", "upstream")

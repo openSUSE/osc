@@ -29,6 +29,7 @@ Scenario: List pull requests
         Allow edit  : no
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
+        Target      : pool/test-GitPkgA, branch: factory, commit: .*
         Description : some text
         """
      And stderr is
@@ -38,7 +39,6 @@ Scenario: List pull requests
          * Login (name of the entry in the config file): admin
          * URL: http://localhost:{context.podman.container.ports[gitea_http]}
          * User: Admin
-
 
         Total entries: 1
         """
@@ -65,7 +65,6 @@ Scenario: Search pull requests
          * URL: http://localhost:{context.podman.container.ports[gitea_http]}
          * User: Admin
 
-
         Total entries: 1
         """
 
@@ -85,6 +84,7 @@ Scenario: Get a pull request
         Allow edit  : no
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
+        Target      : pool/test-GitPkgA, branch: factory, commit: .*
         Description : some text
         """
      And stderr is

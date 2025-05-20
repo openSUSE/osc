@@ -1,8 +1,9 @@
+from typing import List
 from typing import Optional
 
 from .connection import Connection
-from .connection import GiteaHTTPResponse
 from .exceptions import ForkExists
+from .repo import Repo
 
 
 class Fork:
@@ -12,7 +13,7 @@ class Fork:
         conn: Connection,
         owner: str,
         repo: str,
-    ) -> GiteaHTTPResponse:
+    ) -> List["Repo"]:
         """
         List forks of a repository.
 
@@ -24,7 +25,9 @@ class Fork:
             "limit": -1,
         }
         url = conn.makeurl("repos", owner, repo, "forks", query=q)
-        return conn.request("GET", url)
+        response = conn.request("GET", url)
+        obj_list = [Repo(i, response=response) for i in response.json()]
+        return obj_list
 
     @classmethod
     def create(
@@ -36,7 +39,7 @@ class Fork:
         new_repo_name: Optional[str] = None,
         target_org: Optional[str] = None,
         exist_ok: bool = False,
-    ) -> GiteaHTTPResponse:
+    ) -> Repo:
         """
         Fork a repository.
 
@@ -47,17 +50,16 @@ class Fork:
         :param target_org: Name of the organization, if forking into organization.
         :param exist_ok: A ``ForkExists`` exception is raised when the target exists. Set to ``True`` to avoid throwing the exception.
         """
-
         json_data = {
             "name": new_repo_name,
             "organization": target_org,
         }
         url = conn.makeurl("repos", owner, repo, "forks")
         try:
-            return conn.request("POST", url, json_data=json_data)
+            response = conn.request("POST", url, json_data=json_data)
+            obj = Repo(response.json(), response=response)
+            return obj
         except ForkExists as e:
             if not exist_ok:
                 raise
-
-            from . import Repo  # pylint: disable=import-outside-toplevel
             return Repo.get(conn, e.fork_owner, e.fork_repo)

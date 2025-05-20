@@ -31,19 +31,19 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
 
         # TODO: try to authenticate to verify that the updated entry works
 
-        original_login = self.gitea_conf.get_login(args.name)
+        original_login_obj = self.gitea_conf.get_login(args.name)
         print("Original entry:")
-        print(original_login.to_human_readable_string())
+        print(original_login_obj.to_human_readable_string())
 
         if args.new_token == "-":
             print(file=sys.stderr)
             while not args.new_token or args.new_token == "-":
-                args.new_token = getpass.getpass(prompt=f"Enter a new Gitea token for user '{args.new_user or original_login.user}': ")
+                args.new_token = getpass.getpass(prompt=f"Enter a new Gitea token for user '{args.new_user or original_login_obj.user}': ")
 
         if not re.match(r"^[0-9a-f]{40}$", args.new_token):
             self.parser.error("Invalid token format, 40 hexadecimal characters expected")
 
-        updated_login = self.gitea_conf.update_login(
+        updated_login_obj = self.gitea_conf.update_login(
             args.name,
             new_name=args.new_name,
             new_url=args.new_url,
@@ -54,4 +54,4 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         )
         print("")
         print("Updated entry:")
-        print(updated_login.to_human_readable_string())
+        print(updated_login_obj.to_human_readable_string())

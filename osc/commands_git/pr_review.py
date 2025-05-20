@@ -1,6 +1,7 @@
 import os
 import subprocess
 import sys
+from typing import Generator
 from typing import Optional
 
 import osc.commandline_git
@@ -28,6 +29,7 @@ DECLINE_REVIEW_TEMPLATE = """
 
 class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
     """
+    Interactive review of pull requests
     """
 
     name = "review"
@@ -50,11 +52,10 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
         else:
             # keep only the list of pull request IDs, throw search results away
             # because the search returns issues instead of pull requests
-            data = gitea_api.PullRequest.search(self.gitea_conn, review_requested=True).json()
-            # TODO: priority ordering?
-            data = sorted(data, key=gitea_api.PullRequest.cmp)
-            pull_request_ids = [f"{i['repository']['full_name']}#{i['number']}" for i in data]
-            del data
+            pr_obj_list = gitea_api.PullRequest.search(self.gitea_conn, review_requested=True)
+            pr_obj_list.sort()
+            pull_request_ids = [pr_obj.id for pr_obj in pr_obj_list]
+            del pr_obj_list
 
         skipped_drafts = 0
 
@@ -62,15 +63,15 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
             self.print_gitea_settings()
 
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
-            pr_data = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number).json()
+            pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)
 
-            if pr_data["draft"]:
+            if pr_obj.draft:
                 # we don't want to review drafts, they will change
                 skipped_drafts += 1
                 continue
 
             self.clone_git(owner, repo, number)
-            self.view(owner, repo, number, pr_index=pr_index, pr_count=len(pull_request_ids), pr_data=pr_data)
+            self.view(owner, repo, number, pr_index=pr_index, pr_count=len(pull_request_ids), pr_obj=pr_obj)
 
             while True:
                 # TODO: print at least some context because the PR details disappear after closing less
@@ -96,7 +97,7 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
                     self.comment(owner, repo, number)
                     break
                 elif reply == "v":
-                    self.view(owner, repo, number, pr_index=pr_index, pr_count=len(pull_request_ids), pr_data=pr_data)
+                    self.view(owner, repo, number, pr_index=pr_index, pr_count=len(pull_request_ids), pr_obj=pr_obj)
                 elif reply == "s":
                     break
                 elif reply == "x":
@@ -110,6 +111,7 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
 
     def approve(self, owner: str, repo: str, number: int):
         from osc import gitea_api
+
         gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number)
 
     def decline(self, owner: str, repo: str, number: int):
@@ -148,8 +150,8 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
     def clone_git(self, owner: str, repo: str, number: int):
         from osc import gitea_api
 
-        repo_data = gitea_api.Repo.get(self.gitea_conn, owner, repo).json()
-        clone_url = repo_data["ssh_url"]
+        repo_obj = gitea_api.Repo.get(self.gitea_conn, owner, repo)
+        clone_url = repo_obj.ssh_url
 
         # TODO: it might be good to have a central cache for the git repos to speed cloning up
         path = self.get_git_repo_path(owner, repo, number)
@@ -161,14 +163,23 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
             git.clone(clone_url, directory=path, quiet=False)
         git.fetch_pull_request(number, force=True)
 
-    def view(self, owner: str, repo: str, number: int, *, pr_index: int, pr_count: int, pr_data: Optional[dict] = None):
+    def view(
+        self,
+        owner: str,
+        repo: str,
+        number: int,
+        *,
+        pr_index: int,
+        pr_count: int,
+        pr_obj: Optional["PullRequest"] = None,
+    ):
         from osc import gitea_api
         from osc.core import highlight_diff
         from osc.output import sanitize_text
         from osc.output import tty
 
-        if pr_data is None:
-            pr_data = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number).json()
+        if pr_obj is None:
+            pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)
 
         # the process works with bytes rather than with strings
         # because the diffs may contain character sequences that cannot be decoded as utf-8 strings
@@ -181,14 +192,13 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
         proc.stdin.write(b"\n")
 
         # pr details
-        pr = gitea_api.PullRequest.to_human_readable_string(pr_data)
-        proc.stdin.write(pr.encode("utf-8"))
+        proc.stdin.write(pr_obj.to_human_readable_string().encode("utf-8"))
         proc.stdin.write(b"\n")
         proc.stdin.write(b"\n")
 
         # patch
         proc.stdin.write(tty.colorize("Patch:\n", "bold").encode("utf-8"))
-        patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, number).data
+        patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, number)
         patch = sanitize_text(patch)
         patch = highlight_diff(patch)
         proc.stdin.write(patch)
@@ -196,7 +206,7 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
 
         # tardiff
         proc.stdin.write(tty.colorize("Archive diffs:\n", "bold").encode("utf-8"))
-        tardiff_chunks = self.tardiff(owner, repo, number, pr_data=pr_data)
+        tardiff_chunks = self.tardiff(owner, repo, number, pr_obj=pr_obj)
         for chunk in tardiff_chunks:
             chunk = sanitize_text(chunk)
             chunk = highlight_diff(chunk)
@@ -213,11 +223,8 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
         path = os.path.expanduser(path)
         return path
 
-    def tardiff(self, owner: str, repo: str, number: int, *, pr_data: dict):
+    def tardiff(self, owner: str, repo: str, number: int, *, pr_obj: ".PullRequest") -> Generator[bytes, None, None]:
         from osc import gitea_api
-
-        src_commit = pr_data["head"]["sha"]
-        dst_commit = pr_data["base"]["sha"]
 
         path = self.get_git_repo_path(owner, repo, number)
         git = gitea_api.Git(path)
@@ -225,8 +232,8 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
         # the repo might be outdated, make sure the commits are available
         git.fetch()
 
-        src_archives = git.lfs_ls_files(ref=src_commit)
-        dst_archives = git.lfs_ls_files(ref=dst_commit)
+        src_archives = git.lfs_ls_files(ref=pr_obj.head_commit)
+        dst_archives = git.lfs_ls_files(ref=pr_obj.base_commit)
 
         def map_archives_by_name(archives: list):
             result = {}
@@ -248,10 +255,10 @@ class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
             dst_archive = dst_archives_by_name.get(name, (None, None))
 
             if src_archive[0]:
-                td.add_archive(src_archive[0], src_archive[1], git.lfs_cat_file(src_archive[0], ref=src_commit))
+                td.add_archive(src_archive[0], src_archive[1], git.lfs_cat_file(src_archive[0], ref=pr_obj.head_commit))
 
             if dst_archive[0]:
-                td.add_archive(dst_archive[0], dst_archive[1], git.lfs_cat_file(dst_archive[0], ref=dst_commit))
+                td.add_archive(dst_archive[0], dst_archive[1], git.lfs_cat_file(dst_archive[0], ref=pr_obj.base_commit))
 
             # TODO: max output length / max lines; in such case, it would be great to list all the changed files at least
             yield from td.diff_archives(*dst_archive, *src_archive)
