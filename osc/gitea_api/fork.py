@@ -20,8 +20,10 @@ class Fork:
         :param owner: Owner of the repo.
         :param repo: Name of the repo.
         """
-
-        url = conn.makeurl("repos", owner, repo, "forks")
+        q = {
+            "limit": -1,
+        }
+        url = conn.makeurl("repos", owner, repo, "forks", query=q)
         return conn.request("GET", url)
 
     @classmethod

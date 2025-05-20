@@ -23,7 +23,10 @@ class SSHKey:
 
         :param conn: Gitea ``Connection`` instance.
         """
-        url = conn.makeurl("user", "keys")
+        q = {
+            "limit": -1,
+        }
+        url = conn.makeurl("user", "keys", query=q)
         return conn.request("GET", url)
 
     @classmethod

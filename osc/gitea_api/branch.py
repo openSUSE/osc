@@ -41,7 +41,10 @@ class Branch:
         :param owner: Owner of the repo.
         :param repo: Name of the repo.
         """
-        url = conn.makeurl("repos", owner, repo, "branches")
+        q = {
+            "limit": -1,
+        }
+        url = conn.makeurl("repos", owner, repo, "branches", query=q)
         # XXX: returns 'null' when there are no branches; an empty list would be a better API
         return conn.request("GET", url)
 

@@ -180,6 +180,7 @@ class PullRequest:
 
         q = {
             "state": state,
+            "limit": -1,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
         return conn.request("GET", url)
@@ -220,6 +221,8 @@ class PullRequest:
             "created": created,
             "mentioned": mentioned,
             "review_requested": review_requested,
+            # HACK: limit=-1 doesn't work, the request gets stuck; we need to use a high number to avoid pagination
+            "limit": 10**6,
         }
         url = conn.makeurl("repos", "issues", "search", query=q)
         return conn.request("GET", url)
@@ -260,6 +263,17 @@ class PullRequest:
             "body": msg,
         }
         return conn.request("POST", url, json_data=json_data)
+
+    @classmethod
+    def get_reviews(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ):
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
+        return conn.request("GET", url)
 
     @classmethod
     def approve_review(
