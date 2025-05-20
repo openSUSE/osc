@@ -33,6 +33,12 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             help="Filter by review state. Needs to be used with ``--reviewer``.",
         )
         self.add_argument(
+            "--target-branch",
+            dest="target_branches",
+            action="append",
+            help="Filter by target branch.",
+        )
+        self.add_argument(
             "--no-draft",
             action="store_true",
             help="Filter by draft flag. Exclude pull requests with draft flag set.",
@@ -49,6 +55,9 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
 
             if args.no_draft:
                 data = [i for i in data if not i["draft"]]
+
+            if args.target_branches:
+                data = [i for i in data if i["base"]["ref"] in args.target_branches]
 
             review_states = args.review_states or ["REQUEST_REVIEW"]
 
