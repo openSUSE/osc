@@ -1,3 +1,30 @@
+- 1.16.0
+  - Command-line:
+    - Add 'osc rmkpac' subcommand
+    - Add 'osc service precommit' subcommand, for use with git hook
+    - Add '--target-branch' filter option to 'git-obs pr list'
+    - Add '--reviewer' and '--review-state' options to 'git-obs pr list'
+    - Add '--no-draft' filter option to 'git-obs pr list'
+    - Set limit=0 to disable pagination in all relevant git-obs subcommands
+    - Improve help of the 'git-obs login' subcommands
+    - Update 'git-obs login {add,update}' to check the gitea token format
+    - Fix 'osc fork' when <attributes/> in the source project is empty
+    - Fix handling env in tests for 'osc vc'
+    - Fix how GitStore reads project from the parent directory
+    - Fix 'git-obs pr create' with multistring EDITOR
+    - Improve handling exceptions in 'git-obs' command
+    - Improve message in 301: Moved Permanently error in git-obs
+    - Improve git-obs to read credentials from env variables
+    - Remove commas from the list of request IDs in the superseding prompt in 'osc sr'
+  - Connection:
+    - Fix git-obs connection for urllib3 v1 by overriding the default timeout
+  - Library:
+    - Add troubleshooting info to gitea_api.Login.DoesNotExist message
+    - Add 'min_key_length' argument to KeyValueTable to enforce the minimal length of the first column
+    - Fix implicit optionals in type hints to make code PEP 484 compliant
+    - Don't crash when OBS API returns None as request description
+    - Fix TypeError in response_to_exception() in gitea_api
+
 - 1.15.1
   - Library:
     - Revert "Run decode_it also in the other case"
