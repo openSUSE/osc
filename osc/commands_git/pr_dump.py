@@ -81,60 +81,51 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
         for pr_id in pull_request_ids:
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
-            pr_data = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number).json()
+            pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)
             path = os.path.join(owner, repo, str(number))
 
-            base_owner = pr_data["base"]["repo"]["owner"]["login"]
-            base_repo = pr_data["base"]["repo"]["name"]
-            base_branch = pr_data["base"]["ref"]
-            base_sha = pr_data["base"]["sha"]
-
-            head_owner = pr_data["head"]["repo"]["owner"]["login"]
-            head_repo = pr_data["head"]["repo"]["name"]
-            head_branch = pr_data["head"]["ref"]
-            head_sha = pr_data["head"]["sha"]
-
-            reviews_data = gitea_api.PullRequest.get_reviews(self.gitea_conn, owner, repo, number).json()
+            review_obj_list = pr_obj.get_reviews(self.gitea_conn)
 
             state_map = {
                 "APPROVED": "accepted",
                 "REQUEST_CHANGES": "declined",
                 "REQUEST_REVIEW": "review",  # or "new"?
+                "COMMENT": "deleted",  # just to make XML validation happy, we'll replace it with "comment" later
             }
 
-            review_list = []
-            for review_data in reviews_data:
-                review_list.append(
+            xml_review_list = []
+            for review_obj in review_obj_list:
+                xml_review_list.append(
                     {
-                        "state": state_map[review_data["state"]],
-                        "who": review_data["user"]["login"] if review_data["user"] else f"@{review_data['team']['name']}",
-                        "created": review_data["submitted_at"],
-                        "when": review_data["updated_at"],
-                        "comment": review_data["body"],
+                        "state": state_map[review_obj.state],
+                        "who": review_obj.who,
+                        "created": review_obj.submitted_at,
+                        "when": review_obj.updated_at,
+                        "comment": review_obj.body,
                     }
                 )
 
             req = obs_api.Request(
                 id=pr_id,
-                title=pr_data["title"],
-                description=pr_data["body"],
-                creator=pr_data["user"]["login"],
+                title=pr_obj.title,
+                description=pr_obj.body,
+                creator=pr_obj.user,
                 # each pull request maps to only one action
                 action_list=[
                     {
                         "type": "submit",
                         "source": {
-                            "project": head_owner,
-                            "package": head_repo,
-                            "rev": head_sha,
+                            "project": pr_obj.head_owner,
+                            "package": pr_obj.head_repo,
+                            "rev": pr_obj.head_commit,
                         },
                         "target": {
-                            "project": base_owner,
-                            "package": base_repo,
+                            "project": pr_obj.base_owner,
+                            "package": pr_obj.base_repo,
                         },
                     },
                 ],
-                review_list=review_list,
+                review_list=xml_review_list,
             )
 
             # HACK: changes to request XML that are not compatible with OBS
@@ -148,13 +139,19 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             req_xml_action_source = req_xml_action.find("source")
             assert req_xml_action_source is not None
             req_xml_action_source.append(ET.Comment("The 'branch' attribute is a custom extension to the OBS XML schema."))
-            req_xml_action_source.attrib["branch"] = head_branch
+            req_xml_action_source.attrib["branch"] = pr_obj.head_branch
 
             req_xml_action_target = req_xml_action.find("target")
             assert req_xml_action_target is not None
             req_xml_action_target.append(ET.Comment("The 'rev' and 'branch' attributes are custom extensions to the OBS XML schema."))
-            req_xml_action_target.attrib["rev"] = base_sha
-            req_xml_action_target.attrib["branch"] = base_branch
+            req_xml_action_target.attrib["rev"] = pr_obj.base_commit
+            req_xml_action_target.attrib["branch"] = pr_obj.base_branch
+
+            req_xml_review_list = req_xml.findall("review")
+            for req_xml_review in req_xml_review_list:
+                if req_xml_review.attrib["state"] == "deleted":
+                    req_xml_review.attrib["state"] = "comment"
+                    req_xml_review.insert(0, ET.Comment("The state='comment' attribute value is a custom extension to the OBS XML schema."))
 
             metadata_dir = os.path.join(path, "metadata")
             os.makedirs(metadata_dir, exist_ok=True)
@@ -164,19 +161,19 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                 ET.ElementTree(req_xml).write(f, encoding="utf-8")
 
             with open(os.path.join(metadata_dir, "pr.json"), "w", encoding="utf-8") as f:
-                json.dump(pr_data, f, indent=4, sort_keys=True)
+                json.dump(pr_obj._data, f, indent=4, sort_keys=True)
 
             with open(os.path.join(metadata_dir, "base.json"), "w", encoding="utf-8") as f:
-                json.dump(pr_data["base"], f, indent=4, sort_keys=True)
+                json.dump(pr_obj._data["base"], f, indent=4, sort_keys=True)
 
             with open(os.path.join(metadata_dir, "head.json"), "w", encoding="utf-8") as f:
-                json.dump(pr_data["head"], f, indent=4, sort_keys=True)
+                json.dump(pr_obj._data["head"], f, indent=4, sort_keys=True)
 
             with open(os.path.join(metadata_dir, "reviews.json"), "w", encoding="utf-8") as f:
-                json.dump(reviews_data, f, indent=4, sort_keys=True)
+                json.dump([i._data for i in review_obj_list], f, indent=4, sort_keys=True)
 
             base_dir = os.path.join(path, "base")
-            self.clone_or_update(owner, repo, branch=base_branch, commit=base_sha, directory=base_dir)
+            self.clone_or_update(owner, repo, branch=pr_obj.base_branch, commit=pr_obj.base_commit, directory=base_dir)
 
             head_dir = os.path.join(path, "head")
-            self.clone_or_update(owner, repo, pr_number=number, commit=head_sha, directory=head_dir, reference=base_dir)
+            self.clone_or_update(owner, repo, pr_number=pr_obj.number, commit=pr_obj.head_commit, directory=head_dir, reference=base_dir)
