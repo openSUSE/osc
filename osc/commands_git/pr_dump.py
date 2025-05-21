@@ -52,16 +52,20 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         assert git_owner == owner, f"owner does not match: {git_owner} != {owner}"
         assert git_repo == repo, f"repo does not match: {git_repo} != {repo}"
 
-        git.fetch()
-
         if pr_number:
             # checkout the pull request and check if HEAD matches head/sha from Gitea
-            pr_branch = git.fetch_pull_request(pr_number, force=True)
+            pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
             git.switch(pr_branch)
             head_commit = git.get_branch_head()
             assert head_commit == commit, f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
         elif branch:
             git.switch(branch)
+
+            # run 'git fetch' only when the branch head is different to the expected commit
+            head_commit = git.get_branch_head()
+            if head_commit != commit:
+                git.fetch()
+
             if not git.branch_contains_commit(commit=commit):
                 raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
             git.reset(commit, hard=True)
