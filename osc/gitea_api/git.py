@@ -84,9 +84,16 @@ class Git:
     def current_branch(self) -> str:
         return self._run_git(["branch", "--show-current"])
 
-    def branch_contains_commit(self, commit: str, branch: Optional[str] = None) -> bool:
+    def branch_contains_commit(self, commit: str, branch: Optional[str] = None, remote: Optional[str] = None) -> bool:
         if not branch:
             branch = self.current_branch
+
+        if remote:
+            try:
+                self._run_git(["merge-base", "--is-ancestor", commit, f"{remote}/{branch}"], mute_stderr=True)
+                return True
+            except subprocess.CalledProcessError:
+                return False
 
         try:
             stdout = self._run_git(["branch", branch, "--contains", commit, "--format", "%(objectname) %(objecttype) %(refname)"])
