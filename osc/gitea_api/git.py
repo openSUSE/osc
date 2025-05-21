@@ -131,12 +131,18 @@ class Git:
         pull_number: int,
         *,
         remote: str = "origin",
+        commit: Optional[str] = None,
         force: bool = False,
     ):
         """
         Fetch pull/$pull_number/head to pull/$pull_number branch
         """
         target_branch = f"pull/{pull_number}"
+
+        # if the branch exists and the head matches the expected commit, skip running 'git fetch'
+        if commit and self.branch_exists(target_branch) and self.get_branch_head(target_branch) == commit:
+            return target_branch
+
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
         if force:
             cmd += [
