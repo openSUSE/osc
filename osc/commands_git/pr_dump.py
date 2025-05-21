@@ -66,7 +66,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             if head_commit != commit:
                 git.fetch()
 
-            if not git.branch_contains_commit(commit=commit):
+            if not git.branch_contains_commit(commit=commit, remote="origin"):
                 raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
             git.reset(commit, hard=True)
         else:
