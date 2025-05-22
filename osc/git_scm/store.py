@@ -110,7 +110,7 @@ class GitStore:
 
             path, _ = os.path.split(path)
 
-            if os.path.isdir(os.path.join(path, ".git")):
+            if os.path.exists(os.path.join(path, ".git")):
                 break
 
         config_path = os.path.join(path, "_config")
@@ -164,7 +164,7 @@ class GitStore:
         self.is_project = False
         self.is_package = False
 
-        if os.path.isdir(os.path.join(self.abspath, ".git")):
+        if os.path.exists(os.path.join(self.abspath, ".git")):
             # NOTE: we have only one store in project-git for all packages
             config_path = os.path.join(self.abspath, "_config")
             pbuild_path = os.path.join(self.abspath, "_pbuild")
