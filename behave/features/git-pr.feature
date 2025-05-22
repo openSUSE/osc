@@ -43,6 +43,21 @@ Scenario: List pull requests
         Total entries: 1
         """
 
+@destructive
+Scenario: List pull requests in json
+    When I execute git-obs with args "pr list pool/test-GitPkgA --json"
+    Then the exit code is 0
+     And stdout contains "\"url\": \"http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1\", \"title\": \"Change version\", \"state\": \"open\","
+     And stderr is
+        """
+        Using the following Gitea settings:
+         * Config path: {context.git_obs.config}
+         * Login (name of the entry in the config file): admin
+         * URL: http://localhost:{context.podman.container.ports[gitea_http]}
+         * User: Admin
+
+        Total entries: 1
+        """
 
 @destructive
 Scenario: Search pull requests
