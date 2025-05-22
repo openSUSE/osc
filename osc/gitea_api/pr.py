@@ -148,12 +148,17 @@ class PullRequest:
         return re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", self._data["url"])
 
     def to_human_readable_string(self):
-        from osc.output import KeyValueTable
+        from osc.output.formatter_creator import FormatterCreator
+
+        res = self.format_output(FormatterCreator().default_formatter())
+        return str(res)
+
+    def format_output(self, output_formatter):
 
         def yes_no(value):
             return "yes" if value else "no"
 
-        table = KeyValueTable()
+        table = output_formatter.new_table()
         table.add("ID", self.id, color="bold")
         table.add("URL", self.url)
         table.add("Title", self.title)
@@ -172,7 +177,7 @@ class PullRequest:
             )
         table.add("Description", self.body)
 
-        return str(table)
+        return table
 
     @classmethod
     def create(
