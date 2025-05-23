@@ -13,6 +13,12 @@ Background:
      And I execute "git push"
      And I execute git-obs with args "pr create --title 'Change version' --description='some text'"
 
+@destructive
+Scenario: List pull requests in json
+    When I execute git-obs with args "pr list pool/test-GitPkgA --export"
+    Then the exit code is 0
+# example stdout [{"owner": "pool", "repo": "test-GitPkgA", "requests": [{"is_pull_request": true, "id": "pool/test-GitPkgA#1", "number": 1, "title": "Change version", "body": "some text", "state": "open", "user": "Admin", "draft": false, "merged": false, "allow_maintainer_edit": false, "base_owner": "pool", "base_repo": "test-GitPkgA", "base_branch": "factory", "base_commit": "204e27b646e6e65c210f80514f5e6286a864a4e7", "base_ssh_url": "ssh://gitea@localhost:38591/pool/test-GitPkgA.git", "head_owner": "Admin", "head_repo": "test-GitPkgA", "head_branch": "factory", "head_commit": "1c2c5bd344e3c300fe562c28ece73e6742ba3c63", "head_ssh_url": "ssh://gitea@localhost:38591/Admin/test-GitPkgA.git", "url": "http://localhost:35179/pool/test-GitPkgA/pulls/1"}]}]
+     And stdout contains "\"url\": \"http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1\""
 
 @destructive
 Scenario: List pull requests
@@ -67,6 +73,13 @@ Scenario: Search pull requests
 
         Total entries: 1
         """
+
+
+@destructive
+Scenario: Search pull requests and print json
+    When I execute git-obs with args "pr search --export"
+    Then the exit code is 0
+     And stdout contains "\"url\": \"http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1\""
 
 
 @destructive
