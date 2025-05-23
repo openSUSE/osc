@@ -53,6 +53,12 @@ class PullRequestSearchCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Filter pull requests requesting your review",
         )
+        self.add_argument(
+            "--export",
+            action="store_true",
+            help="Show json objects instead of human readable text",
+        )
+
 
     def run(self, args):
         from osc import gitea_api
@@ -71,10 +77,19 @@ class PullRequestSearchCommand(osc.commandline_git.GitObsCommand):
             review_requested=args.review_requested,
         )
 
+        result = []
         if pr_obj_list:
             pr_obj_list.sort()
             for pr_obj in pr_obj_list:
-                print(pr_obj.to_human_readable_string())
-                print()
+                if not args.export:
+                    print(pr_obj.to_human_readable_string())
+                    print()
+                else:
+                    result.append(pr_obj.dict())
+
+        if args.export:
+            from json import dumps
+
+            print(dumps(result, indent=4, sort_keys=True))
 
         print(f"Total entries: {len(pr_obj_list)}", file=sys.stderr)

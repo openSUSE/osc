@@ -13,6 +13,13 @@ Background:
      And I execute "git push"
      And I execute git-obs with args "pr create --title 'Change version' --description='some text'"
 
+@destructive
+Scenario: List pull requests in json
+    When I execute git-obs with args "pr list pool/test-GitPkgA --export"
+    Then the exit code is 0
+     And stdout contains "\"owner\": \"pool\","
+     And stdout contains "\"repo\": \"test-GitPkgA\","
+     And stdout contains "\"url\": \"http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1\""
 
 @destructive
 Scenario: List pull requests
@@ -67,6 +74,13 @@ Scenario: Search pull requests
 
         Total entries: 1
         """
+
+
+@destructive
+Scenario: Search pull requests and print json
+    When I execute git-obs with args "pr search --export"
+    Then the exit code is 0
+     And stdout contains "\"url\": \"http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1\""
 
 
 @destructive
