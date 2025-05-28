@@ -92,9 +92,12 @@ class TestGitStoreProject(unittest.TestCase):
         except OSError:
             pass
 
-    def _git_init(self, path):
+    def _git_init(self, path, separate_git_dir=None):
         os.makedirs(path, exist_ok=True)
-        subprocess.check_output(["git", "init", "-q"], cwd=path)
+        git_init_cmd = ["git", "init", "-q"]
+        if separate_git_dir:
+            git_init_cmd += ["--separate-git-dir", separate_git_dir]
+        subprocess.check_output(git_init_cmd, cwd=path)
         subprocess.check_output(["git", "checkout", "-b", "factory", "-q"], cwd=path)
         subprocess.check_output(["git", "remote", "add", "origin", "https://example.com/packages/my-package.git"], cwd=path)
 
@@ -138,6 +141,20 @@ class TestGitStoreProject(unittest.TestCase):
 
         pkg_path = os.path.join(prj_path, "package")
         self._git_init(pkg_path)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_pkg_separate_git_dir_git_project(self):
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_config"))
+        self._write(os.path.join(prj_path, "project.build"), "PROJ")
+
+        # .git is not a directory, it's a file that contains "gitdir: <path>"
+        pkg_path = os.path.join(prj_path, "package")
+        self._git_init(pkg_path, separate_git_dir="../package-git-dir")
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
