@@ -69,9 +69,9 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
                 review_states = args.review_states or ["REQUEST_REVIEW"]
                 new_pr_obj_list = []
                 for pr_obj in pr_obj_list:
-                    all_reviews = gitea_api.PullRequest.get_reviews(self.gitea_conn, owner, repo, pr_obj.number).json()
-                    user_reviews = {i["user"]["login"]: i["state"] for i in all_reviews if i["user"] and i["state"] in review_states}
-                    team_reviews = {i["team"]["name"]: i["state"] for i in all_reviews if i["team"] and i["state"] in review_states}
+                    all_reviews = pr_obj.get_reviews(self.gitea_conn)
+                    user_reviews = {i.user: i.state for i in all_reviews if i.user and i.state in review_states}
+                    team_reviews = {i.team: i.state for i in all_reviews if i.team and i.state in review_states}
 
                     user_reviewers = [i for i in args.reviewers if not i.startswith("@")]
                     team_reviewers = [i[1:] for i in args.reviewers if i.startswith("@")]
