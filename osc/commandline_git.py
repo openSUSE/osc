@@ -185,9 +185,16 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             "-G",
             "--gitea-login",
             help=(
-                "Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file. "
-                "Alternatively, you can omit this argument and set GIT_OBS_GITEA_URL, GIT_OBS_GITEA_USER, and GIT_OBS_GITEA_TOKEN environmental variables instead. "
-                "Optional variables: GIT_OBS_GITEA_SSH_KEY"
+                "Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file.\n"
+                "Alternatively, you can omit this argument and set GIT_OBS_GITEA_URL, GIT_OBS_GITEA_USER, and GIT_OBS_GITEA_TOKEN environmental variables instead.\n"
+                "Optional variables: GIT_OBS_GITEA_SSH_KEY\n"
+                "\n"
+                "To override the existing values from the config file, you can specify the following environmental variables:\n"
+                " - GIT_OBS_LOGIN_<LOGIN-NAME>_USER\n"
+                " - GIT_OBS_LOGIN_<LOGIN-NAME>_TOKEN\n"
+                " - GIT_OBS_LOGIN_<LOGIN-NAME>_SSH_KEY\n"
+                "Setting new ``name`` or ``url`` is not possible.\n"
+                "Please note that the login name that is part of the environmental variable name is case sensitive."
             ),
         ).completer = complete_login
 
