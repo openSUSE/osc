@@ -207,12 +207,12 @@ class OscOptions(BaseModel):
                 setattr(self, field_name, None)
                 return
 
-        if field.origin_type is Password:
+        if field.origin_type == Password:
             value = Password(value)
             setattr(self, field_name, value)
             return
 
-        if field.type is List[HttpHeader]:
+        if field.type == List[HttpHeader]:
             value = http.client.parse_headers(BytesIO(value.strip().encode("utf-8"))).items()
             setattr(self, field_name, value)
             return
