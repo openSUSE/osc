@@ -205,9 +205,9 @@ class OscTestCase(unittest.TestCase):
         global EXPECTED_REQUESTS
         EXPECTED_REQUESTS = []
         os.chdir(os.path.dirname(__file__))
-        oscrc = os.path.join(self._get_fixtures_dir(), 'oscrc')
-        osc.conf.get_config(override_conffile=oscrc, override_no_keyring=True)
-        os.environ['OSC_CONFIG'] = oscrc
+        self.oscrc = os.path.join(self._get_fixtures_dir(), "oscrc")
+        with unittest.mock.patch.dict(os.environ, {"OSC_CONFIG": self.oscrc}):
+            osc.conf.get_config(override_conffile=self.oscrc, override_no_keyring=True)
 
         self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
         if copytree:
@@ -221,7 +221,6 @@ class OscTestCase(unittest.TestCase):
             shutil.rmtree(self.tmpdir)
         except:
             pass
-        os.environ.pop("OSC_CONFIG", "")
         self.assertTrue(len(EXPECTED_REQUESTS) == 0)
 
     def _get_fixtures_dir(self):
@@ -231,6 +230,15 @@ class OscTestCase(unittest.TestCase):
         path = os.path.join(self._get_fixtures_dir(), filename)
         with open(path) as f:
             return f.read()
+
+    def _run_osc(self, *args):
+        """Runs osc, returning captured STDOUT as a string."""
+        with unittest.mock.patch.dict(os.environ, {"OSC_CONFIG": self.oscrc}):
+            cli = osc.commandline.Osc()
+            argv = ['osc', '--no-keyring']
+            argv.extend(args)
+            cli.main(argv=argv)
+            return sys.stdout.getvalue()
 
     def _change_to_pkg(self, name):
         os.chdir(os.path.join(self.tmpdir, 'osctest', name))

@@ -3,6 +3,7 @@ import os
 import shutil
 import tempfile
 import unittest
+import unittest.mock
 
 from osc.commandline import Command
 from osc.commandline import MainCommand
@@ -41,13 +42,11 @@ pass=opensuse
 
 class TestCommandClasses(unittest.TestCase):
     def setUp(self):
-        os.environ.pop("OSC_CONFIG", None)
         self.tmpdir = tempfile.mkdtemp(prefix="osc_test")
         os.chdir(self.tmpdir)
         self.oscrc = None
 
     def tearDown(self):
-        os.environ.pop("OSC_CONFIG", None)
         try:
             shutil.rmtree(self.tmpdir)
         except OSError:
@@ -134,9 +133,9 @@ class TestCommandClasses(unittest.TestCase):
         main.load_command(TestCommand, "test.osc.commands")
 
         self.write_oscrc_localhost()
-        os.environ["OSC_CONFIG"] = self.oscrc
-        args = main.parse_args(["test-cmd"])
-        main.post_parse_args(args)
+        with unittest.mock.patch.dict(os.environ, {"OSC_CONFIG": self.oscrc}):
+            args = main.parse_args(["test-cmd"])
+            main.post_parse_args(args)
         self.assertEqual(args.apiurl, "https://localhost")
 
 

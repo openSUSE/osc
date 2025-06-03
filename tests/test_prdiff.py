@@ -72,11 +72,7 @@ class TestProjectDiff(OscTestCase):
 
     def _run_prdiff(self, *args):
         """Runs osc prdiff, returning captured STDOUT as a string."""
-        cli = osc.commandline.Osc()
-        argv = ['osc', '--no-keyring', 'prdiff']
-        argv.extend(args)
-        cli.main(argv=argv)
-        return sys.stdout.getvalue()
+        return self._run_osc("prdiff", *args)
 
     def testPrdiffTooManyArgs(self):
         def runner():
