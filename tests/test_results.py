@@ -21,14 +21,6 @@ class TestResults(OscTestCase):
     def _get_fixtures_dir(self):
         return os.path.join(os.path.dirname(__file__), self._get_fixtures_name())
 
-    def _run_osc(self, *args):
-        """Runs osc, returning captured STDOUT as a string."""
-        cli = osc.commandline.Osc()
-        argv = ['osc', '--no-keyring']
-        argv.extend(args)
-        cli.main(argv=argv)
-        return sys.stdout.getvalue()
-
     @GET('http://localhost/build/testproject/_result', file='result.xml')
     def testPrjresults(self):
         out = self._run_osc('prjresults', '--xml', 'testproject')
