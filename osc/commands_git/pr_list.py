@@ -43,6 +43,11 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Filter by draft flag. Exclude pull requests with draft flag set.",
         )
+        self.add_argument(
+            "--export",
+            action="store_true",
+            help="Show json objects instead of human readable text",
+        )
 
     def run(self, args):
         from osc import gitea_api
@@ -50,6 +55,7 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
         self.print_gitea_settings()
 
         total_entries = 0
+        result = []
         for owner, repo in args.owner_repo:
             pr_obj_list = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state)
 
@@ -78,8 +84,21 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             if pr_obj_list:
                 total_entries += len(pr_obj_list)
                 pr_obj_list.sort()
-                for pr_obj in pr_obj_list:
-                    print(pr_obj.to_human_readable_string())
-                    print()
+                if not args.export:
+                    for pr_obj in pr_obj_list:
+                        print(pr_obj.to_human_readable_string())
+                        print()
+                else:
+                    repos_list = []
+                    for pr_obj in pr_obj_list:
+                        # we group results by owner and repo anyway, so exclude those columns from dicts to avoid data duplication
+                        repos_list.append(pr_obj.dict(exclude_columns=["owner", "repo"]))
+                    row = {"owner": owner, "repo": repo, "requests": repos_list}
+                    result.append(row)
+
+        if args.export:
+            from json import dumps
+
+            print(dumps(result, indent=4, sort_keys=True))
 
         print(f"Total entries: {total_entries}", file=sys.stderr)
