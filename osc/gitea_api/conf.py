@@ -111,6 +111,16 @@ class Config:
         data = self._read()
         result = []
         for i in data.get("logins", []):
+            login_name = i["name"]
+
+            # override values from GIT_OBS_LOGIN_{login_name}_{field_name.upper()}
+            for field_name in Login.__fields__.keys():
+                if field_name in ("name", "url"):
+                    continue
+                value = os.environ.get(f"GIT_OBS_LOGIN_{login_name}_{field_name.upper()}", None)
+                if value:
+                    i[field_name] = value
+
             login = Login(**i)
             result.append(login)
         return result
