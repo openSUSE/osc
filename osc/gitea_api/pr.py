@@ -430,12 +430,19 @@ class PullRequest:
         """
         Approve review in a pull request.
         """
+        if commit:
+            pr_obj = cls.get(conn, owner, repo, number)
+            if pr_obj.head_commit != commit:
+                raise RuntimeError("The pull request '{owner}/{repo}#{number}' has changed during the review")
+
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
+        # XXX[dmach]: commit_id has no effect; I thought it's going to approve if the commit matches with head and errors out otherwise
         json_data = {
             "event": "APPROVED",
             "body": msg,
             "commit_id": commit,
         }
+        print(url, json_data)
         return conn.request("POST", url, json_data=json_data)
 
     @classmethod
@@ -459,3 +466,30 @@ class PullRequest:
             "commit": commit,
         }
         return conn.request("POST", url, json_data=json_data)
+
+    @classmethod
+    def merge(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        *,
+        merge_when_checks_succeed: Optional[bool] = None,
+    ) -> GiteaHTTPResponse:
+        """
+        Merge a pull request.
+
+        :param merge_when_checks_succeed: Schedule the merge until all checks succeed.
+        """
+        from .exceptions import AutoMergeAlreadyScheduled
+
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "merge")
+        json_data = {
+            "Do": "merge",  # we're merging because we don't want to modify the commits by rebasing and we also want to keep information about the pull request in the merge commit
+            "merge_when_checks_succeed": merge_when_checks_succeed,
+        }
+        try:
+            conn.request("POST", url, json_data=json_data, context={"owner": owner, "repo": repo})
+        except AutoMergeAlreadyScheduled:
+            pass

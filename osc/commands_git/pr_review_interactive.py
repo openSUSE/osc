@@ -79,6 +79,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     f"Select a review action for '{pr_id}':",
                     answers={
                         "a": "approve",
+                        "A": "approve and schedule for merging",
                         "d": "decline",
                         "m": "comment",
                         "v": "view again",
@@ -88,7 +89,15 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     default_answer="s",
                 )
                 if reply == "a":
+                    self.approve(owner, repo, number, commit=pr_obj.head_commit)
+                    break
+                if reply == "A":
+                    self.approve(owner, repo, number, commit=pr_obj.head_commit)
+                    gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
+                    break
+                if reply == "A":
                     self.approve(owner, repo, number)
+                    gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
                     break
                 elif reply == "d":
                     self.decline(owner, repo, number)
@@ -109,10 +118,10 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
             print(file=sys.stderr)
             print(f"Skipped drafts: {skipped_drafts}", file=sys.stderr)
 
-    def approve(self, owner: str, repo: str, number: int):
+    def approve(self, owner: str, repo: str, number: int, *, commit: str):
         from osc import gitea_api
 
-        gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number)
+        gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number, commit=commit)
 
     def decline(self, owner: str, repo: str, number: int):
         from osc import gitea_api
