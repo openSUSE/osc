@@ -79,6 +79,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     f"Select a review action for '{pr_id}':",
                     answers={
                         "a": "approve",
+                        "A": "approve and schedule for merging",
                         "d": "decline",
                         "m": "comment",
                         "v": "view again",
@@ -92,6 +93,10 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     break
                 if reply == "A":
                     self.approve(owner, repo, number, commit=pr_obj.head_commit)
+                    gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
+                    break
+                if reply == "A":
+                    self.approve(owner, repo, number)
                     gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
                     break
                 elif reply == "d":
