@@ -423,7 +423,9 @@ class PullRequest:
         owner: str,
         repo: str,
         number: int,
-        msg: str = "LGTM",
+        *,
+        msg: Optional[str] = None,
+        commit: Optional[str] = None,
     ) -> GiteaHTTPResponse:
         """
         Approve review in a pull request.
@@ -432,6 +434,7 @@ class PullRequest:
         json_data = {
             "event": "APPROVED",
             "body": msg,
+            "commit_id": commit,
         }
         return conn.request("POST", url, json_data=json_data)
 
@@ -442,7 +445,9 @@ class PullRequest:
         owner: str,
         repo: str,
         number: int,
+        *,
         msg: str,
+        commit: Optional[str] = None,
     ) -> GiteaHTTPResponse:
         """
         Decline review (request changes) in a pull request.
@@ -451,5 +456,6 @@ class PullRequest:
         json_data = {
             "event": "REQUEST_CHANGES",
             "body": msg,
+            "commit": commit,
         }
         return conn.request("POST", url, json_data=json_data)
