@@ -159,5 +159,23 @@ class InvalidSshPublicKey(oscerr.OscBaseError):
         return "Invalid public ssh key"
 
 
+class AutoMergeAlreadyScheduled(GiteaException):
+    RESPONSE_STATUS = 409
+    # models/pull/automerge.go: return fmt.Sprintf("pull request is already scheduled to auto merge when checks succeed [pull_id: %d]", err.PullID)
+    RESPONSE_MESSAGE_RE = [
+        re.compile(r"^pull request is already scheduled to auto merge when checks succeed \[pull_id: (?P<number>.+)\]"),
+    ]
+
+    def __init__(self, response: GiteaHTTPResponse, owner: str, repo: str, number: int):
+        super().__init__(response)
+        self.owner = owner
+        self.repo = repo
+        self.number = number
+
+    def __str__(self):
+        result = f"Automated merge of '{self.owner}/{self.repo}#{self.number}' is already scheduled"
+        return result
+
+
 # gather all exceptions from this module that inherit from GiteaException
 EXCEPTION_CLASSES = [i for i in globals().values() if hasattr(i, "RESPONSE_MESSAGE_RE") and inspect.isclass(i) and issubclass(i, GiteaException)]
