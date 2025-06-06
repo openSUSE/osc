@@ -442,7 +442,6 @@ class PullRequest:
             "body": msg,
             "commit_id": commit,
         }
-        print(url, json_data)
         return conn.request("POST", url, json_data=json_data)
 
     @classmethod
