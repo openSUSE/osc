@@ -89,6 +89,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             path = os.path.join(owner, repo, str(number))
 
             review_obj_list = pr_obj.get_reviews(self.gitea_conn)
+            comment_obj_list = pr_obj.get_comments(self.gitea_conn)
 
             # see https://github.com/go-gitea/gitea/blob/main/modules/structs/pull_review.go - look for "type ReviewStateType string"
             state_map = {
@@ -108,6 +109,18 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                         "created": review_obj.submitted_at,
                         "when": review_obj.updated_at,
                         "comment": review_obj.body,
+                    }
+                )
+
+            # store all comments as <history/> entries
+            xml_history_list = []
+            for comment_obj in comment_obj_list:
+                xml_history_list.append(
+                    {
+                        "who": comment_obj.user,
+                        "when": comment_obj.updated_at,
+                        "description": "",
+                        "comment": comment_obj.body,
                     }
                 )
 
@@ -132,6 +145,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     },
                 ],
                 review_list=xml_review_list,
+                history_list=xml_history_list,
             )
 
             # HACK: changes to request XML that are not compatible with OBS

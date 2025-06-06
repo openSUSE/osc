@@ -9,6 +9,55 @@ from .connection import GiteaHTTPResponse
 from .user import User
 
 
+class IssueComment:
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    @property
+    def body(self) -> str:
+        return self._data["body"]
+
+    @property
+    def created_at(self) -> str:
+        return self._data["created_at"]
+
+    @property
+    def updated_at(self) -> str:
+        return self._data["updated_at"]
+
+    @property
+    def user(self) -> str:
+        return self._data["user"]["login"]
+
+    @property
+    def user_obj(self) -> User:
+        return User(self._data["user"], response=self._response)
+
+    @classmethod
+    def list(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> List["IssueComment"]:
+        """
+        List comments associated with an issue or a pull request.
+
+        :param conn: Gitea ``Connection`` instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the issue or the pull request in owner/repo.
+        """
+        q = {
+        }
+        url = conn.makeurl("repos", owner, repo, "issues", str(number), "comments", query=q)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
+
+
 class PullRequestReview:
     def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
         self._data = data
@@ -472,6 +521,12 @@ class PullRequest:
             "body": msg,
         }
         return conn.request("POST", url, json_data=json_data)
+
+    def get_comments(
+        self,
+        conn: Connection,
+    ) -> List[IssueComment]:
+        return IssueComment.list(conn, self.base_owner, self.base_repo, self.number)
 
     def get_reviews(
         self,
