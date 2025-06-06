@@ -95,10 +95,6 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     self.approve(owner, repo, number, commit=pr_obj.head_commit)
                     gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
                     break
-                if reply == "A":
-                    self.approve(owner, repo, number)
-                    gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
-                    break
                 elif reply == "d":
                     self.decline(owner, repo, number)
                     break
