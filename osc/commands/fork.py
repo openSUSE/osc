@@ -63,6 +63,12 @@ class ForkCommand(osc.commandline.OscCommand):
         project = args.project
         package = args.package
 
+        if project and "/" in project:
+            self.parser.error(f"Invalid project: {project}")
+
+        if package and "/" in package:
+            self.parser.error(f"Invalid package: {package}")
+
         is_package = package is not None
         use_devel_project = False
 
