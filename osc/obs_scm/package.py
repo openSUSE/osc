@@ -659,7 +659,7 @@ class Package:
             except:
                 pass
         else:
-            store_write_string(self.absdir, name, '%s\n' % '\n'.join(data))
+            store_write_string(self.absdir, name, "\n".join(data))
 
     def write_conflictlist(self):
         self.__write_storelist('_in_conflict', self.in_conflict)

@@ -10796,6 +10796,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_project_dir
         from .core import parseargs
         from .core import raw_input
+        from .store import Store
 
         def get_apiurl(apiurls):
             print('No apiurl is defined for this working copy.\n'
@@ -10816,7 +10817,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         apiurls = list(conf.config['api_host_options'].keys())
         apiurl = ''
         for i in args:
-            if is_project_dir(i):
+            if Store(i, check=False).is_project:
                 try:
                     prj = Project(i, getPackageList=False)
                 except (oscerr.WorkingCopyInconsistent, oscerr.NoWorkingCopy) as e:
@@ -10834,7 +10835,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         Package(os.path.join(i, p))
                     except oscerr.WorkingCopyInconsistent:
                         pacs.append(os.path.join(i, p))
-            elif is_package_dir(i):
+            elif Store(i, check=False).is_package:
                 pacs.append(i)
             else:
                 print('\'%s\' is neither a project working copy '

@@ -383,7 +383,8 @@ def check_store_version(dir):
         with open(versionfile) as f:
             v = f.read().strip()
     except:
-        if is_project_dir(dir):
+        # we need to initialize store without `check` to avoid recursive calling of check_store_version()
+        if Store(dir, check=False).is_project:
             v = '1.0'
         else:
             v = ''
@@ -451,203 +452,180 @@ def check_store_version(dir):
 
 
 def is_project_dir(d):
-    global store
+    from ..store import get_store
 
-    return os.path.exists(os.path.join(d, store, '_project')) and not \
-        os.path.exists(os.path.join(d, store, '_package'))
+    try:
+        store = get_store(d)
+        return store.is_project
+    except oscerr.NoWorkingCopy:
+        return False
 
 
 def is_package_dir(d):
-    global store
+    from ..store import get_store
 
-    return os.path.exists(os.path.join(d, store, '_project')) and \
-        os.path.exists(os.path.join(d, store, '_package'))
+    try:
+        store = get_store(d)
+        return store.is_package
+    except oscerr.NoWorkingCopy:
+        return False
 
 
 def read_filemeta(dir):
-    from ..util.xml import xml_parse
+    from ..store import get_store
 
-    global store
+    store = get_store(dir)
 
-    msg = f'\'{dir}\' is not a valid working copy.'
-    filesmeta = os.path.join(dir, store, '_files')
-    if not is_package_dir(dir):
+    store.assert_is_package()
+    if store.exists("_scm"):
+        msg = "Package '{store.path}' is managed via SCM"
         raise oscerr.NoWorkingCopy(msg)
-    if os.path.isfile(os.path.join(dir, store, '_scm')):
-        raise oscerr.NoWorkingCopy("Is managed via scm")
-    if not os.path.isfile(filesmeta):
-        raise oscerr.NoWorkingCopy(f'{msg} ({filesmeta} does not exist)')
+    if not store.exists("_files"):
+        msg = "Package '{store.path}' doesn't contain _files metadata"
+        raise oscerr.NoWorkingCopy(msg)
 
-    try:
-        r = xml_parse(filesmeta)
-    except SyntaxError as e:
-        raise oscerr.NoWorkingCopy(f'{msg}\nWhen parsing .osc/_files, the following error was encountered:\n{e}')
-    return r
+    return store.read_xml_node("_files", "directory")
 
 
 def store_readlist(dir, name):
-    global store
+    from ..store import get_store
 
-    r = []
-    if os.path.exists(os.path.join(dir, store, name)):
-        with open(os.path.join(dir, store, name)) as f:
-            r = [line.rstrip('\n') for line in f]
-    return r
+    store = get_store(dir)
+    return store.read_list(name)
 
 
 def read_tobeadded(dir):
-    return store_readlist(dir, '_to_be_added')
+    from ..store import get_store
+
+    store = get_store(dir)
+    return store.to_be_added
 
 
 def read_tobedeleted(dir):
-    return store_readlist(dir, '_to_be_deleted')
+    from ..store import get_store
+
+    store = get_store(dir)
+    return store.to_be_deleted
 
 
 def read_sizelimit(dir):
-    global store
+    from ..store import get_store
 
-    r = None
-    fname = os.path.join(dir, store, '_size_limit')
-
-    if os.path.exists(fname):
-        with open(fname) as f:
-            r = f.readline().strip()
-
-    if r is None or not r.isdigit():
-        return None
-    return int(r)
+    store = get_store(dir)
+    return store.size_limit
 
 
 def read_inconflict(dir):
-    return store_readlist(dir, '_in_conflict')
+    from ..store import get_store
+
+    store = get_store(dir)
+    return store.in_conflict
 
 
 def store_read_project(dir):
-    global store
+    from ..store import get_store
 
-    try:
-        with open(os.path.join(dir, store, '_project')) as f:
-            p = f.readline().strip()
-    except OSError:
-        msg = f'Error: \'{os.path.abspath(dir)}\' is not an osc project dir or working copy'
-        if os.path.exists(os.path.join(dir, '.svn')):
-            msg += '\nTry svn instead of osc.'
-        raise oscerr.NoWorkingCopy(msg)
-    return p
+    store = get_store(dir)
+    return store.project
 
 
 def store_read_package(dir):
-    global store
+    from ..store import get_store
 
-    try:
-        with open(os.path.join(dir, store, '_package')) as f:
-            p = f.readline().strip()
-    except OSError:
-        msg = f'Error: \'{os.path.abspath(dir)}\' is not an osc package working copy'
-        if os.path.exists(os.path.join(dir, '.svn')):
-            msg += '\nTry svn instead of osc.'
-        raise oscerr.NoWorkingCopy(msg)
-    return p
+    store = get_store(dir)
+    return store.package
 
 
 def store_read_scmurl(dir):
     import warnings
+    from ..store import get_store
+
     warnings.warn(
         "osc.core.store_read_scmurl() is deprecated. "
         "You should be using high-level classes such as Store, Project or Package instead.",
         DeprecationWarning
     )
-    return Store(dir).scmurl
+    store = get_store(dir)
+    return store.scmurl
 
 
 def store_read_apiurl(dir, defaulturl=True):
     import warnings
+    from ..store import get_store
+
     warnings.warn(
         "osc.core.store_read_apiurl() is deprecated. "
         "You should be using high-level classes such as Store, Project or Package instead.",
         DeprecationWarning
     )
-    return Store(dir).apiurl
+    store = get_store(dir)
+    return store.apiurl
 
 
 def store_read_last_buildroot(dir):
-    global store
+    from ..store import get_store
 
-    fname = os.path.join(dir, store, '_last_buildroot')
-    if os.path.exists(fname):
-        lines = open(fname).read().splitlines()
-        if len(lines) == 3:
-            return lines
-
-    return
+    store = get_store(dir)
+    return store.last_buildroot
 
 
-def store_write_string(dir, file, string, subdir=''):
-    from ..core import decode_it
+def store_write_string(dir, file, string, subdir=None):
+    from ..store import get_store
 
-    global store
-
-    if subdir and not os.path.isdir(os.path.join(dir, store, subdir)):
-        os.mkdir(os.path.join(dir, store, subdir))
-    fname = os.path.join(dir, store, subdir, file)
-    try:
-        f = open(fname + '.new', 'w')
-        if not isinstance(string, str):
-            string = decode_it(string)
-        f.write(string)
-        f.close()
-        os.rename(fname + '.new', fname)
-    except:
-        if os.path.exists(fname + '.new'):
-            os.unlink(fname + '.new')
-        raise
+    store = get_store(dir)
+    store.write_string(file, string, subdir)
 
 
 def store_write_project(dir, project):
-    store_write_string(dir, '_project', project + '\n')
+    from ..store import get_store
+
+    store = get_store(dir)
+    store.project = project
 
 
 def store_write_apiurl(dir, apiurl):
     import warnings
+    from ..store import get_store
+
     warnings.warn(
         "osc.core.store_write_apiurl() is deprecated. "
         "You should be using high-level classes such as Store, Project or Package instead.",
         DeprecationWarning
     )
-    Store(dir).apiurl = apiurl
+    store = get_store(dir)
+    store.apiurl = apiurl
 
 
 def store_write_last_buildroot(dir, repo, arch, vm_type):
-    store_write_string(dir, '_last_buildroot', repo + '\n' + arch + '\n' + vm_type + '\n')
+    from ..store import get_store
+
+    store = get_store(dir)
+    store.last_buildroot = repo, arch, vm_type
 
 
 def store_unlink_file(dir, file):
-    global store
+    from ..store import get_store
 
-    try:
-        os.unlink(os.path.join(dir, store, file))
-    except:
-        pass
+    store = get_store(dir)
+    store.unlink(file)
 
 
 def store_read_file(dir, file):
-    global store
+    from ..store import get_store
 
-    try:
-        with open(os.path.join(dir, store, file)) as f:
-            return f.read()
-    except:
-        return None
+    store = get_store(dir)
+    return store.read_file(file)
 
 
 def store_write_initial_packages(dir, project, subelements):
-    global store
+    from ..store import get_store
 
-    fname = os.path.join(dir, store, '_packages')
+    store = get_store(dir)
+
     root = ET.Element('project', name=project)
-    for elem in subelements:
-        root.append(elem)
-    ET.ElementTree(root).write(fname)
+    root.extend(subelements)
+
+    store.write_xml_node("_packages", "project", root)
 
 
 def delete_storedir(store_dir):
