@@ -6811,7 +6811,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import ET
         from .core import store
 
-        files = glob.glob(os.path.join(Path.cwd(), store, "_buildinfo-*"))
+        files = \
+            glob.glob(os.path.join(Path.cwd(), store, "_buildinfo-*")) + \
+            glob.glob(os.path.join(Path.cwd(), "_buildinfo-*"))
         if repo is not None:
             files = [f for f in files
                      if os.path.basename(f).replace('_buildinfo-', '').startswith(repo + '-')]
