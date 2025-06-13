@@ -31,6 +31,7 @@ build-vmdisk-filesystem = ext4
 build-vm-user = abuild
 build-kernel = /boot/vmlinuz
 build-initrd = /boot/initrd
+queryrecipe-cmd = /usr/lib/build/queryrecipe
 download-assets-cmd = /usr/lib/build/download_assets
 build-jobs = 4
 builtin_signature_check = 1
@@ -182,6 +183,9 @@ class TestExampleConfig(unittest.TestCase):
 
     def test_build_initrd(self):
         self.assertEqual(self.config["build-initrd"], "/boot/initrd")
+
+    def test_queryrecipe_cmd(self):
+        self.assertEqual(self.config["queryrecipe-cmd"], "/usr/lib/build/queryrecipe")
 
     def test_download_assets_cmd(self):
         self.assertEqual(self.config["download-assets-cmd"], "/usr/lib/build/download_assets")

@@ -1899,18 +1899,21 @@ def read_meta_from_spec(specfile, *args):
     if not os.path.isfile(specfile):
         raise oscerr.OscIOError(None, f'\'{specfile}\' is not a regular file')
 
-    rpmspec_path = shutil.which("rpmspec")
-    if rpmspec_path:
-        result = {}
-        for arg in args:
-            # convert tag to lower case and remove the leading '%'
-            tag = arg.lower().lstrip("%")
-            cmd = [rpmspec_path, "-q", specfile, "--srpm", "--qf", "%{" + tag + "}"]
-            value = subprocess.check_output(cmd, encoding="utf-8")
-            if value == "(none)":
-                value = ""
-            result[arg] = value
-        return result
+    if conf.config.queryrecipe_cmd:
+        import json
+
+        cmd = [conf.config.queryrecipe_cmd, "--dist", "tumbleweed", "--format", "json", specfile]
+        stdout = subprocess.check_output(cmd, encoding="utf-8")
+        try:
+            result = json.loads(stdout)
+            # compatibility hack - make fields available under expected names
+            result["%description"] = result["description"]
+            result["Summary"] = result["summary"]
+            result["Url"] = result["url"]
+            return result
+        except json.decoder.JSONDecodeError:
+            # json output mixed with garbage or old `queryrecipe` that doesn't support json
+            pass
 
     try:
         lines = codecs.open(specfile, 'r', locale.getpreferredencoding()).readlines()
