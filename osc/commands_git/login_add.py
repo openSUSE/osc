@@ -35,7 +35,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         while not args.token or args.token == "-":
             args.token = getpass.getpass(prompt=f"Enter Gitea token for user '{args.user}': ")
 
-        if not re.match(r"^[0-9a-f]{40}$", args.token):
+        if args.token and not re.match(r"^[0-9a-f]{40}$", args.token):
             self.parser.error("Invalid token format, 40 hexadecimal characters expected")
 
         login_obj = gitea_api.Login(

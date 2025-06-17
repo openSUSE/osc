@@ -40,7 +40,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             while not args.new_token or args.new_token == "-":
                 args.new_token = getpass.getpass(prompt=f"Enter a new Gitea token for user '{args.new_user or original_login_obj.user}': ")
 
-        if not re.match(r"^[0-9a-f]{40}$", args.new_token):
+        if args.new_token and not re.match(r"^[0-9a-f]{40}$", args.new_token):
             self.parser.error("Invalid token format, 40 hexadecimal characters expected")
 
         updated_login_obj = self.gitea_conf.update_login(
