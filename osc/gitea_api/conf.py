@@ -21,6 +21,7 @@ class Login(BaseModel):
     user: str = Field()  # type: ignore[assignment]
     token: str = Field()  # type: ignore[assignment]
     ssh_key: Optional[str] = Field()  # type: ignore[assignment]
+    git_uses_http: Optional[bool] = Field()  # type: ignore[assignment]
     default: Optional[bool] = Field()  # type: ignore[assignment]
 
     class AlreadyExists(oscerr.OscBaseError):
@@ -67,6 +68,8 @@ class Login(BaseModel):
         table.add("User", self.user)
         if self.ssh_key:
             table.add("Private SSH key path", self.ssh_key)
+        if self.git_uses_http:
+            table.add("Git uses http(s)", "yes" if self.git_uses_http else "no")
         if show_token:
             # tokens are stored in the plain text, there's not reason to protect them too much
             # let's only hide them from the output by default
@@ -217,6 +220,7 @@ class Config:
         new_user: Optional[str] = None,
         new_token: Optional[str] = None,
         new_ssh_key: Optional[str] = None,
+        new_git_uses_http: Optional[bool] = None,
         set_as_default: Optional[bool] = None,
     ) -> Login:
         login = self.get_login(name)
@@ -231,6 +235,16 @@ class Config:
             login.token = new_token
         if new_ssh_key is not None:
             login.ssh_key = new_ssh_key
+
+        if new_git_uses_http is None:
+            # keep the original value
+            pass
+        elif new_git_uses_http:
+            login.git_uses_http = True
+        else:
+            # remove from the config instead of setting to False
+            login.git_uses_http = None
+
         if set_as_default:
             login.default = True
 
@@ -241,6 +255,11 @@ class Config:
         for entry in data["logins"]:
             if entry.get("name", None) == name:
                 entry.update(login.dict())
+
+                # remove keys with no value
+                for key, value in entry.copy().items():
+                    if value is None:
+                        del entry[key]
             else:
                 if set_as_default:
                     entry.pop("default", None)
