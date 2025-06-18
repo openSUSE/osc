@@ -29,7 +29,15 @@ class ApiCommand(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
-        url = self.gitea_conn.makeurl(args.url)
+        # we need to preserve query without quoting
+        if "?" in args.url:
+            url, query = args.url.split("?", 1)
+        else:
+            url, query = args.url, None
+
+        url = self.gitea_conn.makeurl(url)
+        if query:
+            url += f"?{query}"
 
         json_data = None
         if args.data:
