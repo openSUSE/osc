@@ -65,6 +65,10 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
         run_args['cwd'] = context.scenario.working_dir
 
     env = os.environ.copy()
+
+    # use any env variables we've set in the steps
+    env.update(context.env)
+
     # let's temporarily pass GIT_OBS_CONFIG through environment variable until other methods work
     if not env.get("GIT_OBS_CONFIG"):
         env["GIT_OBS_CONFIG"] = context.git_obs.config
@@ -86,6 +90,12 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
 
     if not can_fail and context.cmd_exitcode != 0:
         raise AssertionError('Running command "%s" failed: %s' % (cmd, context.cmd_exitcode))
+
+
+@behave.step("I set env \"{key}\" to \"{value}\"")
+def step_impl(context, key, value):
+    value = value.format(context=context)
+    context.env[key] = value
 
 
 @behave.step("I execute \"{command}\"")
