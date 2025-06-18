@@ -21,6 +21,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         self.parser.add_argument("--user", help="Gitea username", required=True)
         self.parser.add_argument("--token", help="Gitea access token; omit or set to '-' to invoke a secure interactive prompt")
         self.parser.add_argument("--ssh-key", metavar="PATH", help="Path to a private SSH key").completer = complete_ssh_key_path
+        self.parser.add_argument("--git-uses-http", action="store_true", help="Git uses http(s) instead of SSH", default=None)
         self.parser.add_argument("--set-as-default", help="Set the new login entry as default", action="store_true", default=None)
 
     def run(self, args):
@@ -35,7 +36,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         while not args.token or args.token == "-":
             args.token = getpass.getpass(prompt=f"Enter Gitea token for user '{args.user}': ")
 
-        if not re.match(r"^[0-9a-f]{40}$", args.token):
+        if args.token and not re.match(r"^[0-9a-f]{40}$", args.token):
             self.parser.error("Invalid token format, 40 hexadecimal characters expected")
 
         login_obj = gitea_api.Login(
@@ -44,6 +45,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
             user=args.user,
             token=args.token,
             ssh_key=args.ssh_key,
+            git_uses_http=args.git_uses_http,
             default=args.set_as_default,
         )
         self.gitea_conf.add_login(login_obj)

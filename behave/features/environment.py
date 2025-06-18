@@ -16,6 +16,7 @@ def after_step(context, step):
 
 
 def before_scenario(context, scenario):
+    context.env = {}
     # truncate the logs before running any commands
     proc = context.podman.container.exec(["bash", "-c", "find /srv/www/obs/api/log/ /srv/obs/log/ /var/log/gitea/ -name '*.log' -exec truncate --size=0 {} \\;"])
 

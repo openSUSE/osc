@@ -65,6 +65,22 @@ Use one of the following commands to upload your public SSH key to the Gitea ser
     git-obs ssh-key add --key-path PUBLIC_KEY_PATH
 
 
+Using git with token auth instead of SSH keys
+=============================================
+
+It is possible to use Gitea token for both communicating with the Gitea API
+and also for authenticating the git command.
+
+
+To use token auth for git operations, switch git from using SSH to http(s)::
+
+    git-obs login update <login> --new-git-uses-http=1
+
+and add the following entry to ~/.config/git/config or ~/.gitconfig::
+
+    [credential "https://src.example.com"]
+        helper = "git-obs -G <login> login gitcredentials-helper"
+
 
 Workflow: Making changes to packages
 ====================================

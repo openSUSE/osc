@@ -84,7 +84,7 @@ class Repo:
         quiet: bool = False,
         directory: Optional[str] = None,
         cwd: Optional[str] = None,
-        anonymous: bool = False,
+        use_http: bool = False,
         add_remotes: bool = False,
         ssh_private_key_path: Optional[str] = None,
         ssh_strict_host_key_checking: bool = True,
@@ -97,7 +97,7 @@ class Repo:
         :param repo: Name of the repo.
         :param directory: The name of a new directory to clone into. Defaults to the repo name.
         :param cwd: Working directory. Defaults to the current working directory.
-        :param anonymous: Whether to use``clone_url`` for an anonymous access or use authenticated ``ssh_url``.
+        :param use_http: Whether to use``clone_url`` for cloning over http(s) instead of ``ssh_url`` for cloning over SSH.
         :param add_remotes: Determine and add 'parent' or 'fork' remotes to the cloned repo.
         """
         import shlex
@@ -109,7 +109,7 @@ class Repo:
 
         repo_obj = cls.get(conn, owner, repo)
 
-        clone_url = repo_obj.clone_url if anonymous else repo_obj.ssh_url
+        clone_url = repo_obj.clone_url if use_http else repo_obj.ssh_url
 
         remotes = {}
         if add_remotes:
@@ -117,7 +117,7 @@ class Repo:
             if repo_obj.owner == user_obj.login:
                 # we're cloning our own repo, setting remote to the parent (if exists)
                 if repo_obj.parent_obj:
-                    remotes["parent"] = repo_obj.parent_obj.clone_url if anonymous else repo_obj.parent_obj.ssh_url
+                    remotes["parent"] = repo_obj.parent_obj.clone_url if use_http else repo_obj.parent_obj.ssh_url
             else:
                 # we're cloning someone else's repo, setting remote to our fork (if exists)
                 from . import Fork
@@ -127,12 +127,12 @@ class Repo:
                 if fork_obj_list:
                     assert len(fork_obj_list) == 1
                     fork_obj = fork_obj_list[0]
-                    remotes["fork"] = fork_obj.clone_url if anonymous else fork_obj.ssh_url
+                    remotes["fork"] = fork_obj.clone_url if use_http else fork_obj.ssh_url
 
         ssh_args = []
         env = os.environ.copy()
 
-        if ssh_private_key_path:
+        if ssh_private_key_path and not use_http:
             ssh_args += [
                 # avoid guessing the ssh key, use the specified one
                 "-o IdentitiesOnly=yes",
