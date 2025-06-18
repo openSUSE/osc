@@ -40,6 +40,16 @@ class CommandBase:
     def write_config(self, **kwargs):
         raise NotImplementedError()
 
+    def get_cmd(self):
+        raise NotImplementedError()
+
+    @property
+    def cmd(self):
+        # required as a property for string formatting that doesn't allow function calls
+        import shlex
+
+        return " ".join(shlex.quote(i) for i in self.get_cmd())
+
 
 class Osc(CommandBase):
     CONFIG_NAME = "oscrc"
