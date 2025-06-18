@@ -15,6 +15,8 @@ def debug(context, *args):
 
 
 def makedirs(path):
+    if not path:
+        return
     try:
         os.makedirs(path)
     except OSError as e:
