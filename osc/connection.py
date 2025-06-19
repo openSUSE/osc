@@ -680,9 +680,21 @@ class SignatureAuthHandler(AuthHandlerBase):
         if not keyfile:
             raise oscerr.OscIOError(None, "No SSH key configured or auto-detected")
         keyfile = os.path.expanduser(keyfile)
-        cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8")
-        signature, _ = proc.communicate(data)
+
+        # ssh-keygen makes a decision about where to get the passphrase from based on whether the stdin is connected to a terminal
+        # which is not the case when reading input from stdin
+        # we want it to consider also other password inputs, so we're avoiding piping ``data`` to ssh-keygen
+        with tempfile.TemporaryDirectory() as tmp_dir:
+            data_path = os.path.join(tmp_dir, "data")
+            with open(data_path, "w", encoding="utf-8") as f:
+                f.write(data)
+
+            cmd = [self.ssh_keygen_path, "-Y", "sign", "-f", keyfile, "-n", namespace, "-q", data_path]
+            proc = subprocess.run(cmd, check=True, cwd=tmp_dir)
+
+            sig_path = f"{data_path}.sig"
+            with open(sig_path, "r", encoding="utf-8") as f:
+                signature = f.read()
 
         if self.temp_pubkey:
             self.temp_pubkey.close()
