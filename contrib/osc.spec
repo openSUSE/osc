@@ -40,14 +40,20 @@
 %define ssh_add_pkg openssh-clients
 %define ssh_keygen_pkg openssh
 %define sphinx_pkg %{use_python_pkg}-sphinx
-%define ruamel_yaml_pkg %{use_python_pkg}-ruamel-yaml
+%define yaml_pkg %{use_python_pkg}-ruamel-yaml
 
 %if 0%{?suse_version}
 %define argparse_manpage_pkg %{use_python_pkg}-argparse-manpage
 %define obs_build_pkg build
 %define ssh_keygen_pkg openssh-common
 %define sphinx_pkg %{use_python_pkg}-Sphinx
-%define ruamel_yaml_pkg %{use_python_pkg}-ruamel.yaml
+%define yaml_pkg %{use_python_pkg}-ruamel.yaml
+%endif
+
+%if 0%{?suse_version} < 1600
+# ruamel.yaml is not available on SLE 15, use PyYAML instead
+%define use_pyyaml 1
+%define yaml_pkg %{use_python_pkg}-PyYAML
 %endif
 
 Name:           osc
@@ -77,7 +83,7 @@ BuildRequires:  %{use_python_pkg}-devel >= 3.6
 BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
 BuildRequires:  %{use_python_pkg}-urllib3
-BuildRequires:  %{ruamel_yaml_pkg}
+BuildRequires:  %{yaml_pkg}
 BuildRequires:  diffstat
 %if %{with fdupes}
 BuildRequires:  fdupes
@@ -88,7 +94,7 @@ BuildRequires:  git-core
 Requires:       %{use_python_pkg}-cryptography
 Requires:       %{use_python_pkg}-rpm
 Requires:       %{use_python_pkg}-urllib3
-Requires:       %{ruamel_yaml_pkg}
+Requires:       %{yaml_pkg}
 
 # needed for git-obs completion
 Recommends:     %{use_python_pkg}-argcomplete
@@ -156,6 +162,12 @@ for a general introduction.
 %autosetup -p1
 
 %build
+
+%if 0%{?use_pyyaml}
+    # replace ruamel.yaml with PyYAML
+    sed -i 's/ruamel\.yaml/PyYAML/g' setup.cfg
+%endif
+
 %{use_python} setup.py build
 
 # write rpm macros
