@@ -680,9 +680,15 @@ class SignatureAuthHandler(AuthHandlerBase):
         if not keyfile:
             raise oscerr.OscIOError(None, "No SSH key configured or auto-detected")
         keyfile = os.path.expanduser(keyfile)
-        cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q']
-        proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, encoding="utf-8")
-        signature, _ = proc.communicate(data)
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            datafile = os.path.join(tmpdirname, 'data')
+            with open(datafile, 'w') as fd:
+                fd.write(data)
+            cmd = [self.ssh_keygen_path, '-Y', 'sign', '-f', keyfile, '-n', namespace, '-q', datafile]
+            proc = subprocess.run(cmd)
+            sigfile = datafile + '.sig'
+            with open(sigfile, 'r') as fd:
+                signature = fd.read()
 
         if self.temp_pubkey:
             self.temp_pubkey.close()
