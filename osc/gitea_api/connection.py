@@ -1,8 +1,11 @@
 import copy
 import http.client
 import json
+import re
 import time
 import urllib.parse
+from typing import Dict
+from typing import Generator
 from typing import Optional
 
 import urllib3
@@ -10,6 +13,19 @@ import urllib3.exceptions
 import urllib3.response
 
 from .conf import Login
+
+
+RE_HTTP_HEADER_LINK = re.compile('<(?P<url>.*?)>; rel="(?P<rel>.*?)",?')
+
+
+def parse_http_header_link(link: str) -> Dict[str, str]:
+    """
+    Parse RFC8288 "link" http headers into {"rel": "url"}
+    """
+    result = {}
+    for match in RE_HTTP_HEADER_LINK.findall(link):
+        result[match[1]] = match[0]
+    return result
 
 
 class GiteaHTTPResponse:
@@ -153,3 +169,24 @@ class Connection:
             raise response_to_exception(response, context=context)
 
         return response
+
+    def request_all_pages(
+        self, method, url, json_data: Optional[dict] = None, *, context: Optional[dict] = None
+    ) -> Generator[GiteaHTTPResponse, None, None]:
+        """
+        Make a request and yield ``GiteaHTTPResponse`` instances for each page.
+        Arguments are forwarded to the underlying ``request()`` call.
+        """
+
+        while True:
+            response = self.request(method, url, json_data=json_data, context=context)
+            yield response
+
+            if "link" not in response.headers:
+                break
+
+            links = parse_http_header_link(response.headers["link"])
+            if "next" in links:
+                url = links["next"]
+            else:
+                break
