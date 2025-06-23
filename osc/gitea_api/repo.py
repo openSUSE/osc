@@ -1,18 +1,24 @@
+import functools
 import os
 import re
 import subprocess
+from typing import List
 from typing import Optional
 from typing import Tuple
 
+from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .user import User
 
 
-class Repo:
-    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
-        self._data = data
-        self._response = response
+@functools.total_ordering
+class Repo(GiteaModel):
+    def __eq__(self, other):
+        (self.owner, self.repo) == (other.owner, other.repo)
+
+    def __lt__(self, other):
+        (self.owner, self.repo) < (other.owner, other.repo)
 
     @property
     def owner(self) -> str:
@@ -179,3 +185,37 @@ class Repo:
             subprocess.run(cmd, cwd=cwd, check=True)
 
         return directory_abspath
+
+    @classmethod
+    def list_org_repos(cls, conn: Connection, owner: str) -> List["Repo"]:
+        """
+        List repos owned by an organization.
+
+        :param conn: Gitea ``Connection`` instance.
+        """
+        q = {
+            # XXX: limit works in range 1..50, setting it any higher doesn't help, we need to handle paginated results
+            "limit": 10**6,
+        }
+        url = conn.makeurl("orgs", owner, "repos", query=q)
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response) for i in response.json()])
+        return obj_list
+
+    @classmethod
+    def list_user_repos(cls, conn: Connection, owner: str) -> List["Repo"]:
+        """
+        List repos owned by a user.
+
+        :param conn: Gitea ``Connection`` instance.
+        """
+        q = {
+            # XXX: limit works in range 1..50, setting it any higher doesn't help, we need to handle paginated results
+            "limit": 10**6,
+        }
+        url = conn.makeurl("users", owner, "repos", query=q)
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response) for i in response.json()])
+        return obj_list
