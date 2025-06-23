@@ -3132,7 +3132,8 @@ def run_obs_scm_bridge(url: str, target_dir: str):
         raise oscerr.OscIOError(None, "Install the obs-scm-bridge package to work on packages managed in scm (git)!")
     env = os.environ.copy()
     env["OSC_VERSION"] = get_osc_version()
-    run_external([conf.config.obs_scm_bridge_cmd, "--outdir", target_dir, "--url", url], env=env)
+    if run_external([conf.config.obs_scm_bridge_cmd, "--outdir", target_dir, "--url", url], env=env) != 0:
+        raise oscerr.OscIOError(None, "obs-scm-bridge failed")
 
 
 def checkout_package(
