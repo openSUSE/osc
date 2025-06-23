@@ -6,17 +6,14 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .user import User
 
 
 @functools.total_ordering
-class Repo:
-    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
-        self._data = data
-        self._response = response
-
+class Repo(GiteaModel):
     def __eq__(self, other):
         (self.owner, self.repo) == (other.owner, other.repo)
 
