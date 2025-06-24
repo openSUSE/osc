@@ -139,9 +139,6 @@ Conflicts:      obs-service-source_validator < 0.39
 Recommends:     obs-service-tar_scm
 Recommends:     obs-service-verify_file
 
-# needed for `osc updatepacmetafromspec` that calls rpmspec to get values with expanded macros
-Recommends:     rpm-build
-
 # needed for ssh signature auth
 Recommends:     %{ssh_add_pkg}
 Recommends:     %{ssh_keygen_pkg}
