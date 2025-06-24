@@ -235,7 +235,7 @@ class GitStore:
 
                 if not self._project:
                     # read project from Gitea (identical owner, repo: _ObsPrj, file: project.build)
-                    origin = self._run_git(["remote", "get-url", "origin"])
+                    origin = self._run_git(["remote", "get-url", self.current_remote])
                     self._project = self.get_build_project(origin)
 
             else:
@@ -261,7 +261,7 @@ class GitStore:
     @property
     def package(self):
         if self._package is None:
-            origin = self._run_git(["remote", "get-url", "origin"])
+            origin = self._run_git(["remote", "get-url", self.current_remote])
             self._package = Path(urllib.parse.urlsplit(origin).path).stem
         return self._package
 
@@ -328,6 +328,20 @@ class GitStore:
     @property
     def scmurl(self):
         try:
-            return self._run_git(["remote", "get-url", "origin"])
+            return self._run_git(["remote", "get-url", self.current_remote])
         except subprocess.CalledProcessError:
             return None
+
+    @property
+    def current_remote(self):
+        result = None
+        try:
+            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"])
+            if result:
+                result = result.split("/")[0]
+        except subprocess.CalledProcessError:
+            pass
+
+        if result:
+            return result
+        return "origin"
