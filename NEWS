@@ -1,3 +1,34 @@
+- 1.17.0
+  - Command-line:
+    - Rename 'git-obs pr review' to 'git-obs pr review interactive'
+    - Add 'A)approve and schedule for merging' action to 'git obs pr review interactive'
+    - Add 'git-obs pr merge' command
+    - Add 'git-obs pr review accept' and 'git-obs pr review decline' commands
+    - Implement 'git-obs repo list' command
+    - Add '--export' option to 'git-obs pr list' and 'git-obs pr search'
+    - Fix crash during token validation in 'git-obs login {add,update}' when value is not specified
+    - Fix loading shell completions for 'git-obs'
+    - Fix 'git-obs api' by preventing of quoting the URL query part
+    - Add a possibility to override git-obs login entries from env
+    - Validate arguments in 'osc fork' command
+    - Revert "Improve 'updatepacmetafromspec' command to expand rpm spec macros by calling rpmspec to query the data"
+    - Improve 'updatepacmetafromspec' command to expand rpm spec macros by calling queryrecipe to query the data (bsc#1243722)
+  - Connection:
+    - Do not use pipe for ssh-keygen input
+  - Library:
+    - Refactor gitea_api to use objects with properties instead of raw JSON data
+    - Add GiteaModel base class and json_dumps() function that can serialize such objects
+    - Rename 'anonymous' argument in 'gitea_api.Repo.clone()' to 'use_http'
+    - Allow git in git-obs to be switched from SSH to http(s)
+    - Move yaml handling code to osc.util.yaml, add fallback to PyYaml
+    - Fix how types are compared in OscOptions.set_value_from_string()
+    - get_package_results: check for waiting states in all multibuild packages
+    - Extend _buildinfo file lookup to the current directory
+    - Fix git store when .git is a file with "gitdir: <path>" link
+    - Migrate store_* functions to use get_store instead of the original code
+  - Spec:
+    - Modify spec to use PyYAML on SLE15
+
 - 1.16.0
   - Command-line:
     - Add 'osc rmkpac' subcommand
