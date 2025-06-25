@@ -46,7 +46,7 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
             if args.patch:
                 print("")
                 print(tty.colorize("Patch:", "bold"))
-                patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, pull).data
+                patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, pull)
                 patch = highlight_diff(patch)
                 print(patch.decode("utf-8"))
 
