@@ -146,6 +146,32 @@ class TestGitStoreProject(unittest.TestCase):
         self.assertEqual(store.project, "PROJ")
         self.assertEqual(store.package, "my-package")
 
+    def test_pkg_git_project_with_config_without_pbuild(self):
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_config"))
+        self._write(os.path.join(prj_path, "project.build"), "PROJ")
+
+        pkg_path = os.path.join(prj_path, "package")
+        self._git_init(pkg_path)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_pkg_git_project_without_config_with_pbuild(self):
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_pbuild"))
+        self._write(os.path.join(prj_path, "project.build"), "PROJ")
+
+        pkg_path = os.path.join(prj_path, "package")
+        self._git_init(pkg_path)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
     def test_pkg_separate_git_dir_git_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
         self._git_init(prj_path)

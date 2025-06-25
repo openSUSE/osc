@@ -117,7 +117,7 @@ class GitStore:
         subdirs_path = os.path.join(path, "_subdirs")
 
         # we always stop at the top-most directory that contains .git subdir
-        if not os.path.isfile(config_path) or os.path.isfile(pbuild_path):
+        if not (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
             # it's not a project, stop traversing and return
             return None
 
