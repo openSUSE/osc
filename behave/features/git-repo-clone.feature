@@ -28,6 +28,16 @@ Scenario: Clone a git repo
 
 
 @destructive
+Scenario: Clone and build with non-default origin
+    When I execute git-obs with args "repo clone pool/test-GitPkgA --no-ssh-strict-host-key-checking"
+    Then the exit code is 0
+    When I set working directory to "{context.osc.temp}/test-GitPkgA"
+     And I execute "git remote rename origin myorigin"
+     And I execute osc with args "build --just-print-buildroot --alternative-project test:factory"
+    Then the exit code is 0
+
+
+@destructive
 Scenario: Clone a git repo via http
    Given I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/ --data '{{"private": true}}'"
      And stdout contains ""private": true"
