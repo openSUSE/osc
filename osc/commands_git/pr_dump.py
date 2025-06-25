@@ -16,6 +16,19 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         from osc.commandline_git import complete_checkout_pr
 
         self.add_argument(
+            "--subdir-fmt",
+            metavar="FMT",
+            default="{pr.base_owner}/{pr.base_repo}/{pr.number}",
+            help=(
+                "Formatting string for a subdir associated with each pull request\n"
+                "(default: '{pr.base_owner}/{pr.base_repo}/{pr.number}')\n"
+                "Available values:\n"
+                "  - 'pr' object which is an instance of 'osc.gitea_api.PullRequest'\n"
+                "  - 'login_name', 'login_user' from the currently used Gitea login entry"
+            ),
+        )
+
+        self.add_argument(
             "id",
             nargs="+",
             help="Pull request ID in <owner>/<repo>#<number> format",
@@ -86,7 +99,14 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         for pr_id in pull_request_ids:
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
             pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)
-            path = os.path.join(owner, repo, str(number))
+
+            path = args.subdir_fmt.format(
+                pr=pr_obj,
+                login_name=self.gitea_login.name,
+                login_user=self.gitea_login.user,
+            )
+            # sanitize path for os.path.join()
+            path = path.strip("/")
 
             review_obj_list = pr_obj.get_reviews(self.gitea_conn)
 
