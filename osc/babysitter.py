@@ -6,7 +6,6 @@
 
 import errno
 import os
-import pdb
 import signal
 import ssl
 import sys
@@ -16,10 +15,7 @@ from urllib.error import URLError, HTTPError
 
 import urllib3.exceptions
 
-from . import _private
 from . import commandline
-from . import conf as osc_conf
-from . import core as osc_core
 from . import oscerr
 from . import output
 from .OscConfigParser import configparser
@@ -45,6 +41,13 @@ except ImportError:
         pass
 
 
+try:
+    from argcomplete import ArgcompleteException
+except:
+    class ArgcompleteException(Exception):
+        pass
+
+
 # the good things are stolen from Matt Mackall's mercurial
 
 
@@ -64,11 +67,17 @@ def run(prg, argv=None):
         try:
             # we haven't parsed options yet, that's why we rely on argv directly
             if "--debugger" in (argv or sys.argv[1:]):
+                import pdb
                 pdb.set_trace()
             # here we actually run the program
             prg.main(argv)
             return 0
+        except (ArgcompleteException, SystemExit):
+            # no need to handle traceback or post_mortem options -> don't load osc.conf to improve osc responsivness
+            raise
         except:
+            from . import conf as osc_conf
+
             # If any of these was set via the command-line options,
             # the config values are expected to be changed accordingly.
             # That's why we're working only with the config.
@@ -78,6 +87,7 @@ def run(prg, argv=None):
             # enter the debugger, if desired
             if osc_conf.config["post_mortem"]:
                 if sys.stdout.isatty() and not hasattr(sys, 'ps1'):
+                    import pdb
                     pdb.post_mortem(sys.exc_info()[2])
                 else:
                     print('sys.stdout is not a tty. Not jumping into pdb.', file=sys.stderr)
@@ -99,6 +109,8 @@ def run(prg, argv=None):
     except oscerr.NoWorkingCopy as e:
         print(e, file=sys.stderr)
     except HTTPError as e:
+        from . import _private
+
         print('Server returned an error:', e, file=sys.stderr)
         if hasattr(e, 'osc_msg'):
             print(e.osc_msg, file=sys.stderr)
@@ -189,6 +201,9 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except oscerr.OscBaseError as e:
         print('*** Error:', e, file=sys.stderr)
+
+    from . import core as osc_core
+
     if osc_core.MESSAGE_BACKUPS:
         print()
         print("If you lost any edited commit messages due to an error, you may find them here:")
