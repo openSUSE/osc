@@ -235,4 +235,10 @@ class PackageInternalError(PackageError):
     pass
 
 
+class CertVerificationError(OscBaseError):
+    def __str__(self):
+        args_str = [str(i) for i in self.args]
+        return "Certificate Verification Error: " + "\n".join(args_str)
+
+
 # vim: sw=4 et

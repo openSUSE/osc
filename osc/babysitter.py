@@ -23,7 +23,6 @@ from . import core as osc_core
 from . import oscerr
 from . import output
 from .OscConfigParser import configparser
-from .oscssl import CertVerificationError
 from .util.cpio import CpioError
 from .util.helper import decode_it
 from .util.packagequery import PackageError
@@ -180,7 +179,7 @@ def run(prg, argv=None):
         print(e, file=sys.stderr)
     except KeyringLocked as e:
         print(e, file=sys.stderr)
-    except CertVerificationError as e:
+    except oscerr.CertVerificationError as e:
         print(e, file=sys.stderr)
     except urllib3.exceptions.MaxRetryError as e:
         print(e.reason, file=sys.stderr)
