@@ -30,6 +30,14 @@ DECLINE_REVIEW_TEMPLATE = """
 class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
     """
     Interactive review of pull requests
+
+    Since this is an interactive command, the program return code indicates the user choice:
+    - 0: default return code
+    - 1: user selected "exit"
+    - 2: user selected "skip"
+
+    This might be useful when wrapping the command in any external review tooling,
+    handling one review at a time.
     """
 
     name = "interactive"
@@ -58,6 +66,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
             del pr_obj_list
 
         skipped_drafts = 0
+        return_code = 0
 
         for pr_index, pr_id in enumerate(pull_request_ids):
             self.print_gitea_settings()
@@ -104,15 +113,19 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                 elif reply == "v":
                     self.view(owner, repo, number, pr_index=pr_index, pr_count=len(pull_request_ids), pr_obj=pr_obj)
                 elif reply == "s":
+                    return_code = 2
                     break
                 elif reply == "x":
-                    return
+                    return_code = 1
+                    sys.exit(return_code)
                 else:
                     raise RuntimeError(f"Unhandled reply: {reply}")
 
         if skipped_drafts:
             print(file=sys.stderr)
             print(f"Skipped drafts: {skipped_drafts}", file=sys.stderr)
+
+        sys.exit(return_code)
 
     def approve(self, owner: str, repo: str, number: int, *, commit: str):
         from osc import gitea_api
