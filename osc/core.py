@@ -16,6 +16,7 @@ import locale
 import os
 import platform
 import re
+import requests
 import shlex
 import shutil
 import subprocess
@@ -99,6 +100,8 @@ def cmp(a, b):
 DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<repository>.*?)/(?P<revision>.*)-(?P<source>.*)$")
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
 BUFSIZE = 1024 * 1024
+
+DEVEL_PACKAGES_URL = "https://src.opensuse.org/openSUSE/Factory/raw/branch/main/pkgs/_meta/devel_packages"
 
 new_project_templ = """\
 <project name="%(name)s">
@@ -1397,6 +1400,20 @@ def show_devel_project(apiurl, prj, pac):
 
     package_obj = obs_api.Package.from_api(apiurl, prj, pac)
     if package_obj.devel is None:
+        if prj == 'openSUSE:Factory' or prj == 'openSUSE.org:opensuse:Factory':
+            # If OBS api doesn't return a devel project, query the gitea devel_packages file
+            try:
+                response = requests.get(DEVEL_PACKAGES_URL)
+            except:
+                return None, None
+            if response.status_code == 200 and response.text:
+                # locate pac in the devel_packages file
+                for line in response.text.splitlines():
+                    parts = line.split()
+                    if parts[0] == pac:
+                        # found the package, return devel project and package
+                        if len(parts) > 1:
+                            return parts[1], parts[0]
         return None, None
 
     # mute a false-positive: Instance of 'dict' has no 'project' member (no-member)
