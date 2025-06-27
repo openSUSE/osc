@@ -58,10 +58,21 @@ class Git:
             cmd += ["-q"]
         self._run_git(cmd, mute_stderr=mute_stderr)
 
-    def clone(self, url, directory: Optional[str] = None, quiet: bool = True):
+    def clone(self,
+        url: str,
+        *,
+        directory: Optional[str] = None,
+        reference: Optional[str] = None,
+        reference_if_able: Optional[str] = None,
+        quiet: bool = True
+    ):
         cmd = ["clone", url]
         if directory:
             cmd += [directory]
+        if reference:
+            cmd += ["--reference", reference]
+        if reference_if_able:
+            cmd += ["--reference-if-able", reference_if_able]
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd)
@@ -72,7 +83,27 @@ class Git:
     def current_branch(self) -> str:
         return self._run_git(["branch", "--show-current"])
 
-    def get_branch_head(self, branch: str) -> str:
+    def branch_contains_commit(self, commit: str, branch: Optional[str] = None, remote: Optional[str] = None) -> bool:
+        if not branch:
+            branch = self.current_branch
+
+        if remote:
+            try:
+                self._run_git(["merge-base", "--is-ancestor", commit, f"{remote}/{branch}"], mute_stderr=True)
+                return True
+            except subprocess.CalledProcessError:
+                return False
+
+        try:
+            stdout = self._run_git(["branch", branch, "--contains", commit, "--format", "%(objectname) %(objecttype) %(refname)"])
+            return stdout.strip() == f"{commit} commit refs/heads/{branch}"
+        except subprocess.CalledProcessError:
+            return False
+
+    def get_branch_head(self, branch: Optional[str] = None) -> str:
+        if not branch:
+            branch = self.current_branch
+
         return self._run_git(["rev-parse", f"refs/heads/{branch}"])
 
     def branch_exists(self, branch: str) -> bool:
@@ -89,6 +120,12 @@ class Git:
         except subprocess.CalledProcessError:
             return -1
 
+    def reset(self, commit: str, hard: bool = False):
+        cmd = ["reset", commit]
+        if hard:
+            cmd += ["--hard"]
+        self._run_git(cmd)
+
     def switch(self, branch: str, orphan: bool = False):
         cmd = ["switch"]
         if orphan:
@@ -101,12 +138,18 @@ class Git:
         pull_number: int,
         *,
         remote: str = "origin",
+        commit: Optional[str] = None,
         force: bool = False,
     ):
         """
         Fetch pull/$pull_number/head to pull/$pull_number branch
         """
         target_branch = f"pull/{pull_number}"
+
+        # if the branch exists and the head matches the expected commit, skip running 'git fetch'
+        if commit and self.branch_exists(target_branch) and self.get_branch_head(target_branch) == commit:
+            return target_branch
+
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
         if force:
             cmd += [

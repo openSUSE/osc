@@ -9,6 +9,117 @@ from .connection import GiteaHTTPResponse
 from .user import User
 
 
+class IssueComment:
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    @property
+    def body(self) -> str:
+        return self._data["body"]
+
+    @property
+    def created_at(self) -> str:
+        return self._data["created_at"]
+
+    @property
+    def updated_at(self) -> str:
+        return self._data["updated_at"]
+
+    @property
+    def user(self) -> str:
+        return self._data["user"]["login"]
+
+    @property
+    def user_obj(self) -> User:
+        return User(self._data["user"], response=self._response)
+
+    @classmethod
+    def list(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> List["IssueComment"]:
+        """
+        List comments associated with an issue or a pull request.
+
+        :param conn: Gitea ``Connection`` instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the issue or the pull request in owner/repo.
+        """
+        q = {
+        }
+        url = conn.makeurl("repos", owner, repo, "issues", str(number), "comments", query=q)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
+
+
+class PullRequestReview:
+    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
+        self._data = data
+        self._response = response
+
+    @property
+    def state(self) -> str:
+        return self._data["state"]
+
+    @property
+    def user(self) -> Optional[str]:
+        if not self._data["user"]:
+            return None
+        return self._data["user"]["login"]
+
+    @property
+    def team(self) -> Optional[str]:
+        if not self._data["team"]:
+            return None
+        return self._data["team"]["name"]
+
+    @property
+    def who(self) -> str:
+        return self.user if self.user else f"@{self.team}"
+
+    @property
+    def submitted_at(self) -> str:
+        return self._data["submitted_at"]
+
+    @property
+    def updated_at(self) -> str:
+        return self._data["updated_at"]
+
+    @property
+    def body(self) -> str:
+        return self._data["body"]
+
+    @classmethod
+    def list(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> List["PullRequestReview"]:
+        """
+        List reviews associated with a pull request.
+
+        :param conn: Gitea ``Connection`` instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request in owner/repo.
+        """
+        q = {
+            "limit": -1,
+        }
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews", query=q)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
+
+
 @functools.total_ordering
 class PullRequest:
     def __init__(self, data, *, response: Optional[GiteaHTTPResponse] = None):
@@ -111,6 +222,12 @@ class PullRequest:
         if not self.is_pull_request:
             return None
         return self._data["base"]["repo"]["ssh_url"]
+
+    @property
+    def merge_base(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["merge_base"]
 
     @property
     def head_owner(self) -> Optional[str]:
@@ -405,16 +522,17 @@ class PullRequest:
         }
         return conn.request("POST", url, json_data=json_data)
 
-    @classmethod
-    def get_reviews(
-        cls,
+    def get_comments(
+        self,
         conn: Connection,
-        owner: str,
-        repo: str,
-        number: int,
-    ):
-        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
-        return conn.request("GET", url)
+    ) -> List[IssueComment]:
+        return IssueComment.list(conn, self.base_owner, self.base_repo, self.number)
+
+    def get_reviews(
+        self,
+        conn: Connection,
+    ) -> List[PullRequestReview]:
+        return PullRequestReview.list(conn, self.base_owner, self.base_repo, self.number)
 
     @classmethod
     def approve_review(
