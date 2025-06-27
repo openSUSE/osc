@@ -16,7 +16,6 @@ import locale
 import os
 import platform
 import re
-import requests
 import shlex
 import shutil
 import subprocess
@@ -1400,16 +1399,18 @@ def show_devel_project(apiurl, prj, pac):
 
     package_obj = obs_api.Package.from_api(apiurl, prj, pac)
     if package_obj.devel is None:
-        if prj == 'openSUSE:Factory' or prj == 'openSUSE.org:openSUSE:Factory':
+        if prj == "openSUSE:Factory" or prj == "openSUSE.org:openSUSE:Factory":
             # If OBS api doesn't return a devel project, query the gitea devel_packages file
             try:
-                response = requests.get(DEVEL_PACKAGES_URL)
+                response = http_request("GET", DEVEL_PACKAGES_URL)
+                response.auto_close = False
             except:
                 return None, None
-            if response.status_code == 200 and response.text:
+            if response.status == 200:
                 # locate pac in the devel_packages file
-                for line in response.text.splitlines():
-                    devel_pkg, _, devel_prj = line.partition(' ')
+                for line in io.TextIOWrapper(response):
+                    devel_pkg, _, devel_prj = line.partition(" ")
+                    devel_prj = devel_prj.strip()
                     if devel_pkg == pac:
                         # found the package, return devel project and package
                         if devel_pkg and devel_prj:

@@ -83,7 +83,6 @@ BuildRequires:  %{use_python_pkg}-devel >= 3.6
 BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
 BuildRequires:  %{use_python_pkg}-urllib3
-BuildRequires:  %{use_python_pkg}-requests
 BuildRequires:  %{yaml_pkg}
 BuildRequires:  diffstat
 %if %{with fdupes}
@@ -95,7 +94,6 @@ BuildRequires:  git-core
 Requires:       %{use_python_pkg}-cryptography
 Requires:       %{use_python_pkg}-rpm
 Requires:       %{use_python_pkg}-urllib3
-BuildRequires:  %{use_python_pkg}-requests
 Requires:       %{yaml_pkg}
 
 # needed for git-obs completion
