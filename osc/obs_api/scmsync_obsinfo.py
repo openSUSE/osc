@@ -1,3 +1,4 @@
+import re
 import typing
 import urllib.parse
 
@@ -71,11 +72,13 @@ class ScmsyncObsinfo(BaseModel):
 
         if self.subdir:
             query["subdir"] = self.subdir
+        if self.revision and not re.match(r"^[0-9a-fA-F]{40,}$", self.revision):
+            query["trackingbranch"] = self.revision
 
         parsed_url[4] = urllib.parse.urlencode(query)
 
-        if self.revision:
+        if self.commit:
             # set revision as fragment
-            parsed_url[5] = self.revision
+            parsed_url[5] = self.commit
 
         return urllib.parse.urlunparse(parsed_url)
