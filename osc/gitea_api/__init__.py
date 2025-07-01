@@ -1,4 +1,5 @@
 from .connection import Connection
+from .common import edit_message
 from .exceptions import BranchDoesNotExist
 from .exceptions import BranchExists
 from .exceptions import ForkExists

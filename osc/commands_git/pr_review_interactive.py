@@ -135,9 +135,8 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
     def decline(self, owner: str, repo: str, number: int):
         from osc import gitea_api
-        from .pr_create import edit_message
 
-        message = edit_message(template=DECLINE_REVIEW_TEMPLATE.format(**locals()))
+        message = gitea_api.edit_message(template=DECLINE_REVIEW_TEMPLATE.format(**locals()))
 
         # remove comments
         message = "\n".join([i for i in message.splitlines() if not i.startswith("#")])
@@ -149,9 +148,8 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
     def comment(self, owner: str, repo: str, number: int):
         from osc import gitea_api
-        from .pr_create import edit_message
 
-        message = edit_message(template=NEW_COMMENT_TEMPLATE.format(**locals()))
+        message = gitea_api.edit_message(template=NEW_COMMENT_TEMPLATE.format(**locals()))
 
         # remove comments
         message = "\n".join([i for i in message.splitlines() if not i.startswith("#")])

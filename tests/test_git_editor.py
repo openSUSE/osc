@@ -3,7 +3,7 @@ import shutil
 import unittest
 import unittest.mock
 
-from osc.commands_git.pr_create import get_editor_command
+from osc.gitea_api.common import get_editor_command
 
 
 class TestGitEditor(unittest.TestCase):
