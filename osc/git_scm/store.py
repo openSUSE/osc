@@ -10,7 +10,6 @@ from ..util import yaml as osc_yaml
 
 
 class GitStore:
-
     @classmethod
     def is_project_dir(cls, path):
         try:
@@ -91,27 +90,37 @@ class GitStore:
             return None
 
         try:
-            store = Store(os.path.join(self.abspath, ".."))
+            project_dir = self._find_parent_git_repo_dir()
+            if not project_dir:
+                project_dir = os.path.join(self.abspath, "..")
+
+            store = Store(project_dir)
             store.assert_is_project()
             return store
         except oscerr.NoWorkingCopy:
             return None
+
+    def _find_parent_git_repo_dir(self):
+        path = self.abspath
+        while path:
+            if path == "/":
+                # no git repo found
+                break
+
+            path, _ = os.path.split(path)
+
+            if os.path.exists(os.path.join(path, ".git")):
+                return path
+        return None
 
     def get_project_git_scm_store(self):
         if not self.is_package:
             return None
 
         path = self.abspath
-        while path:
-            if path == "/":
-                # no git repo found
-                return None
-
-            path, _ = os.path.split(path)
-
-            if os.path.exists(os.path.join(path, ".git")):
-                break
-
+        repo_dir = self._find_parent_git_repo_dir()
+        if repo_dir:
+            path = repo_dir
         config_path = os.path.join(path, "_config")
         pbuild_path = os.path.join(path, "_pbuild")
         subdirs_path = os.path.join(path, "_subdirs")
@@ -162,7 +171,11 @@ class GitStore:
         self.is_project = False
         self.is_package = False
 
-        if os.path.exists(os.path.join(self.abspath, ".git")):
+        gitpath: str | None = self.abspath
+        if not os.path.exists(os.path.join(gitpath, ".git")):
+            gitpath = self._find_parent_git_repo_dir()
+
+        if gitpath and os.path.exists(os.path.join(gitpath, ".git")):
             # NOTE: we have only one store in project-git for all packages
             config_path = os.path.join(self.abspath, "_config")
             pbuild_path = os.path.join(self.abspath, "_pbuild")

@@ -133,6 +133,18 @@ class TestGitStoreProject(unittest.TestCase):
         self.assertEqual(store.project, "PROJ")
         self.assertEqual(store.package, "my-package")
 
+    def test_nested_pkg_osc_project(self):
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._osc_init(prj_path, project="PROJ")
+
+        pkg_path = os.path.join(prj_path, "group/package")
+        os.makedirs(pkg_path, exist_ok=True)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
     def test_pkg_git_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
         self._git_init(prj_path)
