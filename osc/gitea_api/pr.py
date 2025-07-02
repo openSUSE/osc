@@ -426,6 +426,7 @@ class PullRequest:
         *,
         msg: Optional[str] = None,
         commit: Optional[str] = None,
+        reviewer: Optional[str] = None,
     ) -> GiteaHTTPResponse:
         """
         Approve review in a pull request.
@@ -434,6 +435,12 @@ class PullRequest:
             pr_obj = cls.get(conn, owner, repo, number)
             if pr_obj.head_commit != commit:
                 raise RuntimeError("The pull request '{owner}/{repo}#{number}' has changed during the review")
+
+        if reviewer:
+            # group review bot is controlled via messages in comments
+            msg = f"@{reviewer} : approve\n\n" + (msg or "")
+            msg = msg.strip()
+            return cls.add_comment(conn, owner, repo, number, msg=msg)
 
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
         # XXX[dmach]: commit_id has no effect; I thought it's going to approve if the commit matches with head and errors out otherwise
@@ -454,10 +461,17 @@ class PullRequest:
         *,
         msg: str,
         commit: Optional[str] = None,
+        reviewer: Optional[str] = None,
     ) -> GiteaHTTPResponse:
         """
         Decline review (request changes) in a pull request.
         """
+        if reviewer:
+            # group review bot is controlled via messages in comments
+            msg = f"@{reviewer} : decline\n\n" + (msg or "")
+            msg = msg.strip()
+            return cls.add_comment(conn, owner, repo, number, msg=msg)
+
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
         json_data = {
             "event": "REQUEST_CHANGES",
