@@ -5,6 +5,7 @@ from .exceptions import BranchExists
 from .exceptions import ForkExists
 from .exceptions import GiteaException
 from .exceptions import RepoExists
+from .exceptions import UserDoesNotExist
 from .exceptions import response_to_exception
 from .branch import Branch
 from .conf import Config
