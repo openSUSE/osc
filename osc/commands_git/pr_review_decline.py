@@ -24,6 +24,10 @@ class PullRequestReviewDeclineCommand(osc.commandline_git.GitObsCommand):
             "--commit",
             help="Pin the review to the specified commit",
         )
+        self.add_argument(
+            "--reviewer",
+            help="Review on behalf of the specified reviewer that is associated to group review bot",
+        )
 
     def run(self, args):
         from osc import gitea_api
@@ -33,12 +37,18 @@ class PullRequestReviewDeclineCommand(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
+        if args.reviewer:
+            try:
+                gitea_api.User.get(self.gitea_conn, args.reviewer)
+            except gitea_api.UserDoesNotExist as e:
+                self.parser.error(f"Invalid reviewer: {e}")
+
         pull_request_ids = args.id
 
         for pr_index, pr_id in enumerate(pull_request_ids):
             self.print_gitea_settings()
 
-            print(f"Declining {pr_id}...")
+            print(f"Declining {pr_id} ...")
 
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
-            gitea_api.PullRequest.decline_review(self.gitea_conn, owner, repo, number, msg=args.message, commit=args.commit)
+            gitea_api.PullRequest.decline_review(self.gitea_conn, owner, repo, number, msg=args.message, commit=args.commit, reviewer=args.reviewer)
