@@ -35,13 +35,19 @@ class User:
     def get(
         cls,
         conn: Connection,
+        username: Optional[str] = None,
     ) -> "Self":
         """
-        Retrieve details about the current user.
+        Retrieve details about a user.
+        If ``username`` is not specified, data about the current user is returned."
 
         :param conn: Gitea ``Connection`` instance.
+        :param username: Username of the queried user."
         """
-        url = conn.makeurl("user")
+        if not username:
+            url = conn.makeurl("user")
+        else:
+            url = conn.makeurl("users", username)
         response = conn.request("GET", url)
         obj = cls(response.json(), response=response)
         return obj
