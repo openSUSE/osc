@@ -71,6 +71,10 @@ def run_in_context(context, cmd, can_fail=False, **run_args):
     # use any env variables we've set in the steps
     env.update(context.env)
 
+    env["OSC_TESTING"] = "1"
+    env["GITEA_SERVER_HTTP_PORT"] = str(context.podman.container.ports["gitea_http"])
+    env["GITEA_SERVER_SSH_PORT"] = str(context.podman.container.ports["gitea_ssh"])
+
     # let's temporarily pass GIT_OBS_CONFIG through environment variable until other methods work
     if not env.get("GIT_OBS_CONFIG"):
         env["GIT_OBS_CONFIG"] = context.git_obs.config

@@ -29,7 +29,7 @@ from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
 from typing import Optional, Dict, Union, List, Iterable
-from urllib.parse import parse_qs, urlsplit, urlunsplit, urlparse, quote, urlencode, unquote
+from urllib.parse import parse_qs, urlsplit, urlunsplit, urlparse, urlunparse, quote, urlencode, unquote
 from urllib.error import HTTPError
 from xml.etree import ElementTree as ET
 
@@ -3133,6 +3133,20 @@ def make_dir(
 def run_obs_scm_bridge(url: str, target_dir: str):
     if not os.path.isfile(conf.config.obs_scm_bridge_cmd):
         raise oscerr.OscIOError(None, "Install the obs-scm-bridge package to work on packages managed in scm (git)!")
+
+    # this is for testing environment when Gitea is running on random ports
+    # we replace the port with the actual port Gitea is running on
+    if os.getenv("OSC_TESTING", None):
+        gitea_http_port = os.getenv("GITEA_SERVER_HTTP_PORT", None)
+        if gitea_http_port is not None:
+            parts = list(urlparse(url))
+            netloc = parts[1]
+            if ":" in netloc:
+                netloc = netloc.rsplit(':', 1)[0]
+            netloc = f"{netloc}:{gitea_http_port}"
+            parts[1] = netloc
+            url = urlunparse(parts)
+
     env = os.environ.copy()
     env["OSC_VERSION"] = get_osc_version()
     if run_external([conf.config.obs_scm_bridge_cmd, "--outdir", target_dir, "--url", url], env=env) != 0:
