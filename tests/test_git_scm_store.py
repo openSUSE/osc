@@ -6,6 +6,7 @@ import unittest
 
 import osc.conf
 from osc.git_scm.store import GitStore
+from osc.util import yaml as osc_yaml
 
 from .common import patch
 
@@ -128,6 +129,25 @@ class TestGitStoreProject(unittest.TestCase):
 
         pkg_path = os.path.join(prj_path, "package")
         self._git_init(pkg_path)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_nested_pkg_osc_project_from_git(self):
+        # project .git and .osc are next to each other
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_config"))
+        self._osc_init(prj_path, project="PROJ")
+
+        # the nested package must be under a subdirectory tracked in _subdirs file
+        # otherwise it's not recognized as a package
+        subdirs = {"subdirs": ["group"]}
+        self._write(os.path.join(prj_path, "_subdirs"), osc_yaml.yaml_dumps(subdirs))
+
+        pkg_path = os.path.join(prj_path, "group/package")
+        os.makedirs(pkg_path, exist_ok=True)
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")

@@ -146,7 +146,7 @@ class OscMainCommand(MainCommand):
             # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
             try:
                 # try reading the apiurl from the working copy
-                args.apiurl = osc_store.Store(Path.cwd()).apiurl
+                args.apiurl = osc_store.get_store(Path.cwd()).apiurl
             except oscerr.NoWorkingCopy:
                 # we can't use conf.config["apiurl"] because it contains the default "https://api.opensuse.org"
                 # let's leave setting the right value to conf.get_config()
@@ -1733,17 +1733,19 @@ class Osc(cmdln.Cmdln):
         attributepath = []
         if cmd in ['prj', 'prjconf']:
             if len(args) < 1:
-                apiurl = osc_store.Store(Path.cwd()).apiurl
-                project = store_read_project(Path.cwd())
+                store = osc_store.get_store(Path.cwd())
+                apiurl = store.apiurl
+                project = store.project
             else:
                 project = self._process_project_name(args[0])
 
         elif cmd == 'pkg':
             if len(args) < 2:
-                apiurl = osc_store.Store(Path.cwd()).apiurl
-                project = store_read_project(Path.cwd())
+                store = osc_store.get_store(Path.cwd())
+                apiurl = store.apiurl
+                project = store.project
                 if len(args) < 1:
-                    package = store_read_package(Path.cwd())
+                    package = store.package
                 else:
                     package = args[0]
             else:
@@ -8500,9 +8502,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 4:
             if is_package_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                package = store_read_package(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
+                store = osc_store.get_store(Path.cwd())
+                project = store.project
+                package = store.package
+                apiurl = store.apiurl
                 repo = args[0]
                 arch = args[1]
                 sysrq = args[2]
@@ -8565,12 +8568,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 1:
             if is_package_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                package = store_read_package(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
+                store = osc_store.get_store(Path.cwd())
+                project = store.project
+                package = store.package
+                apiurl = store.apiurl
             elif is_project_dir(Path.cwd()):
-                project = store_read_project(Path.cwd())
-                apiurl = osc_store.Store(Path.cwd()).apiurl
+                store = osc_store.get_store(Path.cwd())
+                project = store.project
+                apiurl = store.apiurl
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
@@ -9450,7 +9455,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             createPackageDir(os.path.join(project.dir, pac), project)
         else:
             if not os.path.exists(os.path.join(project_dir, pac)):
-                apiurl = osc_store.Store(project_dir).apiurl
+                store = osc_store.get_store(project_dir)
+                apiurl = store.apiurl
                 user = conf.get_apiurl_usr(apiurl)
                 data = meta_exists(metatype='pkg',
                                    path_args=(project, pac),
@@ -10583,7 +10589,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if args and is_package_dir(args[0]):
-            apiurl = osc_store.Store(args[0]).apiurl
+            store = osc_store.get_store(args[0])
+            apiurl = store.apiurl
         else:
             apiurl = self.get_api_url()
 
