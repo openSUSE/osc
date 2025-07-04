@@ -172,7 +172,7 @@ class ForkCommand(osc.commandline.OscCommand):
 
         # XXX: implicit branch name should be forbidden; assumptions are bad
         fork_scmsync = urllib.parse.urlunparse(
-            (parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, f"{fork_owner}/{fork_repo}", "", "", fork_branch)
+            (parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, f"{fork_owner}/{fork_repo}", "", parsed_scmsync_url.query, fork_branch)
         )
 
         print()
