@@ -50,10 +50,20 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
             nargs="*",
             help="Pull request ID in <owner>/<repo>#<number> format",
         )
+        self.add_argument(
+            "--reviewer",
+            help="Review on behalf of the specified reviewer that is associated to group review bot",
+        )
 
     def run(self, args):
         from osc import gitea_api
         from osc.output import get_user_input
+
+        if args.reviewer:
+            try:
+                gitea_api.User.get(self.gitea_conn, args.reviewer)
+            except gitea_api.UserDoesNotExist as e:
+                self.parser.error(f"Invalid reviewer: {e}")
 
         if args.id:
             # TODO: deduplicate, skip those that do not require a review (print to stderr)
@@ -128,16 +138,15 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
         sys.exit(return_code)
 
-    def approve(self, owner: str, repo: str, number: int, *, commit: str):
+    def approve(self, owner: str, repo: str, number: int, *, commit: str, reviewer: Optional[str] = None):
         from osc import gitea_api
 
-        gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number, commit=commit)
+        gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number, commit=commit, reviewer=reviewer)
 
-    def decline(self, owner: str, repo: str, number: int):
+    def decline(self, owner: str, repo: str, number: int, reviewer: Optional[str] = None):
         from osc import gitea_api
-        from .pr_create import edit_message
 
-        message = edit_message(template=DECLINE_REVIEW_TEMPLATE.format(**locals()))
+        message = gitea_api.edit_message(template=DECLINE_REVIEW_TEMPLATE.format(**locals()))
 
         # remove comments
         message = "\n".join([i for i in message.splitlines() if not i.startswith("#")])
@@ -145,13 +154,12 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
         # strip leading and trailing spaces
         message = message.strip()
 
-        gitea_api.PullRequest.decline_review(self.gitea_conn, owner, repo, number, msg=message)
+        gitea_api.PullRequest.decline_review(self.gitea_conn, owner, repo, number, msg=message, reviewer=reviewer)
 
     def comment(self, owner: str, repo: str, number: int):
         from osc import gitea_api
-        from .pr_create import edit_message
 
-        message = edit_message(template=NEW_COMMENT_TEMPLATE.format(**locals()))
+        message = gitea_api.edit_message(template=NEW_COMMENT_TEMPLATE.format(**locals()))
 
         # remove comments
         message = "\n".join([i for i in message.splitlines() if not i.startswith("#")])

@@ -177,5 +177,21 @@ class AutoMergeAlreadyScheduled(GiteaException):
         return result
 
 
+class UserDoesNotExist(GiteaException):
+    RESPONSE_STATUS = 404
+    # models/user/redirect.go:        return fmt.Sprintf("user redirect does not exist [name: %s]", err.Name)
+    RESPONSE_MESSAGE_RE = [
+        re.compile(r"^user redirect does not exist \[name: (?P<username>.*)\]"),
+    ]
+
+    def __init__(self, response: GiteaHTTPResponse, username: str):
+        super().__init__(response)
+        self.username = username
+
+    def __str__(self):
+        result = f"User '{self.username}' doesn't exist"
+        return result
+
+
 # gather all exceptions from this module that inherit from GiteaException
 EXCEPTION_CLASSES = [i for i in globals().values() if hasattr(i, "RESPONSE_MESSAGE_RE") and inspect.isclass(i) and issubclass(i, GiteaException)]

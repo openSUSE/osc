@@ -1,4 +1,6 @@
 import inspect
+import os
+import subprocess
 from typing import List
 from typing import Optional
 
@@ -37,3 +39,59 @@ class GiteaModel:
                         pass  # ignore objects that cannot fit to dictionary
 
         return result
+
+
+def get_editor() -> List[str]:
+    import shutil
+    import shlex
+
+    editor = os.getenv("EDITOR", None)
+    if editor:
+        candidates = [editor]
+    else:
+        candidates = ["vim", "vi"]
+
+    editor_path = None
+    args = None
+    for i in candidates:
+        i, *args = shlex.split(i)
+        if i.startswith("/"):
+            editor_path = i
+        else:
+            editor_path = shutil.which(i)
+
+        if editor_path:
+            break
+
+    if not editor_path:
+        raise RuntimeError(f"Unable to start editor '{candidates[0]}'")
+
+    res = [editor_path]
+    if args:
+        res += args
+
+    return res
+
+
+def get_editor_command(file_path: str) -> List[str]:
+    res = get_editor()
+    res.append(file_path)
+    return res
+
+
+def run_editor(file_path: str):
+    subprocess.run(get_editor_command(file_path), check=True)
+
+
+def edit_message(template: Optional[str] = None) -> str:
+    import tempfile
+
+    with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8", prefix="git_obs_message_") as f:
+        if template:
+            f.write(template)
+            f.flush()
+
+        run_editor(f.name)
+
+        f.seek(0)
+        return f.read()
