@@ -98,9 +98,6 @@ class GitStore:
             return None
 
     def get_project_git_scm_store(self):
-        if not self.is_package:
-            return None
-
         path = self.abspath
         while path:
             if path == "/":
@@ -210,13 +207,26 @@ class GitStore:
 
     @property
     def apiurl(self):
+        from ..obs_scm import Store
+
         if not self._apiurl:
-            if self.is_package and self.project_store:
+            if not self._apiurl and self.project_store:
+                # get apiurl from .osc that is at the same level as project .git
+                try:
+                    store = Store(self.project_store.abspath)
+                    store.assert_is_project()
+                    self._apiurl = store.apiurl
+                except oscerr.NoWorkingCopy:
+                    pass
+
+            if not self._apiurl and self.is_package and self.project_store:
                 # read apiurl from parent directory that contains a project with .osc metadata
                 self._apiurl = self.project_store.apiurl
+
             if not self._apiurl:
                 # HACK: use the currently configured apiurl
                 self._apiurl = osc_conf.config["apiurl"]
+
         return self._apiurl
 
     @apiurl.setter
@@ -225,11 +235,22 @@ class GitStore:
 
     @property
     def project(self):
+        from ..obs_scm import Store
+
         if not self._project:
             if self.is_package:
                 # handle _project in a package
 
-                if self.project_store:
+                if not self._project and self.project_store:
+                    # get project from .osc that is at the same level as project .git
+                    try:
+                        store = Store(self.project_store.abspath)
+                        store.assert_is_project()
+                        self._project = store.project
+                    except oscerr.NoWorkingCopy:
+                        pass
+
+                if not self._project and self.project_store:
                     # read project from detected project store
                     self._project = self.project_store.project
 
