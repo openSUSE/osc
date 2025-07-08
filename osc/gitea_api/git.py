@@ -9,9 +9,15 @@ from typing import Optional
 from typing import Tuple
 
 
+class SshParseResult(urllib.parse.ParseResult):
+    """
+    Class to distinguish parsed SSH URLs
+    """
+
+
 class Git:
     @staticmethod
-    def urlparse(url) -> urllib.parse.ParseResult:
+    def urlparse(url: str) -> urllib.parse.ParseResult:
         """
         Parse git url.
 
@@ -32,7 +38,7 @@ class Git:
             params = ''
             query = ''
             fragment = ''
-            result = urllib.parse.ParseResult(scheme, netloc, path, params, query, fragment)
+            result = SshParseResult(scheme, netloc, path, params, query, fragment)
             return result
 
         result = urllib.parse.urlparse(url)
@@ -41,6 +47,28 @@ class Git:
             result = urllib.parse.urlparse("https://" + url)
             result = urllib.parse.ParseResult("", *list(result)[1:])
         return result
+
+    @staticmethod
+    def urljoin(url: str, path: str) -> str:
+        """
+        Append ``path`` to ``url``.
+        """
+        parts = Git.urlparse(url)
+        # we're using os.path.normpath() and os.path.join() for working with URL paths, which may not be ideal, but seems to be working fine (on Linux)
+        # we need to remove leading forward slash from ``parts.path`` because ``os.path.normpath("/../")`` resolves to "/" and we don't want that
+        new_path = os.path.normpath(os.path.join(parts.path.lstrip("/"), path.lstrip("/")))
+
+        parts = parts._replace(path=new_path)
+
+        if isinstance(parts, SshParseResult):
+            new_url = f"{parts.netloc}:{parts.path}"
+        else:
+            new_url = urllib.parse.urlunparse(parts)
+
+        if new_path.startswith("../") or "/../" in new_path:
+            raise ValueError(f"URL must not contain relative path: {new_url}")
+
+        return new_url
 
     def __init__(self, workdir):
         self.abspath = os.path.abspath(workdir)
