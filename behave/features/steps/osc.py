@@ -111,6 +111,9 @@ class GitObs(CommandBase):
 
     def write_config(self):
         data = {
+            "general": {
+                "git_obs_repo_init_template": f"http://localhost:{self.context.podman.container.ports['gitea_http']}/pool/new_package"
+            },
             "logins": [
                 {
                     "name": "admin",
