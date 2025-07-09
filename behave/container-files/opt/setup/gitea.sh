@@ -116,7 +116,13 @@ git config user.email "email@example.com"
 cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.spec test-GitPkgA.spec
 cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.changes test-GitPkgA.changes
 sed 's@test-pkgA@test-GitPkgA@' -i *
-git add *
+
+echo '_build.*' >> .gitignore
+echo '*.changes merge=merge-changes' >> .gitattributes
+echo '[merge "merge-changes"]' >> .gitconfig
+echo 'driver=/usr/lib/obs/helper/bs_mergechanges %O %B %A' >> .gitconfig
+
+git add * .gitignore .gitattributes .gitconfig
 DATE="2022-01-03 11:22:33 UTC"
 GIT_COMMITTER_DATE="$DATE" git commit -a -m "Initial commit" --date "$DATE"
 
