@@ -6427,7 +6427,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.hide_legend = None
             opts.name_filter = None
             opts.show_non_building = None
-            opts.show_excluded = None
             return self.do_prjresults('prjresults', opts, *args)
 
         if opts.xml and opts.csv:
