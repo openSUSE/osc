@@ -101,6 +101,7 @@ class Repo(GiteaModel):
         reference: Optional[str] = None,
         reference_if_able: Optional[str] = None,
         depth: Optional[int] = None,
+        sparse: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
         ssh_strict_host_key_checking: bool = True,
     ) -> str:
@@ -117,6 +118,7 @@ class Repo(GiteaModel):
         :param cache_directory: Manage repo cache under ``cache_directory`` / ``conn.login.name`` / ``owner`` / ``repo`` and pass it as ``reference_if_able``.
         :param reference: Reuse objects from the specified local repository, error out if the repository doesn't exist.
         :param reference_if_able: Reuse objects from the specified local repository, only print warning if the repository doesn't exist.
+        :param sparse: checkout only files that match patterns.
         """
         import shlex
 
@@ -194,6 +196,16 @@ class Repo(GiteaModel):
         if quiet:
             cmd += ["--quiet"]
 
+        if sparse:
+            cmd += [
+                "--no-checkout",
+                "--single-branch",
+                "--filter=blob:none",
+                "--depth",
+                "1",
+                "-n",
+            ]
+
         subprocess.run(cmd, cwd=cwd, env=env, check=True)
 
         # setup remotes
@@ -211,6 +223,24 @@ class Repo(GiteaModel):
                 "config",
                 "core.sshCommand",
                 f"echo 'Using core.sshCommand: {env['GIT_SSH_COMMAND']}' >&2; {env['GIT_SSH_COMMAND']}",
+            ]
+            subprocess.run(cmd, cwd=cwd, check=True)
+
+        if sparse:
+            cmd = [
+                "git",
+                "-C",
+                directory_abspath,
+                "sparse-checkout",
+                "set",
+                "--no-cone",
+            ] + shlex.split(sparse)
+            subprocess.run(cmd, cwd=cwd, check=True)
+            cmd = [
+                "git",
+                "-C",
+                directory_abspath,
+                "checkout",
             ]
             subprocess.run(cmd, cwd=cwd, check=True)
 
