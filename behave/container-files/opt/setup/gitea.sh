@@ -70,11 +70,12 @@ function create_org {
 function create_org_repo {
     org="$1"
     repo="$2"
+    branch="${3:-factory}"
     curl \
         -X POST \
         -H "Authorization: token $TOKEN_ADMIN" \
         -H "Content-type: application/json" \
-        --data "{\"name\": \"$repo\", \"default_branch\": \"factory\"}" \
+        --data "{\"name\": \"$repo\", \"default_branch\": \"$branch\"}" \
         "http://localhost:3000/api/v1/orgs/$org/repos"
 }
 
@@ -95,10 +96,41 @@ function add_ssh_key {
 
 
 create_org pool
+create_org_repo pool new_package main
 create_org_repo pool test-GitPkgA
 add_ssh_key admin $TOKEN_ADMIN /root/.ssh/admin.pub
 add_ssh_key alice $TOKEN_ALICE /root/.ssh/alice.pub
 add_ssh_key bob $TOKEN_BOB /root/.ssh/bob.pub
+
+# create pool/new_package to use in `git repo init`
+(
+GITDIR="$(mktemp -d)"
+cd "$GITDIR"
+
+git init --initial-branch main
+# git commiter equals to the configured user
+git config user.name "Geeko Packager"
+git config user.email "email@example.com"
+
+echo '_build.*' >> .gitignore
+echo '*.changes merge=merge-changes' >> .gitattributes
+echo '[merge "merge-changes"]' >> .gitconfig
+echo 'driver=/usr/lib/obs/helper/bs_mergechanges %O %B %A' >> .gitconfig
+
+git add * .gitignore .gitattributes .gitconfig
+DATE="2022-01-03 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Initial commit" --date "$DATE"
+
+echo AAA > testfile
+
+git add *
+DATE="2022-01-04 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Initial commit2" --date "$DATE"
+
+
+git remote add origin http://admin:opensuse@localhost:3000/pool/new_package.git
+git push --set-upstream origin main
+)
 
 
 # create test-GitPkgA package based on test-PkgA
@@ -116,7 +148,13 @@ git config user.email "email@example.com"
 cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.spec test-GitPkgA.spec
 cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.changes test-GitPkgA.changes
 sed 's@test-pkgA@test-GitPkgA@' -i *
-git add *
+
+echo '_build.*' >> .gitignore
+echo '*.changes merge=merge-changes' >> .gitattributes
+echo '[merge "merge-changes"]' >> .gitconfig
+echo 'driver=/usr/lib/obs/helper/bs_mergechanges %O %B %A' >> .gitconfig
+
+git add * .gitignore .gitattributes .gitconfig
 DATE="2022-01-03 11:22:33 UTC"
 GIT_COMMITTER_DATE="$DATE" git commit -a -m "Initial commit" --date "$DATE"
 

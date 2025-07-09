@@ -291,3 +291,33 @@ class Config:
         self._write(data)
 
         return login
+
+    def git_obs_repo_init_template(self, name: Optional[str] = None) -> str:
+        data = self._read()
+
+        env_git_obs_repo_init_template = os.environ.get("GIT_OBS_REPO_INIT_TEMPLATE", "")
+        if env_git_obs_repo_init_template:
+            return env_git_obs_repo_init_template
+
+        res = None
+        general = data.get("general")
+        if general:
+            res = general.get("git_obs_repo_init_template")
+
+        for i in data.get("logins", []):
+            login_name = i.get("name", "")
+            if not login_name:
+                continue
+            if name:
+                if name != login_name:
+                    continue
+                else:
+                    res = i.get("git_obs_repo_init_template", res)
+
+            if not res and i.get("default", True):
+                res = i.get("git_obs_repo_init_template", res)
+
+        if not res:
+            res = "pool/new_package"
+
+        return res

@@ -3,6 +3,7 @@ import re
 import subprocess
 import urllib
 from typing import Dict
+from pathlib import Path
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -100,12 +101,15 @@ class Git:
         return path
 
     def init(self, *, initial_branch: Optional[str] = None, quiet: bool = True, mute_stderr: bool = False):
-        cmd = ["init"]
+        cmd = ["init", "--object-format=sha256"]
         if initial_branch:
             cmd += ["-b", initial_branch]
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd, mute_stderr=mute_stderr)
+
+    def is_initialized(self):
+        return Path(f"{self.abspath}/.git").exists()
 
     def clone(self,
         url: str,
@@ -265,6 +269,13 @@ class Git:
             cmd = ["fetch", "--all"]
         self._run_git(cmd)
 
+    @staticmethod
+    def split_owner_repo(path: str) -> Tuple[str, str]:
+        if path.endswith(".git"):
+            path = path[:-4]
+        return path.strip("/").split("/")[-2:]
+
+
     def get_owner_repo(self, remote: Optional[str] = None) -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
         if not remote_url:
@@ -278,11 +289,7 @@ class Git:
             # ssh://gitea@example.com:22/owner/repo.git
             url = url.rsplit("@", 1)[-1]
         parsed_url = urllib.parse.urlparse(url)
-        path = parsed_url.path
-        if path.endswith(".git"):
-            path = path[:-4]
-        owner, repo = path.strip("/").split("/")[-2:]
-        return owner, repo
+        return split_owner_repo(parsed_url.path)
 
     # LFS
 

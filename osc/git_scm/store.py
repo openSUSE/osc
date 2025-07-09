@@ -642,3 +642,62 @@ class GitStore(LocalGitStore):
             "project": project,
         }
         return result
+
+    def obs_git_init(self, template_dir, initial_branch="main"):
+        """
+        Make sure git repository has proper layout (e.g. adjust content in .gitattributes, .gitignore and .git/config)
+        """
+        from osc import gitea_api
+
+        need_commit = True
+        if self._git.is_initialized():
+            need_commit = False
+        else:
+            self._git.init(initial_branch=initial_branch)
+
+        self._merge_files_if_exist(".gitattributes", template_dir)
+        self._merge_files_if_exist(".gitignore", template_dir)
+        self._merge_configs_if_exist(template_dir)
+
+        if need_commit:
+            files = []
+            for f in [".gitattributes", ".gitignore"]:
+                if Path(f).is_file():
+                    files += [f]
+            if files:
+                self._git.add(files)
+                self._git.commit("Initial commit")
+
+    def _merge_files_if_exist(self, filename: str, srcdir: str):
+        from shutil import copy
+        from ..util.file_utils import merge_files_by_prefix
+
+        if not Path(f"{srcdir}/{filename}").is_file():
+            return
+
+        if not Path(f"{self.abspath}/{filename}").is_file():
+            copy(f"{srcdir}/{filename}", self.abspath)
+            return
+
+        # here both source and dest file exists - let's merge them
+        merge_files_by_prefix(f"{srcdir}/{filename}", f"{self.abspath}/{filename}")
+
+    def _merge_configs_if_exist(self, srcdir: str):
+        from shutil import copy
+        from ..util.file_utils import merge_configs
+
+        if not Path(f"{self.abspath}/.git").is_dir:
+            return
+
+        srcfile = f"{srcdir}/.gitconfig"
+        if not Path(srcfile).is_file():
+            srcfile = f"{srcdir}/.git/config"
+        if not Path(srcfile).is_file():
+            return
+
+        dest = f"{self.abspath}/.git/config"
+        if not Path(dest).is_file():
+            copy(srcfile, dest)
+            return
+
+        merge_configs(srcfile, dest)
