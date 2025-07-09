@@ -92,6 +92,7 @@ class Repo(GiteaModel):
         cwd: Optional[str] = None,
         use_http: bool = False,
         add_remotes: bool = False,
+        sparse: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
         ssh_strict_host_key_checking: bool = True,
     ) -> str:
@@ -105,6 +106,7 @@ class Repo(GiteaModel):
         :param cwd: Working directory. Defaults to the current working directory.
         :param use_http: Whether to use``clone_url`` for cloning over http(s) instead of ``ssh_url`` for cloning over SSH.
         :param add_remotes: Determine and add 'parent' or 'fork' remotes to the cloned repo.
+        :param sparse: checkout only files that match patterns.
         """
         import shlex
 
@@ -164,6 +166,16 @@ class Repo(GiteaModel):
         if quiet:
             cmd += ["--quiet"]
 
+        if sparse:
+            cmd += [
+                "--no-checkout",
+                "--single-branch",
+                "--filter=blob:none",
+                "--depth",
+                "1",
+                "-n",
+            ]
+
         subprocess.run(cmd, cwd=cwd, env=env, check=True)
 
         # setup remotes
@@ -183,6 +195,25 @@ class Repo(GiteaModel):
                 f"echo 'Using core.sshCommand: {env['GIT_SSH_COMMAND']}' >&2; {env['GIT_SSH_COMMAND']}",
             ]
             subprocess.run(cmd, cwd=cwd, check=True)
+
+        if sparse:
+            cmd = [
+                "git",
+                "-C",
+                directory_abspath,
+                "sparse-checkout",
+                "set",
+                "--no-cone",
+            ] + shlex.split(sparse)
+            subprocess.run(cmd, cwd=cwd, check=True)
+            cmd = [
+                "git",
+                "-C",
+                directory_abspath,
+                "checkout",
+            ]
+            subprocess.run(cmd, cwd=cwd, check=True)
+
 
         return directory_abspath
 
