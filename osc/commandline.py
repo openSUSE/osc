@@ -9764,10 +9764,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             search_term = None
             dev_meta = show_project_meta(apiurl, devel_prj)
             dev_metaroot = xml_fromstring(b''.join(dev_meta))
-            scmsync = dev_metaroot.find('scmsync').text
-            print("Devel project scmsync URL: ", scmsync)
-            if (not scmsync is None) and ('src.opensuse.org' in scmsync):
-                develprj_in_gitea = True
+            if dev_metaroot.find('scmsync') is not None:
+                scmsync = dev_metaroot.find('scmsync').text
+                if opts.verbose:
+                    print("Devel project scmsync URL: ", scmsync)
+                if (not scmsync is None) and ('src.opensuse.org' in scmsync):
+                    develprj_in_gitea = True
 
         # Try the OBS 2.4 way first.
         if search_term or opts.user or opts.group:
@@ -9878,26 +9880,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 metaroot = xml_fromstring(b''.join(m))
                 if develprj_in_gitea:
                     devel_maintainers = None
-                    # generate URL of the maintainership file by pulling package and branch name from devel project's scmsync attribute
-                    re_res = re.match(r'^https://src\.opensuse\.org/(.+)/\_ObsPrj\.git\#(.+)$', scmsync)
-                    if len(re_res.groups()) == 2:
-                        maint_file_url = f"https://src.opensuse.org/{re_res.group(1)}/_ObsPrj/raw/branch/{re_res.group(2)}/_maintainership.json"
-                        if opts.verbose:
-                            print(f"Fetching maintainership file from {maint_file_url}")
-                        response = http_request("GET", maint_file_url)
-                        response.auto_close = False
-                        if response.status == 200:
-                            devel_maintainers = json.loads(response.read().decode('utf-8'))
-                            """
-                            print(f"maintainer of {prj}:")
-                            for dm in devel_maintainers[""]:
-                                print(dm)
-                            """
-                        else:
-                            raise oscerr.NotFoundAPIError(f"Maintainership file not found.\nDerived maintainership file URL {maint_file_url} from scmsync attribute {scmsync}\nHTTP response code: {response.status}")
-
+                    # Generate URL of the maintainership file by pulling package and branch name from devel project's scmsync attribute
+                    # The repository name is the second part of the path in the scmsync URL
+                    # e.g. https://src.opensuse.org/<repo>/_ObsPrj/raw/<branch_or_commit>/<fragment>/_maintainership.json
+                    repo = urlsplit(scmsync)[2].split('/')[1]
+                    # The #fragment at the end is either a branch name or a commit hash
+                    fragment = urlsplit(scmsync)[4]
+                    if fragment is None or len(fragment) == 0:
+                        raise oscerr.NotFoundAPIError('Devel project contains incomplete scmsync data')
+                    if re.fullmatch(r'[0-9a-fA-F]{40}', fragment):
+                        branch_or_commit = 'commit'
                     else:
-                            raise oscerr.NotFoundAPIError('Devel project URL does not match the expected pattern')
+                        branch_or_commit = 'branch'
+                    maint_file_url = f"https://src.opensuse.org/{repo}/_ObsPrj/raw/{branch_or_commit}/{fragment}/_maintainership.json"
+                    if opts.verbose:
+                        print(f"Fetching maintainership file from {maint_file_url}")
+                    response = http_request("GET", maint_file_url)
+                    response.auto_close = False
+                    if response.status == 200:
+                        devel_maintainers = json.loads(response.read().decode('utf-8'))
+                    else:
+                        raise oscerr.NotFoundAPIError(f"Maintainership file not found.\nDerived maintainership file URL {maint_file_url} from scmsync attribute {scmsync}\nHTTP response code: {response.status}")
+
                 elif not opts.nodevelproject:
                     while metaroot.findall('devel'):
                         d = metaroot.find('devel')
