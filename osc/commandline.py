@@ -9,6 +9,7 @@ import glob
 import importlib
 import importlib.util
 import inspect
+import json
 import os
 import pkgutil
 import re
@@ -26,12 +27,14 @@ from tempfile import NamedTemporaryFile
 from typing import Optional, List, NoReturn
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
+from .connection import http_request
 
 from . import commands as osc_commands
 from . import oscerr
 from .commandline_common import *
 from .util.xml import xml_fromstring
 from .util.xml import xml_parse
+from . import core
 
 
 class OscCommand(Command):
@@ -9684,6 +9687,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pac = None
         metaroot = None
         searchresult = None
+        prj_in_gitea = False
+        develprj_in_gitea = False
+        devel_prj = None
+        devel_pkg = None
+        scmsync = None
         roles = ['bugowner', 'maintainer']
         if len(opts.role):
             roles = opts.role
@@ -9710,6 +9718,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
         apiurl = self.get_api_url()
+
+        if (prj == "openSUSE:Factory" or prj == "openSUSE.org:openSUSE:Factory"):
+            devel_prj, devel_pkg = core.show_devel_project(apiurl, prj, pac)
+            if devel_prj is None or devel_pkg is None:
+                raise oscerr.NotFoundAPIError('No devel project found for package %s in project %s' % (pac, prj))
+            print("openSUSE:Factory package", pac, " has devel project ", devel_prj)
+            print("Searching for maintainers in ", devel_prj)
+            prj = devel_prj
+            search_term = None
+            dev_meta = show_project_meta(apiurl, devel_prj)
+            dev_metaroot = xml_fromstring(b''.join(dev_meta))
+            if dev_metaroot.find('scmsync') is not None:
+                scmsync = dev_metaroot.find('scmsync').text
+                if opts.verbose:
+                    print("Devel project scmsync URL: ", scmsync)
+                if (not scmsync is None) and ('src.opensuse.org' in scmsync):
+                    develprj_in_gitea = True
 
         # Try the OBS 2.4 way first.
         if search_term or opts.user or opts.group:
@@ -9818,7 +9843,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
                 metaroot = xml_fromstring(b''.join(m))
-                if not opts.nodevelproject:
+                if develprj_in_gitea:
+                    devel_maintainers = None
+                    # Generate URL of the maintainership file by pulling package and branch name from devel project's scmsync attribute
+                    # The repository name is the second part of the path in the scmsync URL
+                    # e.g. https://src.opensuse.org/<repo>/_ObsPrj/raw/<branch_or_commit>/<fragment>/_maintainership.json
+                    repo = urlsplit(scmsync)[2].split('/')[1]
+                    # The #fragment at the end is either a branch name or a commit hash
+                    fragment = urlsplit(scmsync)[4]
+                    if fragment is None or len(fragment) == 0:
+                        raise oscerr.NotFoundAPIError('Devel project contains incomplete scmsync data')
+                    if re.fullmatch(r'[0-9a-fA-F]{40}', fragment):
+                        branch_or_commit = 'commit'
+                    else:
+                        branch_or_commit = 'branch'
+                    maint_file_url = f"https://src.opensuse.org/{repo}/_ObsPrj/raw/{branch_or_commit}/{fragment}/_maintainership.json"
+                    if opts.verbose:
+                        print(f"Fetching maintainership file from {maint_file_url}")
+                    response = http_request("GET", maint_file_url)
+                    response.auto_close = False
+                    if response.status == 200:
+                        devel_maintainers = json.loads(response.read().decode('utf-8'))
+                    else:
+                        raise oscerr.NotFoundAPIError(f"Maintainership file not found.\nDerived maintainership file URL {maint_file_url} from scmsync attribute {scmsync}\nHTTP response code: {response.status}")
+
+                elif not opts.nodevelproject:
                     while metaroot.findall('devel'):
                         d = metaroot.find('devel')
                         prj = d.get('project', prj)
@@ -9860,6 +9909,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
                 for group in metaroot.findall('group'):
                     maintainers.setdefault(group.get('role'), []).append("group:" + group.get('groupid'))
+                projects = [maintainers]
+            # from gitea devel project
+            if develprj_in_gitea:
+                maintainers = {}
+                for person in devel_maintainers[""]:
+                    maintainers.setdefault('maintainer', []).append(person)
                 projects = [maintainers]
 
             # showing the maintainers
