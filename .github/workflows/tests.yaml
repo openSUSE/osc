@@ -63,6 +63,9 @@ jobs:
           - 'registry.opensuse.org/opensuse/leap:15.6'
           - 'registry.opensuse.org/opensuse/tumbleweed'
 
+          # SLE
+          - 'registry.suse.com/bci/bci-base:15.7'
+
           # CentOS Stream
           - 'quay.io/centos/centos:stream9'
 
@@ -85,6 +88,14 @@ jobs:
             zypper -n lr --details
             grep -qi tumbleweed /etc/os-release && zypper -n dist-upgrade || zypper -n patch || zypper -n patch
             zypper -n install git-lfs
+            zypper -n install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
+
+      - name: 'Install packages (SLE)'
+        if: contains(matrix.container, '/bci/bci-base') }}
+        run: |
+            zypper -n --gpg-auto-import-keys refresh
+            zypper -n lr --details
+            zypper -n --no-gpg-checks install https://download.opensuse.org/distribution/leap/15.6/repo/oss/x86_64/git-lfs-3.4.0-bp156.1.14.x86_64.rpm
             zypper -n install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
       - name: 'Install packages (Fedora/CentOS)'
