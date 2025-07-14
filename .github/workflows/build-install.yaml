@@ -38,6 +38,9 @@ jobs:
           - 'registry.opensuse.org/opensuse/leap:15.6'
           - 'registry.opensuse.org/opensuse/tumbleweed'
 
+          # SLE
+          - 'registry.suse.com/bci/bci-base:15.7'
+
           # CentOS Stream
           - 'quay.io/centos/centos:stream9'
 
@@ -54,6 +57,16 @@ jobs:
             zypper -n dist-upgrade
             zypper -n install git-lfs rpm-build
 
+      - name: 'Install packages (SLE)'
+        if: ${{ contains(matrix.container, '/bci/bci-base') }}
+        run: |
+            zypper -n --gpg-auto-import-keys refresh
+            zypper -n lr --details
+            zypper -n dist-upgrade
+            # git-lfs package is not available in the repos, we'll include it from leap 15.6
+            zypper -n install rpm-build
+            zypper -n --no-gpg-checks install https://download.opensuse.org/distribution/leap/15.6/repo/oss/x86_64/git-lfs-3.4.0-bp156.1.14.x86_64.rpm
+
       - name: 'Install packages (Fedora/CentOS)'
         if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
         run: |
@@ -67,8 +80,8 @@ jobs:
         with:
             fetch-depth: 0
 
-      - name: 'Install build dependencies (OpenSUSE)'
-        if: ${{ contains(matrix.container, '/opensuse/') }}
+      - name: 'Install build dependencies (OpenSUSE/SLE)'
+        if: ${{ contains(matrix.container, '/opensuse/') || contains(matrix.container, '/bci/bci-base') }}
         run: |
             zypper --non-interactive install $(rpmspec -q --buildrequires contrib/osc.spec)
 
@@ -89,8 +102,8 @@ jobs:
 
             ./contrib/build_rpm.py --srpm --rpm
 
-      - name: 'Install built RPMs (OpenSUSE)'
-        if: ${{ contains(matrix.container, '/opensuse/') }}
+      - name: 'Install built RPMs (OpenSUSE/SLE)'
+        if: ${{ contains(matrix.container, '/opensuse/') || contains(matrix.container, '/bci/bci-base') }}
         run: |
             zypper --non-interactive install --force --allow-vendor-change --allow-unsigned-rpm ./contrib/*/*.rpm
 

@@ -1,15 +1,13 @@
-FROM opensuse/leap:15.6
+FROM registry.suse.com/bci/bci-base:15.7
 
-RUN zypper -n modifyrepo --disable repo-openh264 || : \
-    && zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.6/OBS:Server:Unstable.repo \
-    && zypper ar --repo http://download.opensuse.org/repositories/devel:/tools:/scm/15.6/devel:tools:scm.repo \
-    && zypper ar --repo https://download.opensuse.org/repositories/devel:/Factory:/git-workflow/15.6/devel:Factory:git-workflow.repo \
+RUN zypper ar --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/15.7/OBS:Server:Unstable.repo \
+    && zypper ar --repo http://download.opensuse.org/repositories/devel:/tools:/scm/15.7/devel:tools:scm.repo \
+    && zypper ar --repo https://download.opensuse.org/repositories/devel:/Factory:/git-workflow/15.7/devel:Factory:git-workflow.repo \
     && zypper -n --gpg-auto-import-keys refresh
 
 RUN zypper -n install \
     bash \
     bash-completion \
-    crun \
     fuse-overlayfs \
     git \
     gitea-action-runner \
@@ -29,7 +27,9 @@ RUN zypper -n install \
     sqlite3 \
     systemd \
     vim \
-    && zypper -n install --repo=devel_tools_scm gitea \
+    devel_Factory_git-workflow:gitea \
+    # gd package is not available in the repos, but required by obs-api-deps -> perl-GD; we'll include it from leap 15.6
+    https://download.opensuse.org/distribution/leap/15.6/repo/oss/x86_64/gd-2.2.5-11.3.1.x86_64.rpm \
     && rm -rf /var/cache/zypp/*
 
 COPY container-files/ /
