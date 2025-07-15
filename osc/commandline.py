@@ -7427,6 +7427,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def parse_repoarchdescr(self, args, noinit=False, alternative_project=None, ignore_descr=False, vm_type=None, multibuild_package=None):
         from . import build as osc_build
         from . import conf
+        from . import store as osc_store
         from .core import Package
         from .core import Repo
         from .core import decode_it
@@ -7479,11 +7480,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         self._debug("arg_repository: ", arg_repository)
         self._debug("arg_descr: ", arg_descr)
 
+        store_obj = osc_store.get_store(".")
+
         repositories = []
         # store list of repos for potential offline use
-        repolistfile = os.path.join(Path.cwd(), store, "_build_repositories")
         if noinit:
-            repositories = Repo.fromfile(repolistfile)
+            repositories = store_obj.build_repositories
         else:
             project = alternative_project or store_read_project('.')
             apiurl = self.get_api_url()
@@ -7492,7 +7494,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs(f'no repositories defined for project \'{project}\'')
             if alternative_project is None:
                 # only persist our own repos
-                Repo.tofile(repolistfile, repositories)
+                store_obj.build_repositories = repositories
 
         no_repo = False
         repo_names = sorted({r.name for r in repositories})

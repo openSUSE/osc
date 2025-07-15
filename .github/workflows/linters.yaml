@@ -16,7 +16,9 @@ jobs:
   mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - uses: actions/setup-python@v4
       - run: pip config set global.break-system-packages 1
       - run: pip install mypy
@@ -27,9 +29,10 @@ jobs:
   darker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          persist-credentials: false
       - uses: actions/setup-python@v4
       - uses: akaihola/darker@1.6.1
         with:
@@ -48,7 +51,9 @@ jobs:
             sudo pip3 config set global.break-system-packages 1
             sudo pip3 install pylint
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: 'Run pylint --errors-only'
         run: |
@@ -77,19 +82,22 @@ jobs:
             sudo pip3 config set global.break-system-packages 1
             sudo pip3 install pylint
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: osc-pr
+          persist-credentials: false
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: osc-master
+          persist-credentials: false
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: ${{ matrix.plugin_repository }}
           path: plugin
+          persist-credentials: false
 
       - name: 'Install dependencies from pip'
         run: |

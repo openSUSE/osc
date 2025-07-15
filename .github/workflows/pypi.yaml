@@ -16,6 +16,8 @@ jobs:
       id-token: write  # IMPORTANT: this permission is mandatory for trusted publishing
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Set up Python 3.12
         uses: actions/setup-python@v5
         with:

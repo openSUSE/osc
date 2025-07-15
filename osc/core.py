@@ -4052,26 +4052,11 @@ class Repo:
     def __repr__(self):
         return f'Repo({self.name} {self.arch})'
 
-    @staticmethod
-    def fromfile(filename):
-        if not os.path.exists(filename):
-            return []
-        repos = []
-        lines = open(filename).readlines()
-        for line in lines:
-            data = line.split()
-            if len(data) == 2:
-                repos.append(Repo(data[0], data[1]))
-            elif len(data) == 1:
-                # only for backward compatibility
-                repos.append(Repo(data[0], ''))
-        return repos
-
-    @staticmethod
-    def tofile(filename, repos):
-        with open(filename, 'w') as f:
-            for repo in repos:
-                f.write(f'{repo.name} {repo.arch}\n')
+    def dict(self):
+        return {
+            "name": self.name,
+            "arch": self.arch,
+        }
 
 
 def get_repos_of_project(apiurl: str, prj: str):

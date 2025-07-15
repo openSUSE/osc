@@ -20,7 +20,9 @@ jobs:
           echo "$GHCR_TOKEN" | podman login ghcr.io -u "$GHCR_USER" --password-stdin
 
       - name: "Checkout sources"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       # This step is necessary to avoid the following error during podman build:
       # (13)Permission denied: AH00072: make_sock: could not bind to address 0.0.0.0:80
