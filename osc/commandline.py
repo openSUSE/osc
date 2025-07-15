@@ -131,6 +131,11 @@ class OscMainCommand(MainCommand):
             action="store_true",
             help="disable usage of desktop keyring system",
         )
+        self.add_argument(
+            "--no-pager",
+            action="store_true",
+            help="disable pager in stdout output",
+        )
 
     def post_parse_args(self, args):
         from . import conf
@@ -819,6 +824,12 @@ class Osc(cmdln.Cmdln):
             action='store_true',
             help='disable usage of desktop keyring system',
         ))
+        arguments.append(dict(
+            names=['--no-pager'],
+            action="store_true",
+            help="disable pager in stdout output",
+        ))
+
 
         _add_parser_arguments_from_data(parser, arguments)
 
@@ -2292,7 +2303,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rdiff = b''
 
         if opts.diff:
-            run_pager(highlight_diff(rdiff))
+            hldiff = highlight_diff(rdiff)
+            if opts.no_pager:
+                sys.stdout.buffer.write(hldiff)
+            else:
+                run_pager(hldiff)
+
             return
         if rdiff is not None:
             rdiff = decode_it(rdiff)
@@ -3485,7 +3501,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                action.tgt_project.encode(), action.tgt_package.encode())
                         diff += submit_action_diff(apiurl, action)
                         diff += b'\n\n'
-                run_pager(highlight_diff(diff), tmp_suffix="")
+                hldiff = highlight_diff(diff)
+                if opts.no_pager:
+                    sys.stdout.buffer.write(hldiff)
+                else:
+                    run_pager(hldiff, tmp_suffix="")
 
         # checkout
         elif cmd in ('checkout', 'co'):
@@ -4849,9 +4869,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.revision = baserev
 
             print(f"diff committed package against linked revision {baserev}\n")
-            run_pager(
-                highlight_diff(
-                    server_diff(
+            hldiff = highlight_diff(server_diff(
                         self.get_api_url(),
                         linkinfo.get("project"),
                         linkinfo.get("package"),
@@ -4863,7 +4881,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         opts.missingok,
                     )
                 )
-            )
+            if opts.no_pager:
+                sys.stdout.buffer.write(hldiff)
+            else:
+                run_pager(hldiff)
             return
 
         if opts.change:
@@ -4897,7 +4918,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                          pac.prjname, pac.name, rev2,
                                          not opts.plain, opts.missingok, opts.meta, not opts.unexpand, files=files)
-        run_pager(highlight_diff(diff))
+        hldiff = highlight_diff(diff)
+        if opts.no_pager:
+            sys.stdout.buffer.write(hldiff)
+        else:
+            run_pager(hldiff)
+
 
     @cmdln.option('--issues-only', action='store_true',
                   help='show only issues in diff')
@@ -4991,8 +5017,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  xml=opts.xml)
         if opts.issues_only:
             print(decode_it(rdiff))
+            return
+
+        hldiff = highlight_diff(rdiff)
+        if opts.no_pager:
+            sys.stdout.buffer.write(hldiff)
         else:
-            run_pager(highlight_diff(rdiff))
+            run_pager(hldiff)
 
     def _pdiff_raise_non_existing_package(self, project, package, msg=None):
         raise oscerr.PackageMissing(project, package, msg or f'{project}/{package} does not exist.')
@@ -5157,8 +5188,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         rdiff = server_diff(apiurl, parent_project, parent_package, None, project,
                             package, None, unified=unified, missingok=noparentok)
-
-        run_pager(highlight_diff(rdiff))
+        hldiff = highlight_diff(rdiff)
+        if opts.no_pager:
+            sys.stdout.buffer.write(hldiff)
+        else:
+            run_pager(hldiff)
 
     def _get_branch_parent(self, prj):
         m = re.match('^home:[^:]+:branches:(.+)', prj)

@@ -75,7 +75,7 @@ oscrc="${XDG_CONFIG_HOME}/osc/oscrc"
 
 command=osc
 oscopts=(--version --help --debugger --post-mortem --traceback --http-full-debug
-    --debug --apiurl -A --config -c --no-keyring --no-gnome-keyring --verbose --quiet)
+    --debug --apiurl -A --config -c --no-keyring --no-gnome-keyring --no-pager --verbose --quiet)
 osccmds=(abortbuild add addremove aggregatepac api ar bco bl blt branch branchco
     bsdevelproject bse bugowner build buildconfig buildhist buildhistory buildinfo
     buildlog buildlogtail cat changedevelreq changedevelrequest checkconstraints checkin checkout
