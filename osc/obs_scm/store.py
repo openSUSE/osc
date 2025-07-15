@@ -325,6 +325,34 @@ class Store:
         self.write_list("_last_buildroot", value)
 
     @property
+    def build_repositories(self):
+        from ..core import Repo
+
+        self.assert_is_package()
+        entries = self.read_list("_build_repositories")
+        if entries is None:
+            return None
+
+        repos = []
+        for entry in entries:
+            name, arch = entry.split(" ")
+            repos.append(Repo(name=name, arch=arch))
+
+        return repos
+
+    @build_repositories.setter
+    def build_repositories(self, value):
+        from ..core import Repo
+
+        self.assert_is_package()
+        entries = []
+        for i in value:
+            if not isinstance(i, Repo):
+                raise ValueError(f"The value is not an instance of 'Repo': {i}")
+            entries.append(f"{i.name} {i.arch}")
+        self.write_list("_build_repositories", entries)
+
+    @property
     def _meta_node(self):
         if not self.exists("_meta"):
             return None

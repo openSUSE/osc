@@ -326,6 +326,22 @@ class GitStore:
         value = json.dumps(value)
         self._set_option(name, value)
 
+    def _get_list_option(self, name):
+        result = self._get_option(name)
+        if result is None:
+            return None
+        result = json.loads(result)
+        self._check_type(name, result, list)
+        return result
+
+    def _set_list_option(self, name, value):
+        if value is None:
+            self._unset_option(name)
+            return
+        self._check_type(name, value, list)
+        value = json.dumps(value)
+        self._set_option(name, value)
+
     @property
     def last_buildroot(self):
         self.assert_is_package()
@@ -345,6 +361,29 @@ class GitStore:
             "vm_type": value[2],
         }
         self._set_dict_option("last-buildroot", value)
+
+    @property
+    def build_repositories(self):
+        from ..core import Repo
+
+        self.assert_is_package()
+        repos = self._get_list_option("build-repositories")
+        if repos is None:
+            return None
+        return [Repo(**i) for i in repos]
+
+    @build_repositories.setter
+    def build_repositories(self, value):
+        from ..core import Repo
+
+        self.assert_is_package()
+        repos = []
+        if value is not None:
+            for i in value:
+                if not isinstance(i, Repo):
+                    raise ValueError(f"The value is not an instance of 'Repo': {i}")
+                repos.append(i.dict())
+        self._set_list_option("build-repositories", repos)
 
     @property
     def scmurl(self):
