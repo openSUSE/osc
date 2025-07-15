@@ -28,7 +28,9 @@ jobs:
             sudo apt-get -y --no-install-recommends install git-lfs
             sudo apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: 'Change owner to root:root'
         run: |
@@ -114,7 +116,9 @@ jobs:
             apt-get -y --no-install-recommends install git-lfs
             apt-get -y --no-install-recommends install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: 'Run unit tests'
         run: |
@@ -153,7 +157,9 @@ jobs:
             sudo ln -s /usr/local/lib/*/*/obs_scm_bridge /usr/lib/obs/service/obs_scm_bridge
 
       - name: "Checkout sources"
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: "Pull container image"
         run: |

@@ -76,9 +76,10 @@ jobs:
             rpm -q dnf5 >/dev/null || dnf -y install dnf-plugins-core || :
             rpm -q dnf5 >/dev/null && dnf -y install dnf5-plugins || :
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
             fetch-depth: 0
+            persist-credentials: false
 
       - name: 'Install build dependencies (OpenSUSE/SLE)'
         if: ${{ contains(matrix.container, '/opensuse/') || contains(matrix.container, '/bci/bci-base') }}
@@ -129,7 +130,9 @@ jobs:
             sudo apt-get -y upgrade
             sudo apt-get -y --no-install-recommends install git python3-pip python3-rpm
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: 'Install osc from pip'
         run: |
@@ -152,7 +155,9 @@ jobs:
             sudo apt-get -y update
             sudo apt-get -y --no-install-recommends install git python3-pip python3-rpm python3-virtualenv
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: 'Initialize virtualenv'
         run: |
