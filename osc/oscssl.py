@@ -12,7 +12,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from urllib3.util.ssl_ import create_urllib3_context
 
-from . import oscerr
+from .oscerr import CertVerificationError
 from .util import xdg
 
 
@@ -39,12 +39,6 @@ def create_ssl_context():
         if ssl_context.minimum_version < ssl.TLSVersion.TLSv1_2:
             ssl_context.minimum_version = ssl.TLSVersion.TLSv1_2
     return ssl_context
-
-
-class CertVerificationError(oscerr.OscBaseError):
-    def __str__(self):
-        args_str = [str(i) for i in self.args]
-        return "Certificate Verification Error: " + "\n".join(args_str)
 
 
 class TrustedCertStore:

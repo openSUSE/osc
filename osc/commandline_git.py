@@ -280,7 +280,7 @@ def main():
         GitObsMainCommand.main()
     except KeyboardInterrupt:
         print_msg("Interrupted on user request", print_to="error")
-        sys.exit(1)
+        sys.exit(130)
     except oscerr.OscBaseError as e:
         print_msg(str(e), print_to="error")
         sys.exit(1)
