@@ -344,24 +344,21 @@ class Package:
         #      it's not possible to "leave" the metamode again) (except if you modify pac.meta
         #      which is really ugly:) )
         if self.meta:
-            store_write_string(self.absdir, '_meta_mode', '')
+            self.store.write_string("_meta_mode", "")
         elif self.ismetamode():
-            os.unlink(os.path.join(self.storedir, '_meta_mode'))
+            self.store.unlink("_meta_mode")
 
     def write_sizelimit(self):
         if self.size_limit and self.size_limit <= 0:
-            try:
-                os.unlink(os.path.join(self.storedir, '_size_limit'))
-            except:
-                pass
+            self.store.unlink("_size_limit")
         else:
-            store_write_string(self.absdir, '_size_limit', str(self.size_limit) + '\n')
+            self.store.size_limit = self.size_limit
 
     def write_addlist(self):
-        self.__write_storelist('_to_be_added', self.to_be_added)
+        self.store.to_be_added = self.to_be_added or None
 
     def write_deletelist(self):
-        self.__write_storelist('_to_be_deleted', self.to_be_deleted)
+        self.store.to_be_deleted = self.to_be_deleted or None
 
     def delete_source_file(self, n):
         """delete local a source file"""
@@ -606,9 +603,9 @@ class Package:
         print(f'Committed revision {self.rev}.')
 
         if self.ispulled():
-            os.unlink(os.path.join(self.storedir, '_pulled'))
+            self.store.unlink("_pulled")
         if self.islinkrepair():
-            os.unlink(os.path.join(self.storedir, '_linkrepair'))
+            self.store.unlink("_linkrepair")
             self.linkrepair = False
             # XXX: mark package as invalid?
             print('The source link has been repaired. This directory can now be removed.')
@@ -652,17 +649,8 @@ class Package:
             # file
             self.update_local_pacmeta()
 
-    def __write_storelist(self, name, data):
-        if len(data) == 0:
-            try:
-                os.unlink(os.path.join(self.storedir, name))
-            except:
-                pass
-        else:
-            store_write_string(self.absdir, name, "\n".join(data))
-
     def write_conflictlist(self):
-        self.__write_storelist('_in_conflict', self.in_conflict)
+        self.store.in_conflict = self.in_conflict or None
 
     def updatefile(self, n, revision, mtime=None):
         from ..core import get_source_file
@@ -867,7 +855,7 @@ class Package:
         self.to_be_added = read_tobeadded(self.absdir)
         self.to_be_deleted = read_tobedeleted(self.absdir)
         self.in_conflict = read_inconflict(self.absdir)
-        self.linkrepair = os.path.isfile(os.path.join(self.storedir, '_linkrepair'))
+        self.linkrepair = self.store.exists("_linkrepair")
         self.size_limit = read_sizelimit(self.dir)
         self.meta = self.ismetamode()
 
@@ -899,21 +887,18 @@ class Package:
 
     def ispulled(self):
         """tells us if we have pulled a link."""
-        return os.path.isfile(os.path.join(self.storedir, '_pulled'))
+        return self.store.exists("_pulled")
 
     def isfrozen(self):
         """tells us if the link is frozen."""
-        return os.path.isfile(os.path.join(self.storedir, '_frozenlink'))
+        return self.store.exists("_frozenlink")
 
     def ismetamode(self):
         """tells us if the package is in meta mode"""
-        return os.path.isfile(os.path.join(self.storedir, '_meta_mode'))
+        return self.store.exists("_meta_mode")
 
     def get_pulled_srcmd5(self):
-        pulledrev = None
-        for line in open(os.path.join(self.storedir, '_pulled')):
-            pulledrev = line.strip()
-        return pulledrev
+        return self.store.read_string("_pulled")
 
     def haslinkerror(self):
         """
@@ -1273,8 +1258,7 @@ rev: %s
         print()
 
     def unmark_frozen(self):
-        if os.path.exists(os.path.join(self.storedir, '_frozenlink')):
-            os.unlink(os.path.join(self.storedir, '_frozenlink'))
+        self.store.unlink("_frozenlink")
 
     def latest_rev(self, include_service_files=False, expand=False):
         from ..core import show_upstream_rev
