@@ -93,7 +93,7 @@ jobs:
             zypper -n install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3
 
       - name: 'Install packages (SLE)'
-        if: contains(matrix.container, '/bci/bci-base') }}
+        if: ${{ contains(matrix.container, '/bci/bci-base') }}
         run: |
             zypper -n --gpg-auto-import-keys refresh
             zypper -n lr --details
