@@ -54,6 +54,7 @@ class ForkCommand(osc.commandline.OscCommand):
 
     def run(self, args):
         from osc import conf as osc_conf
+        from osc import core as osc_core
         from osc import gitea_api
         from osc import obs_api
         from osc.git_scm import GitStore
@@ -83,27 +84,11 @@ class ForkCommand(osc.commandline.OscCommand):
             pkg = obs_api.Package.from_api(args.apiurl, project, package)
 
             if not args.no_devel_project:
-                # devel project is not set in package meta as usual but we parse it from "OBS:RejectBranch" attribute
-                try:
-                    attributes = obs_api.Attributes.from_api(args.apiurl, project, package, attr="OBS:RejectBranch").attribute_list
-                except HTTPError as e:
-                    if e.code != 404:
-                        raise
-                    attributes = []
-                except TypeError:
-                    # empty <attributes/> element, unable to instantiate Attributes model
-                    attributes = []
-                if attributes:
-                    attribute = attributes[0].value
-                    # the pattern starts with a non-greedy match so we capture the first url
-                    match = re.match(r".*?(https://[^ ]+).*", attribute)
-                    if match:
-                        devel_project_url = match.group(1)
-                        build_project = GitStore.get_build_project(devel_project_url)
-                        # override the package we're cloning with the one from the devel project
-                        use_devel_project = True
-                        project = build_project
-                        pkg = obs_api.Package.from_api(args.apiurl, project, package)
+                devel_project, devel_package = osc_core.show_devel_project(args.apiurl, project, package)
+                if devel_project:
+                    # override the package we're cloning with the one from the devel project
+                    pkg = obs_api.Package.from_api(args.apiurl, devel_project, devel_package)
+                    use_devel_project = True
 
             if not pkg.scmsync:
                 print(f"{tty.colorize('ERROR', 'red,bold')}: Forking is possible only with packages managed in Git (the <scmsync> element must be set in the package meta)")
