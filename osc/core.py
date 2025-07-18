@@ -100,7 +100,6 @@ DISTURL_RE = re.compile(r"^(?P<bs>.*)://(?P<apiurl>.*?)/(?P<project>.*?)/(?P<rep
 BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(?P<repository>.*?)/(?P<arch>.*?)/(?P<package>.*?)/_log$")
 BUFSIZE = 1024 * 1024
 
-DEVEL_PACKAGES_URL = "https://src.opensuse.org/openSUSE/Factory/raw/branch/main/pkgs/_meta/devel_packages"
 
 new_project_templ = """\
 <project name="%(name)s">
@@ -1399,10 +1398,23 @@ def show_devel_project(apiurl, prj, pac):
 
     package_obj = obs_api.Package.from_api(apiurl, prj, pac)
     if package_obj.devel is None:
-        if prj == "openSUSE:Factory" or prj == "openSUSE.org:openSUSE:Factory":
+        # devel project is not set in package meta as usual
+        # let's check if OBS:GitDevelProjectMap project attribute exists and points to an URL with the devel project mapping
+        try:
+            attributes = obs_api.Attributes.from_api(apiurl, prj, package=None, attr="OBS:GitDevelProjectMap").attribute_list
+        except HTTPError as e:
+            if e.code != 404:
+                raise
+            attributes = []
+        except TypeError:
+            # empty <attributes/> element, unable to instantiate Attributes model
+            attributes = []
+        devel_packages_url = attributes[0].value if attributes else None
+
+        if devel_packages_url:
             # If OBS api doesn't return a devel project, query the gitea devel_packages file
             try:
-                response = http_request("GET", DEVEL_PACKAGES_URL)
+                response = http_request("GET", devel_packages_url)
                 response.auto_close = False
             except:
                 return None, None
