@@ -1,3 +1,33 @@
+- 1.18.0
+  - Command-line:
+    - Add 'git-obs pr comment [--message=...]' command
+    - Add 'git-obs pr show-patch' command
+    - Add '--reviewer' option to 'git-obs pr review {approve,decline,interactive}' to support group reviews via group review bot
+    - Update 'git-obs pr review interactive' to return non-zero return codes for 'exit' and 'skip' actions
+    - Make 'osc results --show-excluded' work in a project context
+    - Add '--no-pager' global option
+    - Fix 'osc fork' by copying whole query part to the new scmsync url
+    - Fix 'osc buildinfo' for git packages by handing the 'build_repositories' files by store objects
+    - Fix crash in 'git-obs pr get --patch'
+    - Fix git-obs to exit with 130 on keyboard interrupt
+    - Fix --sccache help typo in 'osc build' command
+  - Connection:
+    - Don't retry requests on 504 Gateway Timeout
+  - Library:
+    - If a devel project is not specified, try reading it from a mapping from URL set in OBS:GitDevelProjectMap project attribute
+    - Improve detection of packages and projects in git
+    - scmsync_obsinfo: Pass correct revision to obs-scm-bridge
+    - Add obs_api.Request.search() method
+    - Raise an exception if obs-scm-bridge fails
+    - Fix obs_scm.Package.get_pulled_srcmd5() returning an empty string
+    - Fix git store to support non-default remote
+    - Extend 'gitea_api.User.get()' to take 'username' parameter
+    - Move get_editor() and related functions from command-line module to gitea_api.common
+    - Migrate subcommands from using Store() to get_store() that is git aware
+    - Make imports lazy to imporove osc load times
+  - Other:
+    - Add osc prompt for Bash
+
 - 1.17.0
   - Command-line:
     - Rename 'git-obs pr review' to 'git-obs pr review interactive'
