@@ -1,12 +1,12 @@
 import osc.commandline_git
 
 
-class PullRequestMergeCommand(osc.commandline_git.GitObsCommand):
+class PullRequestCancelScheduledMergeCommand(osc.commandline_git.GitObsCommand):
     """
-    Merge pull requests
+    Cancel scheduled merge of pull requests
     """
 
-    name = "merge"
+    name = "cancel-scheduled-merge"
     parent = "PullRequestCommand"
 
     def init_arguments(self):
@@ -14,11 +14,6 @@ class PullRequestMergeCommand(osc.commandline_git.GitObsCommand):
             "id",
             nargs="+",
             help="Pull request ID in <owner>/<repo>#<number> format",
-        )
-        self.add_argument(
-            "--now",
-            action="store_true",
-            help="Merge immediately, don't wait until all checks succeed.",
         )
 
     def run(self, args):
@@ -29,16 +24,12 @@ class PullRequestMergeCommand(osc.commandline_git.GitObsCommand):
         pull_request_ids = args.id
 
         for pr_index, pr_id in enumerate(pull_request_ids):
-            if args.now:
-                print(f"Merging {pr_id}...")
-            else:
-                print(f"Scheduling auto merge of {pr_id}...")
+            print(f"Canceling scheduled merge of {pr_id}...")
 
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
-            gitea_api.PullRequest.merge(
+            gitea_api.PullRequest.cancel_scheduled_merge(
                 self.gitea_conn,
                 owner,
                 repo,
                 number,
-                merge_when_checks_succeed=not args.now,
             )

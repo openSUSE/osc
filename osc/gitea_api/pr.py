@@ -506,3 +506,25 @@ class PullRequest:
             conn.request("POST", url, json_data=json_data, context={"owner": owner, "repo": repo})
         except AutoMergeAlreadyScheduled:
             pass
+
+    @classmethod
+    def cancel_scheduled_merge(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> GiteaHTTPResponse:
+        """
+        Cancel scheduled merge of a pull request.
+        """
+        from .exceptions import GiteaException
+
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "merge")
+        try:
+            conn.request("DELETE", url, context={"owner": owner, "repo": repo})
+        except GiteaException as e:
+            # Gitea returns 404 when there's no scheduled merge or if the pull request doesn't exist
+            # the error message is the same and it's not possible to distinguish between the two cases.
+            if e.status != 404:
+                raise
