@@ -95,3 +95,16 @@ def edit_message(template: Optional[str] = None) -> str:
 
         f.seek(0)
         return f.read()
+
+
+def dt_sanitize(date_time: str, tz_name: Optional[str] = "UTC"):
+    """
+    Sanitize ``date_time`` string to "YYYY-MM-DD HH:MM" format.
+    Also convert it to the given time zone.
+    If ``tz_name`` is None, the time zone is the local time.
+    """
+    import dateutil
+
+    dt = dateutil.parser.parse(timestr=date_time)
+    tz = dateutil.tz.gettz(tz_name)
+    return dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
