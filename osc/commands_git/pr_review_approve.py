@@ -16,6 +16,7 @@ class PullRequestReviewApproveCommand(osc.commandline_git.GitObsCommand):
             help="Pull request ID in <owner>/<repo>#<number> format",
         )
         self.add_argument(
+            "-m",
             "--message",
             help="Justification of the review state change",
         )

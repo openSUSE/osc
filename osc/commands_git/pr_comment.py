@@ -16,6 +16,7 @@ class PullRequestCommentCommand(osc.commandline_git.GitObsCommand):
             help="Pull request ID in <owner>/<repo>#<number> format",
         )
         self.add_argument(
+            "-m",
             "--message",
             help="Text of the comment",
         )
