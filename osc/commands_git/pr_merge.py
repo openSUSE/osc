@@ -29,9 +29,10 @@ class PullRequestMergeCommand(osc.commandline_git.GitObsCommand):
         pull_request_ids = args.id
 
         for pr_index, pr_id in enumerate(pull_request_ids):
-            self.print_gitea_settings()
-
-            print(f"Merging {pr_id}...")
+            if args.now:
+                print(f"Merging {pr_id}...")
+            else:
+                print(f"Scheduling auto merge of {pr_id}...")
 
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
             gitea_api.PullRequest.merge(
