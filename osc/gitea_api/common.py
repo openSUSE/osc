@@ -4,13 +4,15 @@ import subprocess
 from typing import List
 from typing import Optional
 
+from .connection import Connection
 from .connection import GiteaHTTPResponse
 
 
 class GiteaModel:
-    def __init__(self, data, *, response: Optional[GiteaHTTPResponse] = None):
+    def __init__(self, data, *, response: Optional[GiteaHTTPResponse] = None, conn: Optional[Connection] = None):
         self._data = data
         self._response = response
+        self._conn = conn
 
     def dict(self, exclude_columns: Optional[List[str]] = None):
 
