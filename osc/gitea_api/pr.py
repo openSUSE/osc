@@ -116,11 +116,15 @@ class PullRequest:
     def head_owner(self) -> Optional[str]:
         if not self.is_pull_request:
             return None
+        if self._data["head"]["repo"] is None:
+            return None
         return self._data["head"]["repo"]["owner"]["login"]
 
     @property
     def head_repo(self) -> Optional[str]:
         if not self.is_pull_request:
+            return None
+        if self._data["head"]["repo"] is None:
             return None
         return self._data["head"]["repo"]["name"]
 
@@ -139,6 +143,8 @@ class PullRequest:
     @property
     def head_ssh_url(self) -> Optional[str]:
         if not self.is_pull_request:
+            return None
+        if self._data["head"]["repo"] is None:
             return None
         return self._data["head"]["repo"]["ssh_url"]
 
