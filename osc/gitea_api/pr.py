@@ -163,6 +163,12 @@ class PullRequest:
         return self._data["head"]["repo"]["ssh_url"]
 
     @property
+    def merge_commit(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["merge_commit_sha"]
+
+    @property
     def url(self) -> str:
         # HACK: search API returns issues, the URL needs to be transformed to a pull request URL
         return re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", self._data["url"])
