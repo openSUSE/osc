@@ -31,6 +31,20 @@ class PullRequest:
             raise ValueError(f"Invalid pull request id: {pr_id}")
         return match.group(1), match.group(2), int(match.group(3))
 
+    @staticmethod
+    def get_owner_repo_number(url: str) -> Tuple[str, str, int]:
+        """
+        Parse pull request URL such as http(s)://example.com:<port>/<owner>/<repo>/pulls/<number>
+        and return (owner, repo, number) tuple.
+        """
+        import urllib.parse
+
+        parsed_url = urllib.parse.urlparse(url)
+        path = parsed_url.path
+        owner, repo, pulls, number = path.strip("/").split("/")
+        assert pulls in ("pulls", "issues")
+        return owner, repo, int(number)
+
     @property
     def is_pull_request(self):
         # determine if we're working with a proper pull request or an issue without pull request details
