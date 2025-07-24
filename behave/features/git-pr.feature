@@ -236,3 +236,63 @@ Scenario: Rebase a pull request checkout to non fast-forwardable changes
         v123
         v1.1
         """
+
+
+# broken due to https://github.com/go-gitea/gitea/issues/35152
+# @destructive
+# Scenario: Display timeline associated with a pull request
+#    # change title
+#    Given I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/issues/1 --data '{{"title": "NEW TITLE"}}'"
+#      # add comment
+#      And I execute git-obs with args "pr comment --message 'test comment' 'pool/test-GitPkgA#1'"
+#      # close PR
+#      And I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/issues/1 --data '{{"state": "closed"}}'"
+#      # reopen PR
+#      And I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/pulls/1 --data '{{"state": "open"}}'"
+#      # set assignees
+#      And I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/pulls/1 --data '{{"assignees": ["alice", "bob"]}}'"
+#      # unset assignee
+#      And I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/pulls/1 --data '{{"assignees": ["bob"]}}'"
+#      # change target branch
+#      And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/branches --data '{{"new_branch_name": "new-branch", "old_branch_name": "factory"}}'"
+#      And I execute git-obs with args "api -X PATCH /repos/pool/test-GitPkgA/pulls/1 --data '{{"base": "new-branch"}}'"
+#      # schedule merge
+#      And I execute git-obs with args "pr merge 'pool/test-GitPkgA#1'"
+#      # cancel the scheduled merge
+#      And I execute git-obs with args "pr cancel-scheduled-merge 'pool/test-GitPkgA#1'"
+#      # merge
+#      And I execute git-obs with args "pr merge 'pool/test-GitPkgA#1' --now"
+#     When I execute git-obs with args "pr get 'pool/test-GitPkgA#1' --timeline"
+#     Then stdout matches
+#         """
+#         ID          : pool/test-GitPkgA#1
+#         URL         : .*
+#         Title       : NEW TITLE
+#         State       : closed
+#         Draft       : no
+#         Merged      : yes
+#         Allow edit  : no
+#         Author      : Admin \(admin@example.com\)
+#         Source      : Admin/test-GitPkgA, branch: factory, commit: ........................................
+#         Target      : pool/test-GitPkgA, branch: new-branch, commit: ........................................
+#         Description : some text
+#
+#         Timeline:
+#         ....-..-.. ..:.. Admin pushed 2 commits
+#         ....-..-.. ..:.. Admin changed title
+#             \| from 'Change version' to 'NEW TITLE'
+#         ....-..-.. ..:.. Admin commented
+#             \| test comment
+#         ....-..-.. ..:.. Admin closed the pull request
+#         ....-..-.. ..:.. Admin reopened the pull request
+#         ....-..-.. ..:.. Admin assigned the pull request to Alice
+#         ....-..-.. ..:.. Admin assigned the pull request to Bob
+#         ....-..-.. ..:.. Admin unassigned the pull request from Alice
+#         ....-..-.. ..:.. Admin changed target branch from 'factory' to 'new-branch'
+#         ....-..-.. ..:.. Admin scheduled the pull request to auto merge when all checks succeed
+#         ....-..-.. ..:.. Admin canceled auto merging the pull request when all checks succeed
+#         ....-..-.. ..:.. Admin merged commit ........................................ to new-branch
+#         ....-..-.. ..:.. Admin referenced the pull request from commit
+#             \| http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/commit/........................................
+#             \| Merge pull request 'NEW TITLE' \(#1\) from Admin/test-GitPkgA:factory into new-branch
+#          """

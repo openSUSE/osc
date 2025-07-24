@@ -193,5 +193,24 @@ class UserDoesNotExist(GiteaException):
         return result
 
 
+class PullRequestReviewDoesNotExist(GiteaException):
+    RESPONSE_STATUS = 404
+    # models/issues/review.go:        return fmt.Sprintf("review does not exist [id: %d]", err.ID)
+    RESPONSE_MESSAGE_RE = [
+        re.compile(r"review does not exist \[id: (?P<review_id>.+)\]"),
+    ]
+
+    def __init__(self, response: GiteaHTTPResponse, owner: str, repo: str, number: str, review_id: str):
+        super().__init__(response)
+        self.owner = owner
+        self.repo = repo
+        self.number = number
+        self.review_id = review_id
+
+    def __str__(self):
+        result = f"Pull request '{self.owner}/{self.repo}#{self.number}' does not contain review with ID '{self.review_id}'"
+        return result
+
+
 # gather all exceptions from this module that inherit from GiteaException
 EXCEPTION_CLASSES = [i for i in globals().values() if hasattr(i, "RESPONSE_MESSAGE_RE") and inspect.isclass(i) and issubclass(i, GiteaException)]

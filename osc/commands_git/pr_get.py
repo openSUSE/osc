@@ -22,6 +22,11 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Show patches associated with the pull requests",
         )
+        self.add_argument(
+            "--timeline",
+            action="store_true",
+            help="Show timelines of the pull requests",
+        )
 
     def run(self, args):
         from osc import gitea_api
@@ -42,6 +47,18 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
                     continue
                 raise
             print(pr_obj.to_human_readable_string())
+
+            if args.timeline:
+                print()
+                print(tty.colorize("Timeline:", "bold"))
+                timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, pull)
+                for entry in timeline:
+                    text, body = entry.format()
+                    if text is None:
+                        continue
+                    print(f"{gitea_api.dt_sanitize(entry.created_at)} {entry.user} {text}")
+                    for line in (body or "").strip().splitlines():
+                        print(f"    | {line}")
 
             if args.patch:
                 print("")
