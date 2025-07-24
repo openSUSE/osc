@@ -385,12 +385,12 @@ class PullRequest:
             "created": created,
             "mentioned": mentioned,
             "review_requested": review_requested,
-            # HACK: limit=-1 doesn't work, the request gets stuck; we need to use a high number to avoid pagination
-            "limit": 10**6,
+            "limit": 50,
         }
         url = conn.makeurl("repos", "issues", "search", query=q)
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json()]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response) for i in response.json()])
         return obj_list
 
     @classmethod
