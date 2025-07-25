@@ -73,70 +73,10 @@ def run(prg, argv=None):
                 else:
                     print('sys.stdout is not a tty. Not jumping into pdb.', file=sys.stderr)
             raise
-    except oscerr.SignalInterrupt:
-        print('killed!', file=sys.stderr)
-    except KeyboardInterrupt:
-        print('interrupted!', file=sys.stderr)
-        return 130
-    except oscerr.UserAbort:
-        print('aborted.', file=sys.stderr)
-    except oscerr.APIError as e:
-        print('BuildService API error:', e.msg, file=sys.stderr)
-    except oscerr.LinkExpandError as e:
-        print(f'Link "{e.prj}/{e.pac}" cannot be expanded:\n', e.msg, file=sys.stderr)
-        print('Use "osc repairlink" to fix merge conflicts.\n', file=sys.stderr)
-    except oscerr.WorkingCopyWrongVersion as e:
-        print(e, file=sys.stderr)
-    except oscerr.NoWorkingCopy as e:
-        print(e, file=sys.stderr)
-    except OSError as e:
-        # ignore broken pipe
-        if e.errno != errno.EPIPE:
-            raise
-    except OSError as e:
-        if e.errno != errno.ENOENT:
-            raise
-        print(e, file=sys.stderr)
-    except (oscerr.ConfigError, oscerr.NoConfigfile) as e:
-        print(e, file=sys.stderr)
-    except configparser.Error as e:
-        print(e.message, file=sys.stderr)
-    except oscerr.OscIOError as e:
-        print(e.msg, file=sys.stderr)
-        output.print_msg(e.e, print_to="debug")
-    except (oscerr.WrongOptions, oscerr.WrongArgs) as e:
-        print(e, file=sys.stderr)
-        return 2
-    except oscerr.ExtRuntimeError as e:
-        print(f"{e.file}:", e.msg, file=sys.stderr)
-    except oscerr.ServiceRuntimeError as e:
-        print(e.msg, file=sys.stderr)
-    except oscerr.WorkingCopyOutdated as e:
-        print(e, file=sys.stderr)
-    except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent) as e:
-        print(e.msg, file=sys.stderr)
-    except oscerr.PackageInternalError as e:
-        print('a package internal error occured\n'
-              'please file a bug and attach your current package working copy '
-              'and the following traceback to it:', file=sys.stderr)
-        print(e.msg, file=sys.stderr)
-        traceback.print_exc(file=sys.stderr)
-    except oscerr.PackageError as e:
-        print(str(e), file=sys.stderr)
-    except PackageError as e:
-        print(f'{e.fname}:', e.msg, file=sys.stderr)
-    except oscerr.CertVerificationError as e:
-        print(e, file=sys.stderr)
-    except CpioError as e:
-        print(e, file=sys.stderr)
-    except oscerr.OscBaseError as e:
-        print('*** Error:', e, file=sys.stderr)
     except ignore_exceptions:
         raise
     except:
-        # handling exceptions thrown outside osc
-        # we're doing this to postpone loading all 3rd party modules any time osc is executed
-
+        # import modules and handle the re-raised exception
         from http.client import HTTPException, BadStatusLine
         from urllib.error import URLError, HTTPError
         import urllib3.exceptions
@@ -159,9 +99,21 @@ def run(prg, argv=None):
 
         try:
             raise
-        except RPMError as e:
+        except oscerr.SignalInterrupt:
+            print('killed!', file=sys.stderr)
+        except KeyboardInterrupt:
+            print('interrupted!', file=sys.stderr)
+            return 130
+        except oscerr.UserAbort:
+            print('aborted.', file=sys.stderr)
+        except oscerr.APIError as e:
+            print('BuildService API error:', e.msg, file=sys.stderr)
+        except oscerr.LinkExpandError as e:
+            print(f'Link "{e.prj}/{e.pac}" cannot be expanded:\n', e.msg, file=sys.stderr)
+            print('Use "osc repairlink" to fix merge conflicts.\n', file=sys.stderr)
+        except oscerr.WorkingCopyWrongVersion as e:
             print(e, file=sys.stderr)
-        except KeyringLocked as e:
+        except oscerr.NoWorkingCopy as e:
             print(e, file=sys.stderr)
         except HTTPError as e:
             from . import _private
@@ -205,21 +157,65 @@ def run(prg, argv=None):
             if 'tlsv1' in str(e):
                 print('The python on this system or the server does not support TLSv1.2', file=sys.stderr)
             print("SSL Error:", e, file=sys.stderr)
+        except OSError as e:
+            # ignore broken pipe
+            if e.errno != errno.EPIPE:
+                raise
+        except OSError as e:
+            if e.errno != errno.ENOENT:
+                raise
+            print(e, file=sys.stderr)
+        except (oscerr.ConfigError, oscerr.NoConfigfile) as e:
+            print(e, file=sys.stderr)
+        except configparser.Error as e:
+            print(e.message, file=sys.stderr)
+        except oscerr.OscIOError as e:
+            print(e.msg, file=sys.stderr)
+            output.print_msg(e.e, print_to="debug")
+        except (oscerr.WrongOptions, oscerr.WrongArgs) as e:
+            print(e, file=sys.stderr)
+            return 2
+        except oscerr.ExtRuntimeError as e:
+            print(f"{e.file}:", e.msg, file=sys.stderr)
+        except oscerr.ServiceRuntimeError as e:
+            print(e.msg, file=sys.stderr)
+        except oscerr.WorkingCopyOutdated as e:
+            print(e, file=sys.stderr)
+        except (oscerr.PackageExists, oscerr.PackageMissing, oscerr.WorkingCopyInconsistent) as e:
+            print(e.msg, file=sys.stderr)
+        except oscerr.PackageInternalError as e:
+            print('a package internal error occured\n'
+                'please file a bug and attach your current package working copy '
+                'and the following traceback to it:', file=sys.stderr)
+            print(e.msg, file=sys.stderr)
+            traceback.print_exc(file=sys.stderr)
+        except oscerr.PackageError as e:
+            print(str(e), file=sys.stderr)
+        except PackageError as e:
+            print(f'{e.fname}:', e.msg, file=sys.stderr)
+        except RPMError as e:
+            print(e, file=sys.stderr)
+        except KeyringLocked as e:
+            print(e, file=sys.stderr)
+        except oscerr.CertVerificationError as e:
+            print(e, file=sys.stderr)
         except urllib3.exceptions.MaxRetryError as e:
             print(e.reason, file=sys.stderr)
         except urllib3.exceptions.ProtocolError as e:
             print(e.args[0], file=sys.stderr)
-        except:
-            raise
+        except CpioError as e:
+            print(e, file=sys.stderr)
+        except oscerr.OscBaseError as e:
+            print('*** Error:', e, file=sys.stderr)
 
-    from . import core as osc_core
+        from . import core as osc_core
 
-    if osc_core.MESSAGE_BACKUPS:
-        print()
-        print("If you lost any edited commit messages due to an error, you may find them here:")
-        for path in osc_core.MESSAGE_BACKUPS:
-            print(f"  - {path}")
-    return 1
+        if osc_core.MESSAGE_BACKUPS:
+            print()
+            print("If you lost any edited commit messages due to an error, you may find them here:")
+            for path in osc_core.MESSAGE_BACKUPS:
+                print(f"  - {path}")
+        return 1
 
 
 def setup():
