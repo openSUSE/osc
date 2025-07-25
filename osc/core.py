@@ -5773,7 +5773,7 @@ def get_commit_msg(wc_dir, pacs):
     if footer:
         msg = edit_message(footer='\n'.join(footer), template=template)
     if msg:
-        store_write_string(wc_dir, '_commit_msg', msg + '\n')
+        store_write_string(wc_dir, '_commit_msg', msg)
     else:
         store_unlink_file(wc_dir, '_commit_msg')
     return msg

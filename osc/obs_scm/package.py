@@ -619,7 +619,7 @@ class Package:
         for i in sfilelist.findall('entry'):
             if i.get('name') in self.skipped:
                 i.set('skipped', 'true')
-        store_write_string(self.absdir, '_files', ET.tostring(sfilelist, encoding=ET_ENCODING) + '\n')
+        store_write_string(self.absdir, '_files', ET.tostring(sfilelist, encoding=ET_ENCODING))
         for filename in todo_delete:
             self.to_be_deleted.remove(filename)
             self.store.sources_delete_file(filename)
@@ -736,7 +736,7 @@ class Package:
         It is replaced with the version pulled from upstream.
         """
         meta = self.get_files_meta(revision=revision)
-        store_write_string(self.absdir, '_files', meta + '\n')
+        store_write_string(self.absdir, '_files', meta)
 
     def get_files_meta(self, revision='latest', skip_service=True):
         from ..core import ET_ENCODING
@@ -931,7 +931,7 @@ class Package:
         if meta != "":
             # is empty for _project for example
             meta = b''.join(meta)
-            store_write_string(self.absdir, '_meta', meta + b'\n')
+            store_write_string(self.absdir, '_meta', meta)
 
     def findfilebyname(self, n):
         for i in self.filelist:
@@ -1433,7 +1433,7 @@ rev: %s
         fm = self.get_files_meta(revision=rev)
         root = xml_fromstring(fm)
         rfiles = self.__get_files(root)
-        store_write_string(self.absdir, '_files', fm + '\n', subdir='_in_update')
+        store_write_string(self.absdir, '_files', fm, subdir='_in_update')
         kept, added, deleted, services = self.__get_rev_changes(rfiles)
         if not service_files:
             services = []
@@ -1517,7 +1517,7 @@ rev: %s
                             targetfilename=os.path.join(self.absdir, f.name), revision=rev,
                             progress_obj=self.progress_obj, mtime=f.mtime, meta=self.meta)
             print(statfrmt('A', os.path.join(pathn, f.name)))
-        store_write_string(self.absdir, '_files', fm + '\n')
+        store_write_string(self.absdir, '_files', fm)
         if not self.meta:
             self.update_local_pacmeta()
         self.update_datastructs()
