@@ -1,4 +1,5 @@
 from .connection import Connection
+from .common import dt_sanitize
 from .common import edit_message
 from .exceptions import BranchDoesNotExist
 from .exceptions import BranchExists
@@ -12,8 +13,10 @@ from .conf import Config
 from .conf import Login
 from .fork import Fork
 from .git import Git
+from .issue_timeline_entry import IssueTimelineEntry
 from .json import json_dumps
 from .pr import PullRequest
+from .pr_review import PullRequestReview
 from .repo import Repo
 from .ssh_key import SSHKey
 from .tardiff import TarDiff

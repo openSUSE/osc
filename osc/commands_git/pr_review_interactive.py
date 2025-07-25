@@ -223,6 +223,21 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
         proc.stdin.write(b"\n")
         proc.stdin.write(b"\n")
 
+        # timeline
+        timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, number)
+        timeline_lines = []
+        timeline_lines.append(tty.colorize("Timeline:", "bold"))
+        for entry in timeline:
+            text, body = entry.format()
+            if text is None:
+                continue
+            timeline_lines.append(f"{gitea_api.dt_sanitize(entry.created_at)} {entry.user} {text}")
+            for line in (body or "").strip().splitlines():
+                timeline_lines.append(f"    | {line}")
+        proc.stdin.write(b"\n".join((line.encode("utf-8") for line in timeline_lines)))
+        proc.stdin.write(b"\n")
+        proc.stdin.write(b"\n")
+
         # patch
         proc.stdin.write(tty.colorize("Patch:\n", "bold").encode("utf-8"))
         patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, number)

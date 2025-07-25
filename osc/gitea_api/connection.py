@@ -62,6 +62,7 @@ class Connection:
         else:
             raise ValueError(f"Unsupported scheme in Gitea url '{self.login.url}'")
 
+        self.scheme = parsed_url.scheme
         self.host = parsed_url.hostname
         assert self.host is not None
         self.port = alternative_port if alternative_port else parsed_url.port

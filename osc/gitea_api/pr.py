@@ -31,6 +31,20 @@ class PullRequest:
             raise ValueError(f"Invalid pull request id: {pr_id}")
         return match.group(1), match.group(2), int(match.group(3))
 
+    @staticmethod
+    def get_owner_repo_number(url: str) -> Tuple[str, str, int]:
+        """
+        Parse pull request URL such as http(s)://example.com:<port>/<owner>/<repo>/pulls/<number>
+        and return (owner, repo, number) tuple.
+        """
+        import urllib.parse
+
+        parsed_url = urllib.parse.urlparse(url)
+        path = parsed_url.path
+        owner, repo, pulls, number = path.strip("/").split("/")
+        assert pulls in ("pulls", "issues")
+        return owner, repo, int(number)
+
     @property
     def is_pull_request(self):
         # determine if we're working with a proper pull request or an issue without pull request details
@@ -116,11 +130,15 @@ class PullRequest:
     def head_owner(self) -> Optional[str]:
         if not self.is_pull_request:
             return None
+        if self._data["head"]["repo"] is None:
+            return None
         return self._data["head"]["repo"]["owner"]["login"]
 
     @property
     def head_repo(self) -> Optional[str]:
         if not self.is_pull_request:
+            return None
+        if self._data["head"]["repo"] is None:
             return None
         return self._data["head"]["repo"]["name"]
 
@@ -140,7 +158,15 @@ class PullRequest:
     def head_ssh_url(self) -> Optional[str]:
         if not self.is_pull_request:
             return None
+        if self._data["head"]["repo"] is None:
+            return None
         return self._data["head"]["repo"]["ssh_url"]
+
+    @property
+    def merge_commit(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["merge_commit_sha"]
 
     @property
     def url(self) -> str:
@@ -359,12 +385,12 @@ class PullRequest:
             "created": created,
             "mentioned": mentioned,
             "review_requested": review_requested,
-            # HACK: limit=-1 doesn't work, the request gets stuck; we need to use a high number to avoid pagination
-            "limit": 10**6,
+            "limit": 50,
         }
         url = conn.makeurl("repos", "issues", "search", query=q)
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json()]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response) for i in response.json()])
         return obj_list
 
     @classmethod
