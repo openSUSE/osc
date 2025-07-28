@@ -126,6 +126,7 @@ Recommends:     git-lfs
 
 # needed for osc co of a git package
 Recommends:     obs-scm-bridge
+Conflicts:      obs-scm-bridge < 0.7.3
 
 # needed for `osc add <URL>`
 Recommends:     obs-service-recompress
