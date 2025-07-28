@@ -131,6 +131,22 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     }
                 )
 
+            # store timeline as <history/> entries
+            timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, number)
+            xml_history_list = []
+            for entry in timeline:
+                text, body = entry.format()
+                if text is None:
+                    continue
+                xml_history_list.append(
+                    {
+                        "who": entry.user,
+                        "when": gitea_api.dt_sanitize(entry.created_at),
+                        "description": text,
+                        "comment": body or "",
+                    }
+                )
+
             req = obs_api.Request(
                 id=pr_id,
                 title=pr_obj.title,
@@ -152,6 +168,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     },
                 ],
                 review_list=xml_review_list,
+                history_list=xml_history_list,
             )
 
             # HACK: changes to request XML that are not compatible with OBS
@@ -197,6 +214,10 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
             with open(os.path.join(metadata_dir, "reviews.json"), "w", encoding="utf-8") as f:
                 json.dump([i._data for i in review_obj_list], f, indent=4, sort_keys=True)
+
+            with open(os.path.join(metadata_dir, "timeline.json"), "w", encoding="utf-8") as f:
+                # the list doesn't come from Gitea API but is post-processed for our overall sanity
+                json.dump(xml_history_list, f, indent=4, sort_keys=True)
 
             base_dir = os.path.join(path, "base")
             # we must use the `merge_base` instead of `head_commit`, because the latter changes after merging the PR and the `base` directory would contain incorrect data
