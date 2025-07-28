@@ -91,7 +91,7 @@ def enable_http_debug(config):
 
 
 def get_proxy_manager(env):
-    proxy_url = os.environ.get(env, None)
+    proxy_url = os.environ.get(env.upper(), None) or os.environ.get(env.lower(), None)
 
     if not proxy_url:
         return
