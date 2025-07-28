@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import urllib
+from pathlib import Path
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -51,12 +52,15 @@ class Git:
         return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath).strip()
 
     def init(self, *, initial_branch: Optional[str] = None, quiet: bool = True, mute_stderr: bool = False):
-        cmd = ["init"]
+        cmd = ["init", "--object-format=sha256"]
         if initial_branch:
             cmd += ["-b", initial_branch]
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd, mute_stderr=mute_stderr)
+
+    def is_initialized(self):
+        return Path(f"{self.abspath}/.git").exists()
 
     def clone(self, url, directory: Optional[str] = None, quiet: bool = True):
         cmd = ["clone", url]
@@ -136,6 +140,12 @@ class Git:
             cmd = ["fetch", "--all"]
         self._run_git(cmd)
 
+    @staticmethod
+    def split_owner_repo(path: str) -> Tuple[str, str]:
+        if path.endswith(".git"):
+            path = path[:-4]
+        return path.strip("/").split("/")[-2:]
+
     def get_owner_repo(self, remote: str = "origin") -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
         if "@" in remote_url:
@@ -144,10 +154,7 @@ class Git:
             remote_url = remote_url.rsplit("@", 1)[-1]
         parsed_remote_url = urllib.parse.urlparse(remote_url)
         path = parsed_remote_url.path
-        if path.endswith(".git"):
-            path = path[:-4]
-        owner, repo = path.strip("/").split("/")[-2:]
-        return owner, repo
+        return self.split_owner_repo(path)
 
     # LFS
 
