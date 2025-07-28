@@ -1,3 +1,26 @@
+- 1.19.0
+  - Command-line:
+    - Add 'git-obs pr cancel-scheduled-merge' command
+    - Add timeline to 'git-obs pr review interactive'
+    - Add '--timeline' option to 'git-obs pr get'
+    - Fix 'git-obs pr search' by using pagination to retrieve all results
+    - Extend '--message' option in git-obs subcommands with the '-m' short option
+    - Add a different message for scheduled merges in 'git-obs pr merge' command
+  - Library:
+    - Add 'conn' parameter to gitea_api.common.GiteaModel
+    - Add gitea_api.Connection.scheme attribute
+    - Add gitea_api.PullRequest.merge_commit property
+    - Add gitea_api.PullRequest.get_owner_repo_number()
+    - Add gitea_api.common.dt_sanitize() for sanitizing datetime strings
+    - Handle missing head repo in the PullRequest properties
+    - Return None if GitStore cannot determine apiurl
+    - Remove extra newline from store files
+    - Fix the 'Move remaining imports in osc.babysitter into try-except block' change by preserving the order of handling the exceptions
+  - Spec:
+    - Use primary_python to define runtime requires matching the shebang lines
+    - Provide %{use_python_pkg}-osc for all pythons and python3-osc for primary_python
+    - Add conflict with obs-scm-bridge < 0.7.3
+
 - 1.18.0
   - Command-line:
     - Add 'git-obs pr comment [--message=...]' command
