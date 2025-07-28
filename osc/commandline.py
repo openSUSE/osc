@@ -7836,7 +7836,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # Configuration can be overridden by envvars, e.g.
         # OSC_SU_WRAPPER overrides the setting of su-wrapper.
         # OSC_BUILD_ROOT overrides the setting of build-root.
-        # OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
+        # OSC_PACKAGE_CACHE_DIR overrides the setting of packagecachedir.
         """
 
         from . import build as osc_build
@@ -8101,7 +8101,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # 3.) call osc build
         osc_cmd = "osc"
-        for var in ('OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR'):
+        for var in ('OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGE_CACHE_DIR'):
             if os.getenv(var):
                 osc_cmd = f"{var}={os.getenv(var)} {osc_cmd}"
 
