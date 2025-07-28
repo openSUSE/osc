@@ -1,5 +1,10 @@
+%if %{defined primary_python}
+%define use_python     %(echo %{primary_python} | sed -e 's|python3|python3.|g')
+%define use_python_pkg %{primary_python}
+%else
 %define use_python python3
 %define use_python_pkg python3
+%endif
 
 %if 0%{?suse_version} && 0%{?suse_version} < 1500
 # use python36 on SLE 12 and older
