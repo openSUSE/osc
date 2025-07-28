@@ -1,5 +1,10 @@
+%if %{defined primary_python}
+%define use_python     %(echo %{primary_python} | sed -e 's|python3|python3.|g')
+%define use_python_pkg %{primary_python}
+%else
 %define use_python python3
 %define use_python_pkg python3
+%endif
 
 %if 0%{?suse_version} && 0%{?suse_version} < 1500
 # use python36 on SLE 12 and older
@@ -126,6 +131,7 @@ Recommends:     git-lfs
 
 # needed for osc co of a git package
 Recommends:     obs-scm-bridge
+Conflicts:      obs-scm-bridge < 0.7.3
 
 # needed for `osc add <URL>`
 Recommends:     obs-service-recompress
@@ -146,7 +152,12 @@ Recommends:     %{ssh_keygen_pkg}
 # needed for `osc browse` that calls xdg-open
 Recommends:     xdg-utils
 
-Provides:       %{use_python_pkg}-osc
+Provides:       %{use_python_pkg}-osc = %{version}-%{release}
+%if %{defined primary_python}
+%if "%{use_python_pkg}" == "%{primary_python}"
+Provides:       python3-osc = %{version}-%{release}
+%endif
+%endif
 
 %description
 openSUSE Commander is a command-line client for the Open Build Service.
@@ -241,7 +252,6 @@ install -Dm0644 oscrc.5 %{buildroot}%{_mandir}/man5/oscrc.5
 
 # inject argcomplete marker to the generated git-obs executable
 sed -i '3i # PYTHON_ARGCOMPLETE_OK'  %{buildroot}%{_bindir}/git-obs
-
 
 %check
 %{use_python} -m unittest
