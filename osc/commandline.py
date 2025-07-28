@@ -981,7 +981,7 @@ class Osc(cmdln.Cmdln):
             print(f'Initializing {Path.cwd()} (Project: {project})')
         else:
             Package.init_package(apiurl, project, package, Path.cwd())
-            store_write_string(Path.cwd(), '_files', show_files_meta(apiurl, project, package) + b'\n')
+            store_write_string(Path.cwd(), '_files', show_files_meta(apiurl, project, package))
             print(f'Initializing {Path.cwd()} (Project: {project}, Package: {package})')
 
     @cmdln.alias('ls')
@@ -10249,7 +10249,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         os.mkdir(destdir)
 
         Package.init_package(apiurl, target_prj, target_package, destdir)
-        store_write_string(destdir, '_files', b''.join(meta) + b'\n')
+        store_write_string(destdir, '_files', b''.join(meta))
         store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)
 
@@ -10449,7 +10449,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p.write_addlist()
         p.write_conflictlist()
         # store new linkrev
-        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5') + '\n')
+        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
         p.unmark_frozen()
         print()
         if p.in_conflict:
