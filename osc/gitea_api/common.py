@@ -1,6 +1,9 @@
+import datetime
 import inspect
 import os
+import re
 import subprocess
+import sys
 from typing import List
 from typing import Optional
 
@@ -99,14 +102,27 @@ def edit_message(template: Optional[str] = None) -> str:
         return f.read()
 
 
-def dt_sanitize(date_time: str, tz_name: Optional[str] = "UTC"):
+def dt_sanitize(date_time: str):
     """
-    Sanitize ``date_time`` string to "YYYY-MM-DD HH:MM" format.
-    Also convert it to the given time zone.
-    If ``tz_name`` is None, the time zone is the local time.
+    Sanitize ``date_time`` string to "YYYY-MM-DD HH:MM" UTC.
+    The time zone offset must be in the '[+-]HH:MM' format or 'Z' which stands for UTC
     """
-    import dateutil
+    if sys.version_info[:2] <= (3, 10):
+        # python 3.10 doesn't support "Z" offset in fromisoformat()
+        # this also fixes the offset for strptime() in python 3.6
+        if date_time.endswith("Z"):
+            date_time = f"{date_time[:-1]}+00:00"
 
-    dt = dateutil.parser.parse(timestr=date_time)
-    tz = dateutil.tz.gettz(tz_name)
-    return dt.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+    if sys.version_info[:2] <= (3, 6):
+        # python 3.6 doesn't support fromisoformat(), we need to use strptime() instead
+        # unfortunately strptime() is outdated and needs removing colons from the time offset
+        match = re.match(r"^([\d-]+[ T][\d:]+)(Z|[\+\-][\d:]+)", date_time)
+        if match:
+            dt = match.group(1)
+            offset = match.group(2)
+            date_time = f"{dt}{offset.replace(':', '')}"
+        dt = datetime.datetime.strptime(date_time, "%Y-%m-%dT%H:%M:%S%z")
+    else:
+        dt = datetime.datetime.fromisoformat(date_time)
+
+    return dt.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
