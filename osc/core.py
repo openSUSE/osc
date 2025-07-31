@@ -1165,6 +1165,9 @@ def makeurl(apiurl: str, path: List[str], query: Optional[dict] = None):
                   Values can be: ``str``, ``int``, ``bool``, ``[str]``, ``[int]``.
                   Items with value equal to ``None`` will be skipped.
     """
+    if not apiurl:
+        raise oscerr.OscValueError("The ``apiurl`` argument of ``makeurl()`` must not be empty")
+
     apiurl_scheme, apiurl_netloc, apiurl_path = urlsplit(apiurl)[0:3]
 
     path = apiurl_path.split("/") + [i.strip("/") for i in path]
