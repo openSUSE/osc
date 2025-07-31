@@ -871,33 +871,9 @@ class Osc(cmdln.Cmdln):
             self.download_progress = create_text_meter()
 
     def get_api_url(self):
-        from . import conf
-        from . import store as osc_store
-        from .core import is_package_dir
-        from .core import is_project_dir
-
-        try:
-            localdir = Path.cwd()
-        except Exception as e:
-            # check for Stale NFS file handle: '.'
-            try:
-                os.stat('.')
-            except Exception as ee:
-                e = ee
-            print("Path.cwd() failed: ", e, file=sys.stderr)
-            sys.exit(1)
-
-        # prioritize apiurl specified on the command-line
-        if self.options.apiurl:
-            return self.options.apiurl
-
-        # OSC_APIURL env variable seems to be handled correctly even from a checkout, no extra code needed
-
-        try:
-            store = osc_store.get_store(Path.cwd())
-            return store.apiurl
-        except oscerr.NoWorkingCopy:
-            return conf.config['apiurl']
+        # everything is handled in OscMainCommand.post_parse_args() and osc.conf.get_config() already
+        # it should be sufficient to only return ``self.options.apiurl`` configured there
+        return self.options.apiurl
 
     def do_version(self, subcmd, opts):
         """
