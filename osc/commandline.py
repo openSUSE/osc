@@ -146,20 +146,6 @@ class OscMainCommand(MainCommand):
             # HACK: never ask for credentials when displaying help
             return
 
-        if args.apiurl is None:
-            # apiurl hasn't been specified by the user
-            # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
-            try:
-                # try reading the apiurl from the working copy
-                args.apiurl = osc_store.get_store(Path.cwd()).apiurl
-            except oscerr.NoWorkingCopy:
-                # we can't use conf.config["apiurl"] because it contains the default "https://api.opensuse.org"
-                # let's leave setting the right value to conf.get_config()
-                pass
-        else:
-            # apiurl has been specified by the user, let's ignore OSC_APIURL env
-            os.environ.pop("OSC_APIURL", None)
-
         overrides = {}
         for i in args.setopt:
             key, value = i.split("=")
@@ -178,6 +164,7 @@ class OscMainCommand(MainCommand):
                 override_traceback=args.traceback,
                 override_verbose=args.verbose,
                 overrides=overrides,
+                store_dir=Path.cwd(),
             )
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
