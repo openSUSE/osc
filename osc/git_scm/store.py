@@ -223,6 +223,10 @@ class GitStore:
                 # read apiurl from parent directory that contains a project with .osc metadata
                 self._apiurl = self.project_store.apiurl
 
+            if not self._apiurl:
+                # HACK: use the currently configured apiurl
+                self._apiurl = osc_conf.config["apiurl"]
+
         return self._apiurl
 
     @apiurl.setter
