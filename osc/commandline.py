@@ -144,19 +144,6 @@ class OscMainCommand(MainCommand):
             # HACK: never ask for credentials when displaying help
             return
 
-        if args.apiurl is None:
-            # apiurl hasn't been specified by the user
-            # we need to set it here because the 'default' option of an argument doesn't support lazy evaluation
-            try:
-                # try reading the apiurl from the working copy
-                args.apiurl = osc_store.Store(Path.cwd()).apiurl
-            except oscerr.NoWorkingCopy:
-                # we can't use conf.config["apiurl"] because it contains the default "https://api.opensuse.org"
-                # let's leave setting the right value to conf.get_config()
-                pass
-        else:
-            # apiurl has been specified by the user, let's ignore OSC_APIURL env
-            os.environ.pop("OSC_APIURL", None)
 
         overrides = {}
         for i in args.setopt:
@@ -176,6 +163,7 @@ class OscMainCommand(MainCommand):
                 override_traceback=args.traceback,
                 override_verbose=args.verbose,
                 overrides=overrides,
+                store_dir=Path.cwd(),
             )
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
@@ -252,6 +240,11 @@ class OscMainCommand(MainCommand):
             @property
             def download_progress(self_):
                 return self.download_progress
+
+            # pylint: disable=no-self-argument
+            @download_progress.setter
+            def download_progress(self_, value):
+                self.download_progress = value
 
             # pylint: disable=no-self-argument
             @property
@@ -716,6 +709,7 @@ class Osc(cmdln.Cmdln):
         from .util import safewriter
 
         self.options = None
+        self.download_progress = None
         self._load_plugins()
         sys.stderr = safewriter.SafeWriter(sys.stderr)
         sys.stdout = safewriter.SafeWriter(sys.stdout)
@@ -825,84 +819,10 @@ class Osc(cmdln.Cmdln):
 
         _add_parser_arguments_from_data(parser, arguments)
 
-    def post_argparse(self):
-        from . import conf
-        from .meter import create_text_meter
-
-        """merge commandline options into the config"""
-
-        # handle conflicting options manually because the mutually exclusive group is buggy
-        # https://github.com/python/cpython/issues/96310
-        if self.options.quiet and self.options.verbose:
-            self.argparse_error("argument -q/--quiet: not allowed with argument -v/--verbose")
-
-        # avoid loading config that may trigger prompt for username, password etc.
-        if not self.options.command:
-            # no command specified
-            return
-        if self.alias_to_cmd_name_map.get(self.options.command, None) == "help":
-            # help command specified
-            return
-
-        try:
-            conf.get_config(override_conffile=self.options.conffile,
-                            override_apiurl=self.options.apiurl,
-                            override_debug=self.options.debug,
-                            override_http_debug=self.options.http_debug,
-                            override_http_full_debug=self.options.http_full_debug,
-                            override_traceback=self.options.traceback,
-                            override_post_mortem=self.options.post_mortem,
-                            override_no_keyring=self.options.no_keyring,
-                            override_verbose=self.options.verbose)
-        except oscerr.NoConfigfile as e:
-            print(e.msg, file=sys.stderr)
-            print(f'Creating osc configuration file {e.file} ...', file=sys.stderr)
-            conf.interactive_config_setup(e.file, self.options.apiurl)
-            print('done', file=sys.stderr)
-            self.post_argparse()
-        except oscerr.ConfigMissingApiurl as e:
-            print(e.msg, file=sys.stderr)
-            conf.interactive_config_setup(e.file, e.url, initial=False)
-            self.post_argparse()
-        except oscerr.ConfigMissingCredentialsError as e:
-            print(e.msg)
-            print('Please enter new credentials.')
-            conf.interactive_config_setup(e.file, e.url, initial=False)
-            self.post_argparse()
-
-        self.options.verbose = conf.config['verbose']
-        self.download_progress = None
-        if conf.config.get('show_download_progress', False):
-            self.download_progress = create_text_meter()
-
     def get_api_url(self):
-        from . import conf
-        from . import store as osc_store
-        from .core import is_package_dir
-        from .core import is_project_dir
-
-        try:
-            localdir = Path.cwd()
-        except Exception as e:
-            # check for Stale NFS file handle: '.'
-            try:
-                os.stat('.')
-            except Exception as ee:
-                e = ee
-            print("Path.cwd() failed: ", e, file=sys.stderr)
-            sys.exit(1)
-
-        # prioritize apiurl specified on the command-line
-        if self.options.apiurl:
-            return self.options.apiurl
-
-        # OSC_APIURL env variable seems to be handled correctly even from a checkout, no extra code needed
-
-        try:
-            store = osc_store.get_store(Path.cwd())
-            return store.apiurl
-        except oscerr.NoWorkingCopy:
-            return conf.config['apiurl']
+        # everything is handled in OscMainCommand.post_parse_args() and osc.conf.get_config() already
+        # it should be sufficient to only return ``self.options.apiurl`` configured there
+        return self.options.apiurl
 
     def do_version(self, subcmd, opts):
         """

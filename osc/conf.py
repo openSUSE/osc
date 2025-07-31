@@ -1835,15 +1835,17 @@ def get_config(override_conffile=None,
                override_quiet=None,
                override_no_keyring=None,
                override_verbose=None,
-               overrides=None
+               overrides=None,
+               store_dir: Optional[str] = None,
                ):
     """
     Configure osc.
 
     The configuration options are loaded with the following priority:
-        1. environment variables: ``OSC_<uppercase_option>`` or ``OSC_<uppercase_host_alias>_<uppercase_host_option>``
-        2. override arguments provided to ``get_config()``
-        3. oscrc config file
+        1. override arguments provided to ``get_config()``, they frequently come from the command-line
+        2. values from store (apiurl)
+        3. environment variables: ``OSC_<uppercase_option>`` or ``OSC_<uppercase_host_alias>_<uppercase_host_option>``
+        4. oscrc config file
     """
 
     if overrides:
@@ -2009,32 +2011,47 @@ def get_config(override_conffile=None,
         known_ini_keys.add(name)
         env_key = f"OSC_{name.upper()}"
 
-        # priority: env, overrides, config
-        if env_key in os.environ:
-            value = os.environ[env_key]
-            # remove any matching records from overrides because they are checked for emptiness later
-            overrides.pop(name, None)
-            overrides.pop(ini_key, None)
-        elif name in overrides:
+        # priority: overrides (frequently come from the command-line), store, env, config
+        read_value_from_store = False
+        if name in overrides:
             value = overrides.pop(name)
         elif ini_key in overrides:
             value = overrides.pop(ini_key)
+        elif env_key in os.environ:
+            value = os.environ[env_key]
+            read_value_from_store = True
         elif ini_key in cp["general"]:
             value = cp["general"][ini_key]
+            read_value_from_store = True
         else:
             continue
 
-        if name == "apiurl":
-            # resolve an apiurl alias to an actual apiurl
-            apiurl = config.apiurl_aliases.get(value, None)
+        def resolve_apiurl_alias(alias: str) -> str:
+            apiurl = config.apiurl_aliases.get(alias, None)
             if not apiurl:
                 # no alias matched, try again with a sanitized apiurl (with https:// prefix)
                 # and if there's no match again, just use the sanitized apiurl
-                apiurl = sanitize_apiurl(value)
+                apiurl = sanitize_apiurl(alias)
                 apiurl = config.apiurl_aliases.get(apiurl, apiurl)
-            value = apiurl
+            return apiurl
+
+        if name == "apiurl":
+            value = resolve_apiurl_alias(value)
 
         config.set_value_from_string(name, value)
+
+        if name == "apiurl" and read_value_from_store and store_dir:
+            from . import store as osc_store
+
+            # use store.apiurl only if apiurl is set from env or config file
+            try:
+                store = osc_store.get_store(store_dir)
+                if store.apiurl:
+                    value = store.apiurl
+                    value = resolve_apiurl_alias(value)
+                    config.set_value_from_string(name, value)
+            except oscerr.NoWorkingCopy:
+                pass
 
     # BEGIN: override credentials for the default apiurl
 

@@ -234,10 +234,12 @@ class OscTestCase(unittest.TestCase):
     def _run_osc(self, *args):
         """Runs osc, returning captured STDOUT as a string."""
         with unittest.mock.patch.dict(os.environ, {"OSC_CONFIG": self.oscrc}):
-            cli = osc.commandline.Osc()
-            argv = ['osc', '--no-keyring']
+            argv = ["--no-keyring"]
             argv.extend(args)
-            cli.main(argv=argv)
+            try:
+                osc.commandline.OscMainCommand.main(argv)
+            except SystemExit:
+                pass
             return sys.stdout.getvalue()
 
     def _change_to_pkg(self, name):
