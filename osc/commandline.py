@@ -9724,8 +9724,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             search_term = None
             dev_meta = show_project_meta(apiurl, devel_prj)
             dev_metaroot = xml_fromstring(b''.join(dev_meta))
-            if dev_metaroot.find('scmsync') is not None:
-                scmsync = dev_metaroot.find('scmsync').text
+            if dev_metaroot.find("scmsync") is not None:
+                scmsync = dev_metaroot.find("scmsync").text
                 if opts.verbose:
                     print("Devel project scmsync URL: ", scmsync)
                 if (not scmsync is None):
@@ -9733,7 +9733,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     if not split_scmsync.netloc is None:
                         if opts.verbose:
                             print("Devel project scmsync netloc: ", split_scmsync.netloc)
-                        if ('src.opensuse.org' in split_scmsync.netloc):
+                        if ("src.opensuse.org".lower() == split_scmsync.netloc.lower()):
                             develprj_in_gitea = True
 
         # Try the OBS 2.4 way first.
