@@ -379,3 +379,49 @@ class Git:
         if porcelain:
             cmd += ["--porcelain"]
         return self._run_git(cmd)
+
+    # SUBMODULES
+
+    def get_submodules(self) -> dict:
+        SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
+        STATUS_RE = re.compile(r"^.(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
+
+        result = {}
+
+        try:
+            lines = self._run_git(["config", "--blob", "HEAD:.gitmodules", "--list"], mute_stderr=True).splitlines()
+        except subprocess.CalledProcessError:
+            # .gitmodules file is missing
+            return {}
+
+        for line in lines:
+            match = SUBMODULE_RE.match(line)
+            if not match:
+                continue
+            submodule = match.groupdict()["submodule"]
+            key = match.groupdict()["key"]
+            value = match.groupdict()["value"]
+            if key == "url":
+                assert value.startswith("../../")
+            submodule_entry = result.setdefault(submodule, {})
+            submodule_entry[key] = value
+
+        lines = self._run_git(["submodule", "status"]).splitlines()
+
+        for line in lines:
+            match = STATUS_RE.match(line)
+            if not match:
+                continue
+            submodule = match.groupdict()["submodule"]
+            commit = match.groupdict()["commit"]
+            result[submodule]["commit"] = commit
+
+        remote_url = self.get_remote_url()
+        for submodule_entry in result.values():
+            clone_url = self.urljoin(remote_url, submodule_entry["url"])
+            owner, repo = self.get_owner_repo_from_url(clone_url)
+            submodule_entry["clone_url"] = clone_url
+            submodule_entry["owner"] = owner
+            submodule_entry["repo"] = repo
+
+        return result

@@ -225,3 +225,47 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
             head_dir = os.path.join(path, "head")
             self.clone_or_update(owner, repo, pr_number=pr_obj.number, commit=pr_obj.head_commit, directory=head_dir, reference=base_dir)
+
+            with open(os.path.join(metadata_dir, "submodules-base.json"), "w", encoding="utf-8") as f:
+                base_submodules = gitea_api.Git(base_dir).get_submodules()
+                json.dump(base_submodules, f, indent=4, sort_keys=True)
+
+            with open(os.path.join(metadata_dir, "submodules-head.json"), "w", encoding="utf-8") as f:
+                head_submodules = gitea_api.Git(head_dir).get_submodules()
+                json.dump(head_submodules, f, indent=4, sort_keys=True)
+
+            # diff submodules
+
+            submodule_diff = {
+                "added": {},
+                "removed": {},
+                "unchanged": {},
+                "changed": {},
+            }
+
+            # TODO: determine if the submodules point to packages or something else; submodules may point to arbitrary git repos such as other packages, projects or anything else
+            all_submodules = sorted(set(base_submodules) | set(head_submodules))
+            for i in all_submodules:
+                if i in base_submodules and i not in head_submodules:
+                    submodule_diff["removed"][i] = base_submodules[i]
+                elif i not in base_submodules and i in head_submodules:
+                    submodule_diff["added"][i] = head_submodules[i]
+                else:
+                    for key in ["branch", "path", "url"]:
+                        # we don't expect migrating packages to another paths, branches etc.
+                        assert base_submodules[i].get(key, None) == head_submodules[i].get(key, None)
+
+                    if base_submodules[i]["commit"] == head_submodules[i]["commit"]:
+                        submodule_diff["unchanged"][i] = base_submodules[i]
+                        continue
+
+                    # we expect the data to be identical in base and head with the exception of the commit
+                    # we also drop `commit` and add `base_commit` and `head_commit`
+                    data = base_submodules[i].copy()
+                    del data["commit"]
+                    data["base_commit"] = base_submodules[i]["commit"]
+                    data["head_commit"] = head_submodules[i]["commit"]
+                    submodule_diff["changed"][i] = data
+
+            with open(os.path.join(metadata_dir, "submodules-diff.json"), "w", encoding="utf-8") as f:
+                json.dump(submodule_diff, f, indent=4, sort_keys=True)
