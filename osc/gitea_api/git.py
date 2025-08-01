@@ -258,12 +258,16 @@ class Git:
 
     def get_owner_repo(self, remote: Optional[str] = None) -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
-        if "@" in remote_url:
+        return self.get_owner_repo_from_url(remote_url)
+
+    @staticmethod
+    def get_owner_repo_from_url(url: str) -> Tuple[str, str]:
+        if "@" in url:
             # ssh://gitea@example.com:owner/repo.git
             # ssh://gitea@example.com:22/owner/repo.git
-            remote_url = remote_url.rsplit("@", 1)[-1]
-        parsed_remote_url = urllib.parse.urlparse(remote_url)
-        path = parsed_remote_url.path
+            url = url.rsplit("@", 1)[-1]
+        parsed_url = urllib.parse.urlparse(url)
+        path = parsed_url.path
         if path.endswith(".git"):
             path = path[:-4]
         owner, repo = path.strip("/").split("/")[-2:]
