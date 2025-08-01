@@ -202,12 +202,20 @@ class GitStore:
             msg = f"Directory '{self.path}' is not a Git SCM working copy of a package"
             raise oscerr.NoWorkingCopy(msg)
 
-    def _run_git(self, args):
+    # TODO: use gitea_api.git.Git
+    def _run_git(self, args, mute_stderr=False):
+        # HACK: having 2 nearly identical commands is stupid, but it muted a mypy error
+        if mute_stderr:
+            return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath, stderr=subprocess.DEVNULL).strip()
         return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath).strip()
 
     @property
     def apiurl(self):
         from ..obs_scm import Store
+
+        if not self._apiurl:
+            # TODO: defaults
+            self._apiurl = self._get_option("apiurl")
 
         if not self._apiurl:
             if not self._apiurl and self.project_store:
@@ -236,6 +244,10 @@ class GitStore:
     @property
     def project(self):
         from ..obs_scm import Store
+
+        if not self._project:
+            # TODO: defaults
+            self._project = self._get_option("project")
 
         if not self._project:
             if self.is_package:
@@ -281,6 +293,10 @@ class GitStore:
 
     @property
     def package(self):
+        if not self._package:
+            # TODO: defaults
+            self._package = self._get_option("package")
+
         if self._package is None:
             origin = self._run_git(["remote", "get-url", self.current_remote])
             self._package = Path(urllib.parse.urlsplit(origin).path).stem
@@ -290,9 +306,13 @@ class GitStore:
     def package(self, value):
         self._package = value
 
-    def _get_option(self, name):
+    def _get_option(self, name, branch=None):
+        from .. import gitea_api
+        if branch is None:
+            git = gitea_api.Git(self.abspath)
+            branch = git.current_branch
         try:
-            result = self._run_git(["config", "--local", "--get", f"osc.{name}"])
+            result = self._run_git(["config", "--local", "--get", f"osc.{name}.{branch}"])
         except subprocess.CalledProcessError:
             result = None
         return result
@@ -301,14 +321,39 @@ class GitStore:
         if not isinstance(value, expected_type):
             raise TypeError(f"The option '{name}' should be {expected_type.__name__}, not {type(value).__name__}")
 
-    def _set_option(self, name, value):
-        self._run_git(["config", "--local", f"osc.{name}", value])
+    def _set_option(self, name, value, branch=None):
+        from .. import gitea_api
+        if branch is None:
+            git = gitea_api.Git(self.abspath)
+            branch = git.current_branch
+        self._run_git(["config", "--local", f"osc.{name}.{branch}", value])
 
-    def _unset_option(self, name):
+    def _unset_option(self, name, branch=None):
+        from .. import gitea_api
+        if branch is None:
+            git = gitea_api.Git(self.abspath)
+            branch = git.current_branch
         try:
-            self._run_git(["config", "--local", "--unset", f"osc.{name}"])
+            self._run_git(["config", "--local", "--unset", f"osc.{name}.{branch}"])
         except subprocess.CalledProcessError:
             pass
+
+    def _all_options(self):
+        lines = self._run_git(["config", "--list"]).splitlines()
+        result = {}
+        for line in lines:
+            key, value = line.split("=", 1)
+            if not key.startswith("osc."):
+                continue
+            # TODO: entries with differently formatted key?
+            key_osc, key_name, key_branch = key.split(".", 2)
+
+            if key_name == "default":
+                # "*" is not an allowed character in branch names, it's safe to use it without creating a name collision
+                result.setdefault("*", {}).setdefault(key_branch, value)
+            else:
+                result.setdefault(key_branch, {}).setdefault(key_name, value)
+        return result
 
     def _get_dict_option(self, name):
         result = self._get_option(name)
@@ -396,7 +441,7 @@ class GitStore:
     def current_remote(self):
         result = None
         try:
-            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"])
+            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"], mute_stderr=True)
             if result:
                 result = result.split("/")[0]
         except subprocess.CalledProcessError:
