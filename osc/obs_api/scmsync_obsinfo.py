@@ -16,6 +16,7 @@ class ScmsyncObsinfo(BaseModel):
     commit: str = Field()
     url: Optional[str] = Field()
     revision: Optional[str] = Field()
+    trackingbranch: Optional[str] = Field()
     subdir: Optional[str] = Field()
     projectscmsync: Optional[str] = Field()
 
@@ -72,7 +73,9 @@ class ScmsyncObsinfo(BaseModel):
 
         if self.subdir:
             query["subdir"] = self.subdir
-        if self.revision and not re.match(r"^[0-9a-fA-F]{40,}$", self.revision):
+        if self.trackingbranch:
+            query["trackingbranch"] = self.trackingbranch
+        elif self.revision and not re.match(r"^[0-9a-fA-F]{40,}$", self.revision):
             query["trackingbranch"] = self.revision
 
         parsed_url[4] = urllib.parse.urlencode(query)
