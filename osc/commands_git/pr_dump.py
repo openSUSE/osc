@@ -70,7 +70,9 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
             git.switch(pr_branch)
             head_commit = git.get_branch_head()
-            assert head_commit == commit, f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
+            assert (
+                head_commit == commit
+            ), f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
         elif branch:
             git.switch(branch)
 
@@ -87,6 +89,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
     def run(self, args):
         import json
+        import re
         from osc import gitea_api
         from osc import obs_api
         from osc.util.xml import xml_indent
@@ -177,16 +180,25 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             req_xml_action = req_xml.find("action")
             assert req_xml_action is not None
             req_xml_action.attrib["type"] = "gitea-pull-request"
-            req_xml_action.insert(0, ET.Comment("The type='gitea-pull-request' attribute value is a custom extension to the OBS XML schema."))
+            req_xml_action.insert(
+                0,
+                ET.Comment(
+                    "The type='gitea-pull-request' attribute value is a custom extension to the OBS XML schema."
+                ),
+            )
 
             req_xml_action_source = req_xml_action.find("source")
             assert req_xml_action_source is not None
-            req_xml_action_source.append(ET.Comment("The 'branch' attribute is a custom extension to the OBS XML schema."))
+            req_xml_action_source.append(
+                ET.Comment("The 'branch' attribute is a custom extension to the OBS XML schema.")
+            )
             req_xml_action_source.attrib["branch"] = pr_obj.head_branch
 
             req_xml_action_target = req_xml_action.find("target")
             assert req_xml_action_target is not None
-            req_xml_action_target.append(ET.Comment("The 'rev' and 'branch' attributes are custom extensions to the OBS XML schema."))
+            req_xml_action_target.append(
+                ET.Comment("The 'rev' and 'branch' attributes are custom extensions to the OBS XML schema.")
+            )
             req_xml_action_target.attrib["rev"] = pr_obj.base_commit
             req_xml_action_target.attrib["branch"] = pr_obj.base_branch
 
@@ -194,7 +206,10 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             for req_xml_review in req_xml_review_list:
                 if req_xml_review.attrib["state"] == "deleted":
                     req_xml_review.attrib["state"] = "comment"
-                    req_xml_review.insert(0, ET.Comment("The state='comment' attribute value is a custom extension to the OBS XML schema."))
+                    req_xml_review.insert(
+                        0,
+                        ET.Comment("The state='comment' attribute value is a custom extension to the OBS XML schema."),
+                    )
 
             metadata_dir = os.path.join(path, "metadata")
             os.makedirs(metadata_dir, exist_ok=True)
@@ -224,7 +239,9 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             self.clone_or_update(owner, repo, branch=pr_obj.base_branch, commit=pr_obj.merge_base, directory=base_dir)
 
             head_dir = os.path.join(path, "head")
-            self.clone_or_update(owner, repo, pr_number=pr_obj.number, commit=pr_obj.head_commit, directory=head_dir, reference=base_dir)
+            self.clone_or_update(
+                owner, repo, pr_number=pr_obj.number, commit=pr_obj.head_commit, directory=head_dir, reference=base_dir
+            )
 
             with open(os.path.join(metadata_dir, "submodules-base.json"), "w", encoding="utf-8") as f:
                 base_submodules = gitea_api.Git(base_dir).get_submodules()
@@ -269,3 +286,31 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
             with open(os.path.join(metadata_dir, "submodules-diff.json"), "w", encoding="utf-8") as f:
                 json.dump(submodule_diff, f, indent=4, sort_keys=True)
+
+            linked_prs = {}
+
+            for url in re.findall(r"https?://[^\s]+/pulls/\d+", pr_obj.body):
+                if not self.gitea_conn.host in url:
+                    print(f"ignoring PR {url}")
+                    linked_prs[url] = None
+                    continue
+
+                print(f"Linking PR {url}...")
+                _, _, linked_id = url.partition(self.gitea_conn.host + "/")
+
+                try:
+                    linked_owner, linked_repo, linked_number = gitea_api.PullRequest.split_id(linked_id)
+                    linked_pr_obj = gitea_api.PullRequest.get(self.gitea_conn, linked_owner, linked_repo, linked_number)
+                    if linked_pr_obj is None:
+                        linked_prs[url] = None
+                    else:
+                        linked_prs[url] = linked_pr_obj.to_light_dict()
+                except:
+                    linked_prs[url] = None
+
+            with open(
+                os.path.join(metadata_dir, "referenced-pull-requests.json"),
+                "w",
+                encoding="utf-8",
+            ) as f:
+                json.dump(linked_prs, f, indent=4, sort_keys=True)
