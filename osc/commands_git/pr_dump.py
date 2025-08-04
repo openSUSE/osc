@@ -138,6 +138,11 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, number)
             xml_history_list = []
             for entry in timeline:
+                if entry.is_empty():
+                    import sys
+                    print(f"Warning ignoring empty IssueTimelineEntry", file=sys.stderr)
+                    continue
+
                 text, body = entry.format()
                 if text is None:
                     continue
@@ -289,6 +294,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
             linked_prs = {}
 
+            # body may contain references with both https:// or without, which look indetical in UI. so we must handle both cases:
             for url in re.findall(r"https?://[^\s]+/pulls/\d+", pr_obj.body):
                 if not self.gitea_conn.host in url:
                     print(f"ignoring PR {url}")
@@ -307,6 +313,19 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                         linked_prs[url] = linked_pr_obj.to_light_dict()
                 except:
                     linked_prs[url] = None
+
+            for m in re.findall(r"([^\s\/]+)\/([^\s\/]+)\#(\d+)", pr_obj.body):
+                uri = f"{m[0]}/{m[1]}#{m[2]}"
+                print(f"Linking PR {uri}...")
+
+                try:
+                    linked_pr_obj = gitea_api.PullRequest.get(self.gitea_conn, m[0], m[1], m[2])
+                    if linked_pr_obj is None:
+                        linked_prs[uri] = None
+                    else:
+                        linked_prs[uri] = linked_pr_obj.to_light_dict()
+                except:
+                    linked_prs[uri] = None
 
             with open(
                 os.path.join(metadata_dir, "referenced-pull-requests.json"),
