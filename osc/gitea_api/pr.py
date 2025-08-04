@@ -87,6 +87,9 @@ class PullRequest(GiteaModel):
         """
         match = re.match(r"^([^/]+)/([^/]+)[#!]([0-9]+)$", pr_id)
         if not match:
+            match = re.match(r"^([^/]+)/([^/]+)/pulls/([0-9]+)$", pr_id)
+
+        if not match:
             raise ValueError(f"Invalid pull request id: {pr_id}")
         return match.group(1), match.group(2), int(match.group(3))
 
@@ -264,6 +267,12 @@ class PullRequest(GiteaModel):
         table.add("Description", self.body)
 
         return str(table)
+
+    def to_light_dict(self, exclude_columns: Optional[list] = None):
+        x = ["allow_maintainer_edit", "body"]
+        if exclude_columns:
+            x += exclude_columns
+        return self.dict(x)
 
     def dict(self, exclude_columns: Optional[list] = None):
         import inspect
