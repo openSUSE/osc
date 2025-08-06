@@ -290,16 +290,20 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                         # we don't expect migrating packages to another paths, branches etc.
                         assert base_submodules[i].get(key, None) == head_submodules[i].get(key, None)
 
-                    if base_submodules[i]["commit"] == head_submodules[i]["commit"]:
+                    base_commit = base_submodules[i].get("commit","")
+                    head_commit = head_submodules[i].get("commit","")
+
+                    if base_commit == head_commit:
                         submodule_diff["unchanged"][i] = base_submodules[i]
                         continue
 
                     # we expect the data to be identical in base and head with the exception of the commit
                     # we also drop `commit` and add `base_commit` and `head_commit`
                     data = base_submodules[i].copy()
-                    del data["commit"]
-                    data["base_commit"] = base_submodules[i]["commit"]
-                    data["head_commit"] = head_submodules[i]["commit"]
+                    if base_commit:
+                        del data["commit"]
+                    data["base_commit"] = base_commit
+                    data["head_commit"] = head_commit
                     submodule_diff["changed"][i] = data
 
             with open(os.path.join(metadata_dir, "submodules-diff.json"), "w", encoding="utf-8") as f:
