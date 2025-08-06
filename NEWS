@@ -1,3 +1,18 @@
+- 1.19.1
+  - Command-line:
+    - Use OSC_PACKAGE_CACHE_DIR env var instead of deprecated OSC_PACKAGECACHEDIR
+  - Connection:
+    - Check for both upper and lowercase versions of HTTP_PROXY and HTTPS_PROXY env vars
+  - Library:
+    - Add 'trackingbranch' field to ScmsyncObsinfo model
+    - Revert "Return None if GitStore cannot determine apiurl"
+    - Throw a proper exception when 'apiurl' argument of 'makeurl()' is empty
+    - Move code setting apiurl from store to 'osc.conf.get_config()'
+    - Simplify 'osc.commandline.Osc.get_api_url()' to return the value from 'self.options'
+    - Remove 'osc.commandline.Osc.post_argparse()' because it's no longer used
+    - Fix unit tests to use the new code path to run osc
+    - Fix osc.gitea_api.dt_sanitize() by replacing dateutil with datetime
+
 - 1.19.0
   - Command-line:
     - Add 'git-obs pr cancel-scheduled-merge' command
