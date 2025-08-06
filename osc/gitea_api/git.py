@@ -401,8 +401,8 @@ class Git:
             submodule = match.groupdict()["submodule"]
             key = match.groupdict()["key"]
             value = match.groupdict()["value"]
-            if key == "url":
-                assert value.startswith("../../")
+            #if key == "url":
+            #    assert value.startswith("../../")
             submodule_entry = result.setdefault(submodule, {})
             submodule_entry[key] = value
 
@@ -418,6 +418,11 @@ class Git:
 
         remote_url = self.get_remote_url()
         for submodule_entry in result.values():
+            url = submodule_entry["url"]
+            if not url.startswith("../../"):
+                submodule_entry["clone_url"] = url
+                continue
+ 
             clone_url = self.urljoin(remote_url, submodule_entry["url"])
             owner, repo = self.get_owner_repo_from_url(clone_url)
             submodule_entry["clone_url"] = clone_url
