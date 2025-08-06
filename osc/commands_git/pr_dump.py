@@ -90,6 +90,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
     def run(self, args):
         import json
         import re
+        import sys
         from osc import gitea_api
         from osc import obs_api
         from osc.util.xml import xml_indent
@@ -256,8 +257,6 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                 head_submodules = gitea_api.Git(head_dir).get_submodules()
                 json.dump(head_submodules, f, indent=4, sort_keys=True)
 
-            # diff submodules
-
             submodule_diff = {
                 "added": {},
                 "removed": {},
@@ -267,7 +266,21 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
             # TODO: determine if the submodules point to packages or something else; submodules may point to arbitrary git repos such as other packages, projects or anything else
             all_submodules = sorted(set(base_submodules) | set(head_submodules))
+            warnings = 0
             for i in all_submodules:
+
+                if base_submodules[i]:
+                    url = base_submodules[i].get("url","")
+                    if not url.startswith("../../"):
+                        print(f"Warning: incorrect path ({url}) in base submodule ({i})", file=sys.stderr)
+                        warnings += 1
+                else:
+                    url = base_submodules[i].get("url","")
+                    if url.startswith("../../"):
+                        print(f"Warning: incorrect path ({url}) in head submodule ({i})", file=sys.stderr)
+                        warnings += 1
+
+
                 if i in base_submodules and i not in head_submodules:
                     submodule_diff["removed"][i] = base_submodules[i]
                 elif i not in base_submodules and i in head_submodules:
@@ -333,3 +346,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                 encoding="utf-8",
             ) as f:
                 json.dump(linked_prs, f, indent=4, sort_keys=True)
+
+            if warnings:
+                return 38
+            return 0
