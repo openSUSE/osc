@@ -1,6 +1,7 @@
 import json
 import os
 import subprocess
+import sys
 import urllib.parse
 from pathlib import Path
 
@@ -112,13 +113,47 @@ class GitStore:
         config_path = os.path.join(path, "_config")
         pbuild_path = os.path.join(path, "_pbuild")
         subdirs_path = os.path.join(path, "_subdirs")
+        manifest_path = os.path.join(path, "_manifest")
 
         # we always stop at the top-most directory that contains .git subdir
         if not (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
             # it's not a project, stop traversing and return
             return None
 
-        if os.path.isfile(subdirs_path):
+        if os.path.isfile(manifest_path):
+            if os.path.isfile(subdirs_path):
+                print("WARNING: Ignoring '_subdirs' file, using data from '_manifest'", file=sys.stderr)
+
+            # the _manifest file contains a list of project subdirs that contain packages and list of dirs which are packages
+            with open(manifest_path, "r") as f:
+                data = osc_yaml.yaml_load(f)
+
+            # ``packages`` is a list of directories which are packages
+            packages = data.get("packages", [])
+            packages_abspath = [os.path.abspath(os.path.join(path, i)) for i in packages]
+
+            # ``subdirectories`` is a list of directories, which have subdirectories which are packages
+            subdirs = data.get("subdirectories", [])
+            subdirs_abspath = [os.path.abspath(os.path.join(path, i)) for i in subdirs]
+
+            common_paths = set(packages) & set(subdirs)
+            if common_paths:
+                print(f"WARNING: _manifest contains conflicting entries between 'packages' and 'subdirectories': {sorted(common_paths)}", file=sys.stderr)
+
+            if self.abspath in packages_abspath:
+                # we're in a path defined in 'packages' -> it's a package
+                pass
+            elif self.abspath in subdirs_abspath:
+                # paths listed in ``subdirectories`` are never packages, their subdirs are
+                return None
+            elif os.path.abspath(os.path.join(self.abspath, "..")) not in subdirs_abspath:
+                # we're outside paths specified in 'subdirectories' -> not a package
+                return None
+            else:
+                # we're in a subdir of a directory listed in 'subdirectories' -> it's a package
+                pass
+
+        elif os.path.isfile(subdirs_path):
             # the _subdirs file contains a list of project subdirs that contain packages
             with open(subdirs_path, "r") as f:
                 data = osc_yaml.yaml_load(f)
