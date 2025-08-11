@@ -1,3 +1,5 @@
+import contextlib
+import io
 import os
 import shutil
 import subprocess
@@ -145,6 +147,71 @@ class TestGitStoreProject(unittest.TestCase):
         # otherwise it's not recognized as a package
         subdirs = {"subdirs": ["group"]}
         self._write(os.path.join(prj_path, "_subdirs"), osc_yaml.yaml_dumps(subdirs))
+
+        pkg_path = os.path.join(prj_path, "group/package")
+        os.makedirs(pkg_path, exist_ok=True)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_nested_pkg_osc_project_from_git_both_subdirs_and_manifest(self):
+        # project .git and .osc are next to each other
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_config"))
+        self._osc_init(prj_path, project="PROJ")
+
+        # the nested package must be under a subdirectory tracked in _subdirs file
+        # otherwise it's not recognized as a package
+        # IMPORTANT: in this case, _manifest prevails over _subdirs
+        subdirs = {"subdirs": ["does-not-exist"]}
+        self._write(os.path.join(prj_path, "_subdirs"), osc_yaml.yaml_dumps(subdirs))
+
+        # the nested package must be under a subdirectory tracked in _manifest file
+        # otherwise it's not recognized as a package
+        subdirs = {"subdirectories": ["group"]}
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(subdirs))
+
+        pkg_path = os.path.join(prj_path, "group/package")
+        os.makedirs(pkg_path, exist_ok=True)
+
+        stdout = io.StringIO()
+        stderr = io.StringIO()
+        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
+            store = GitStore(pkg_path)
+        self.assertEqual("", stdout.getvalue())
+        self.assertEqual("WARNING: Ignoring '_subdirs' file, using data from '_manifest'\n", stderr.getvalue())
+
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_manifest_packages(self):
+        # project .git and .osc are next to each other
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_config"))
+        self._osc_init(prj_path, project="PROJ")
+
+        subdirs = {"packages": ["group/package"]}
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(subdirs))
+
+        pkg_path = os.path.join(prj_path, "group/package")
+        os.makedirs(pkg_path, exist_ok=True)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_manifest_subdirectories(self):
+        # project .git and .osc are next to each other
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._write(os.path.join(prj_path, "_config"))
+        self._osc_init(prj_path, project="PROJ")
+
+        subdirs = {"subdirectories": ["group"]}
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(subdirs))
 
         pkg_path = os.path.join(prj_path, "group/package")
         os.makedirs(pkg_path, exist_ok=True)
