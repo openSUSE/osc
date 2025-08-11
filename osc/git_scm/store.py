@@ -49,11 +49,7 @@ class GitStore:
         apiurl = osc_conf.config["apiurl"]
         gitea_user = osc_conf.get_apiurl_usr(apiurl)
 
-        # remove trailing ".git" from path
-        if path.endswith(".git"):
-            path = path[:-4]
-
-        gitea_owner, gitea_repo = path.strip("/").split("/")[-2:]
+        gitea_owner, gitea_repo = gitea_api.Git.split_owner_repo(path)
 
         # replace gitea_repo with _ObsPrj
         gitea_repo = "_ObsPrj"
@@ -405,3 +401,63 @@ class GitStore:
         if result:
             return result
         return "origin"
+
+    def obs_git_init(self, template_dir, initial_branch="main"):
+        """
+        Make sure git repository has proper layout (e.g. adjust content in .gitattributes, .gitignore and .git/config)
+        """
+        from osc import gitea_api
+
+        need_commit = True
+        git = gitea_api.Git(self.path)
+        if git.is_initialized():
+            need_commit = False
+        else:
+            git.init(initial_branch=initial_branch)
+
+        self._merge_files_if_exist(".gitattributes", template_dir)
+        self._merge_files_if_exist(".gitignore", template_dir)
+        self._merge_configs_if_exist(template_dir)
+
+        if need_commit:
+            files = []
+            for f in [".gitattributes", ".gitignore"]:
+                if Path(f).is_file():
+                    files += f
+            if files:
+                git.add(files)
+                git.commit("Initial commit")
+
+    def _merge_files_if_exist(self, filename: str, srcdir: str):
+        from shutil import copy
+        from ..util.file_utils import merge_files_by_prefix
+
+        if not Path(f"{srcdir}/{filename}").is_file():
+            return
+
+        if not Path(f"{self.path}/{filename}").is_file():
+            copy(f"{srcdir}/{filename}", self.path)
+            return
+
+        # here both source and dest file exists - let's merge them
+        merge_files_by_prefix(f"{srcdir}/{filename}", f"{self.path}/{filename}")
+
+    def _merge_configs_if_exist(self, srcdir: str):
+        from shutil import copy
+        from ..util.file_utils import merge_configs
+
+        if not Path(f"{self.path}/.git").is_dir:
+            return
+
+        srcfile = f"{srcdir}/.gitconfig"
+        if not Path(srcfile).is_file():
+            srcfile = f"{srcdir}/.git/config"
+        if not Path(srcfile).is_file():
+            return
+
+        dest = f"{self.path}/.git/config"
+        if not Path(dest).is_file():
+            copy(srcfile, dest)
+            return
+
+        merge_configs(srcfile, dest)
