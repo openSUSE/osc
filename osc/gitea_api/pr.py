@@ -4,16 +4,13 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .user import User
 
 
-class PullRequestReview:
-    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
-        self._data = data
-        self._response = response
-
+class PullRequestReview(GiteaModel):
     @property
     def state(self) -> str:
         return self._data["state"]
@@ -72,11 +69,7 @@ class PullRequestReview:
 
 
 @functools.total_ordering
-class PullRequest:
-    def __init__(self, data, *, response: Optional[GiteaHTTPResponse] = None):
-        self._data = data
-        self._response = response
-
+class PullRequest(GiteaModel):
     def __eq__(self, other):
         (self.base_owner, self.base_repo, self.number) == (other.base_owner, other.base_repo, other.number)
 
@@ -107,8 +100,33 @@ class PullRequest:
         parsed_url = urllib.parse.urlparse(url)
         path = parsed_url.path
         owner, repo, pulls, number = path.strip("/").split("/")
-        assert pulls in ("pulls", "issues")
+        if pulls not in ("pulls", "issues"):
+            raise ValueError(f"URL doesn't point to a pull request or an issue: {url}")
         return owner, repo, int(number)
+
+    def parse_pr_references(self) -> List[Tuple[str, str, int]]:
+        refs = re.findall(r"^PR: *(.*)$", self.body, re.M)
+        result = []
+
+        for ref in refs:
+            # try owner/repo#number first
+            try:
+                result.append(PullRequest.split_id(ref))
+                continue
+            except ValueError:
+                pass
+
+            # parse owner, repo, number from a pull request url
+            if ref.startswith(f"{self._conn.login.url.rstrip('/')}/"):
+                try:
+                    result.append(PullRequest.get_owner_repo_number(ref))
+                    continue
+                except ValueError:
+                    pass
+
+            raise ValueError(f"Unable to parse pull request reference: {ref}")
+
+        return result
 
     @property
     def is_pull_request(self):
@@ -340,7 +358,7 @@ class PullRequest:
             "body": description,
         }
         response = conn.request("POST", url, json_data=data)
-        obj = cls(response.json(), response=response)
+        obj = cls(response.json(), response=response, conn=conn)
         return obj
 
     @classmethod
@@ -361,7 +379,7 @@ class PullRequest:
         """
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
         response = conn.request("GET", url)
-        obj = cls(response.json(), response=response)
+        obj = cls(response.json(), response=response, conn=conn)
         return obj
 
     @classmethod
@@ -394,7 +412,7 @@ class PullRequest:
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
         response = conn.request("PATCH", url, json_data=json_data)
-        obj = cls(response.json(), response=response)
+        obj = cls(response.json(), response=response, conn=conn)
         return obj
 
     @classmethod
@@ -423,7 +441,7 @@ class PullRequest:
         }
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
         response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json()]
+        obj_list = [cls(i, response=response, conn=conn) for i in response.json()]
         return obj_list
 
     @classmethod
@@ -467,7 +485,7 @@ class PullRequest:
         url = conn.makeurl("repos", "issues", "search", query=q)
         obj_list = []
         for response in conn.request_all_pages("GET", url):
-            obj_list.extend([cls(i, response=response) for i in response.json()])
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json()])
         return obj_list
 
     @classmethod
