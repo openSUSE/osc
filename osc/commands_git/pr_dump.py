@@ -309,47 +309,18 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             with open(os.path.join(metadata_dir, "submodules-diff.json"), "w", encoding="utf-8") as f:
                 json.dump(submodule_diff, f, indent=4, sort_keys=True)
 
-            linked_prs = {}
-
-            # body may contain references with both https:// or without, which look indetical in UI. so we must handle both cases:
-            for url in re.findall(r"https?://[^\s]+/pulls/\d+", pr_obj.body):
-                if not self.gitea_conn.host in url:
-                    print(f"ignoring PR {url}")
-                    linked_prs[url] = None
-                    continue
-
-                print(f"Linking PR {url}...")
-                _, _, linked_id = url.partition(self.gitea_conn.host + "/")
-
-                try:
-                    linked_owner, linked_repo, linked_number = gitea_api.PullRequest.split_id(linked_id)
-                    linked_pr_obj = gitea_api.PullRequest.get(self.gitea_conn, linked_owner, linked_repo, linked_number)
-                    if linked_pr_obj is None:
-                        linked_prs[url] = None
-                    else:
-                        linked_prs[url] = linked_pr_obj.to_light_dict()
-                except:
-                    linked_prs[url] = None
-
-            for m in re.findall(r"([^\s\/]+)\/([^\s\/]+)\#(\d+)", pr_obj.body):
-                uri = f"{m[0]}/{m[1]}#{m[2]}"
-                print(f"Linking PR {uri}...")
-
-                try:
-                    linked_pr_obj = gitea_api.PullRequest.get(self.gitea_conn, m[0], m[1], m[2])
-                    if linked_pr_obj is None:
-                        linked_prs[uri] = None
-                    else:
-                        linked_prs[uri] = linked_pr_obj.to_light_dict()
-                except:
-                    linked_prs[uri] = None
+            referenced_pull_requests = {}
+            for ref_owner, ref_repo, ref_number in pr_obj.parse_pr_references():
+                ref_id = f"{ref_owner}/{ref_repo}#{ref_number}"
+                referenced_pr_obj = gitea_api.PullRequest.get(self.gitea_conn, ref_owner, ref_repo, ref_number)
+                referenced_pull_requests[ref_id] = referenced_pr_obj.dict()
 
             with open(
                 os.path.join(metadata_dir, "referenced-pull-requests.json"),
                 "w",
                 encoding="utf-8",
             ) as f:
-                json.dump(linked_prs, f, indent=4, sort_keys=True)
+                json.dump(referenced_pull_requests, f, indent=4, sort_keys=True)
 
             if warnings:
                 return 38
