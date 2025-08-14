@@ -6590,7 +6590,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         results' output. If the buildlog url is used buildlog command has the
         same behavior as remotebuildlog.
 
-        buildlog [REPOSITORY ARCH | BUILDLOGURL]
+        buildlog [PROJECT PACKAGE REPOSITORY [ARCH] | REPOSITORY ARCH | BUILDLOGURL]
         """
 
         from . import build as osc_build
@@ -6609,6 +6609,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
+        elif len(args) > 2:
+            project = args[0]
+            project = self._process_project_name(project)
+            package = args[1]
+            repository = args[2]
+            if len(args) == 3:
+                arch = osc_build.hostarch
+            elif len(args) > 4:
+                raise oscerr.WrongArgs('Too many arguments.')
+            else:
+                arch = args[1]
         else:
             project = store_read_project(Path.cwd())
             package = store_read_package(Path.cwd())
@@ -6621,8 +6632,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     arch = osc_build.hostarch
             elif len(args) < 2:
                 self.print_repos()
-            elif len(args) > 2:
-                raise oscerr.WrongArgs('Too many arguments.')
             else:
                 repository = args[0]
                 arch = args[1]
