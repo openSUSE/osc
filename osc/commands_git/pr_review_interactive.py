@@ -228,6 +228,9 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
         timeline_lines = []
         timeline_lines.append(tty.colorize("Timeline:", "bold"))
         for entry in timeline:
+            if entry._data is None:
+                timeline_lines.append(f"{tty.colorize('ERROR', 'red,bold,blink')}: Gitea returned ``None`` instead of a timeline entry")
+                continue
             text, body = entry.format()
             if text is None:
                 continue

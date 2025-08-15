@@ -235,6 +235,7 @@ class IssueTimelineEntry(GiteaModel):
     ) -> List["IssueTimelineEntry"]:
         """
         List issue timeline entries (applicable to issues and pull request).
+        HACK: the resulting list may contain instances wrapping ``None`` instead of dictionary with data!
 
         :param conn: Gitea ``Connection`` instance.
         :param owner: Owner of the repo.
@@ -246,5 +247,5 @@ class IssueTimelineEntry(GiteaModel):
         }
         url = conn.makeurl("repos", owner, repo, "issues", str(number), "timeline", query=q)
         response = conn.request("GET", url)
-        obj_list = [cls(i, response=response, conn=conn) for i in response.json() or []]
+        obj_list = [cls(i, response=response, conn=conn, check_data=False) for i in response.json() or []]
         return obj_list

@@ -53,6 +53,9 @@ class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
                 print(tty.colorize("Timeline:", "bold"))
                 timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, pull)
                 for entry in timeline:
+                    if entry._data is None:
+                        print(f"{tty.colorize('ERROR', 'red,bold,blink')}: Gitea returned ``None`` instead of a timeline entry")
+                        continue
                     text, body = entry.format()
                     if text is None:
                         continue
