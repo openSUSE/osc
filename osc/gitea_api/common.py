@@ -12,7 +12,18 @@ from .connection import GiteaHTTPResponse
 
 
 class GiteaModel:
-    def __init__(self, data, *, response: Optional[GiteaHTTPResponse] = None, conn: Optional[Connection] = None):
+    def __init__(
+        self,
+        data,
+        *,
+        check_data: bool = True,
+        response: Optional[GiteaHTTPResponse] = None,
+        conn: Optional[Connection] = None,
+    ):
+        if check_data and not isinstance(data, dict):
+            # Gitea sometimes fails to serialize an object and returns ``None`` instead
+            raise ValueError(f"Unable to instantiate model {self.__class__.__name__} from the following data: {data}")
+
         self._data = data
         self._response = response
         self._conn = conn
