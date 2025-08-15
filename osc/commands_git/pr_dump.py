@@ -140,8 +140,14 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             xml_history_list = []
             for entry in timeline:
                 if entry.is_empty():
-                    import sys
-                    print(f"Warning ignoring empty IssueTimelineEntry", file=sys.stderr)
+                    xml_history_list.append(
+                        {
+                            "who": "",
+                            "when": "",
+                            "description": "ERROR: Gitea returned ``None`` instead of a timeline entry",
+                            "comment": "",
+                        }
+                    )
                     continue
 
                 text, body = entry.format()
