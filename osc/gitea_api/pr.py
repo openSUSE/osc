@@ -409,7 +409,11 @@ class PullRequest:
         :param repo: Name of the repo.
         :param number: Number of the pull request in the repo.
         """
-        url = conn.makeurl("repos", owner, repo, "pulls", f"{number}.patch")
+        q = {
+            "binary": 0,
+        }
+        # XXX: .patch suffix doesn't work with binary=0
+        url = conn.makeurl("repos", owner, repo, "pulls", f"{number}.diff", query=q)
         response = conn.request("GET", url)
         return response.data
 
