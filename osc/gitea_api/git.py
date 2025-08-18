@@ -2,6 +2,7 @@ import os
 import re
 import subprocess
 import urllib
+from typing import Dict
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -89,6 +90,12 @@ class Git:
         except subprocess.CalledProcessError:
             return -1
 
+    def reset(self, commit: str, hard: bool = False):
+        cmd = ["reset", commit]
+        if hard:
+            cmd += ["--hard"]
+        self._run_git(cmd)
+
     def switch(self, branch: str, orphan: bool = False):
         cmd = ["switch"]
         if orphan:
@@ -101,12 +108,18 @@ class Git:
         pull_number: int,
         *,
         remote: str = "origin",
+        commit: Optional[str] = None,
         force: bool = False,
     ):
         """
         Fetch pull/$pull_number/head to pull/$pull_number branch
         """
         target_branch = f"pull/{pull_number}"
+
+        # if the branch exists and the head matches the expected commit, skip running 'git fetch'
+        if commit and self.branch_exists(target_branch) and self.get_branch_head(target_branch) == commit:
+            return target_branch
+
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
         if force:
             cmd += [
@@ -151,16 +164,29 @@ class Git:
 
     # LFS
 
-    def lfs_ls_files(self, ref: str = "HEAD") -> List[Tuple[str, str]]:
+    def lfs_ls_files(self, ref: str = "HEAD", suffixes: Optional[List[str]] = None) -> Dict[str, str]:
         # TODO: --size; returns human readable string; can we somehow get the exact value in bytes instead?
         out = self._run_git(["lfs", "ls-files", "--long", ref])
-        regex = re.compile(r"^(?P<checksum>[0-9a-f]+) [\*\-] (?P<filename>.*)$")
-        result = []
+        regex = re.compile(r"^(?P<checksum>[0-9a-f]+) [\*\-] (?P<path>.*)$")
+        result = {}
         for line in out.splitlines():
             match = regex.match(line)
             if not match:
                 continue
-            result.append((match.group(2), match.group(1)))
+
+            checksum = match.groupdict()["checksum"]
+            path = match.groupdict()["path"]
+
+            if suffixes:
+                found = False
+                for suffix in suffixes:
+                    if path.endswith(suffix):
+                        found = True
+                        break
+                if not found:
+                    continue
+
+            result[path] = checksum
         return result
 
     def lfs_cat_file(self, filename: str, ref: str = "HEAD"):
@@ -186,6 +212,30 @@ class Git:
         if allow_empty:
             cmd += ["--allow-empty"]
         self._run_git(cmd)
+
+    def ls_files(self, ref: str = "HEAD", suffixes: Optional[List[str]] = None) -> Dict[str, str]:
+        out = self._run_git(["ls-tree", "-r", "--format=%(objectname) %(path)", ref])
+        regex = re.compile(r"^(?P<checksum>[0-9a-f]+) (?P<path>.*)$")
+        result = {}
+        for line in out.splitlines():
+            match = regex.match(line)
+            if not match:
+                continue
+
+            checksum = match.groupdict()["checksum"]
+            path = match.groupdict()["path"]
+
+            if suffixes:
+                found = False
+                for suffix in suffixes:
+                    if path.endswith(suffix):
+                        found = True
+                        break
+                if not found:
+                    continue
+
+            result[path] = checksum
+        return result
 
     def diff(self, ref_old: str, ref_new: str, src_prefix: Optional[str] = None, dst_prefix: Optional[str] = None) -> Iterator[bytes]:
         cmd = ["git", "diff", ref_old, ref_new]

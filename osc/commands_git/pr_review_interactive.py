@@ -90,7 +90,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                 skipped_drafts += 1
                 continue
 
-            self.clone_git(owner, repo, number)
+            self.clone_git(owner, repo, number, subdir="base")
             self.view(owner, repo, number, pr_index=pr_index, pr_count=len(pull_request_ids), pr_obj=pr_obj)
 
             while True:
@@ -169,19 +169,22 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
         gitea_api.PullRequest.add_comment(self.gitea_conn, owner, repo, number, msg=message)
 
-    def get_git_repo_path(self, owner: str, repo: str, number: int):
+    def get_git_repo_path(self, owner: str, repo: str, number: int, *, subdir: Optional[str] = None):
         path = os.path.join("~", ".cache", "git-obs", "reviews", self.gitea_login.name, f"{owner}_{repo}_{number}")
+        if subdir:
+            # we don't check if the subdir points inside the ``path`` because this is not a library and we provide the values only in this command
+            path = os.path.join(path, subdir)
         path = os.path.expanduser(path)
         return path
 
-    def clone_git(self, owner: str, repo: str, number: int):
+    def clone_git(self, owner: str, repo: str, number: int, *, subdir: Optional[str] = None):
         from osc import gitea_api
 
         repo_obj = gitea_api.Repo.get(self.gitea_conn, owner, repo)
         clone_url = repo_obj.ssh_url
 
         # TODO: it might be good to have a central cache for the git repos to speed cloning up
-        path = self.get_git_repo_path(owner, repo, number)
+        path = self.get_git_repo_path(owner, repo, number, subdir=subdir)
         git = gitea_api.Git(path)
         if os.path.isdir(path):
             git.fetch()
@@ -271,39 +274,63 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
     def tardiff(self, owner: str, repo: str, number: int, *, pr_obj: ".PullRequest") -> Generator[bytes, None, None]:
         from osc import gitea_api
 
-        path = self.get_git_repo_path(owner, repo, number)
-        git = gitea_api.Git(path)
+        base_path = self.get_git_repo_path(owner, repo, number, subdir="base")
+        base_git = gitea_api.Git(base_path)
 
         # the repo might be outdated, make sure the commits are available
-        git.fetch()
+        base_git.fetch()
 
-        src_archives = git.lfs_ls_files(ref=pr_obj.head_commit)
-        dst_archives = git.lfs_ls_files(ref=pr_obj.base_commit)
+        head_path = self.get_git_repo_path(owner, repo, number, subdir="head")
+        if os.path.exists(head_path):
+            # update the 'base' and 'head' worktrees to the latest revisions from the pull request
+            base_git.reset(pr_obj.head_commit, hard=True)
+            pr_branch = base_git.fetch_pull_request(number, commit=pr_obj.head_commit, force=True)
+        else:
+            # IMPORTANT: git lfs is extremly difficult to use to query files from random branches and commits.
+            # The easiest we can do is to work with a checkout that contains the exact state we want to work with,
+            # that's why we're creating the 'head' worktree that contains the contents of the pull request.
+            #
+            # typical git lfs issues are:
+            #   - ``git cat-file --format <commit>:<path>`` returns lfs metadata instead of the actual file while switched to another branch
+            #   - ``git cat-file blob <oid> | git lfs smudge`` prints errors when a file is not part of lfs: Pointer file error: Unable to parse pointer at: "<unknown file>"
+            pr_branch = f"pull/{number}"
+            base_git._run_git(["worktree", "add", "--force", head_path, pr_branch])
+
+        head_git = gitea_api.Git(head_path)
+
+        head_archives = head_git.ls_files(ref=pr_obj.head_commit, suffixes=gitea_api.TarDiff.SUFFIXES)
+        base_archives = base_git.ls_files(ref=pr_obj.base_commit, suffixes=gitea_api.TarDiff.SUFFIXES)
+
+        # we need to override oids with lfs oids that match the actual file checksums; that is crucial for creating correct branch names in the cache
+        head_archives.update(head_git.lfs_ls_files(ref=pr_obj.head_commit, suffixes=gitea_api.TarDiff.SUFFIXES))
+        base_archives.update(base_git.lfs_ls_files(ref=pr_obj.base_commit, suffixes=gitea_api.TarDiff.SUFFIXES))
 
         def map_archives_by_name(archives: list):
             result = {}
-            for fn, sha in archives:
-                name = fn.rsplit("-", 1)[0]
+            for path, sha in archives.items():
+                dirname = os.path.dirname(path)
+                basename = os.path.basename(path)
+                name = os.path.join(dirname, basename.rsplit("-", 1)[0])
                 assert name not in result
-                result[name] = (fn, sha)
+                result[name] = (path, sha)
             return result
 
-        src_archives_by_name = map_archives_by_name(src_archives)
-        dst_archives_by_name = map_archives_by_name(dst_archives)
-        all_names = sorted(set(src_archives_by_name) | set(dst_archives_by_name))
+        head_archives_by_name = map_archives_by_name(head_archives)
+        base_archives_by_name = map_archives_by_name(base_archives)
+        all_names = sorted(set(head_archives_by_name) | set(base_archives_by_name))
 
         path = self.get_tardiff_path()
         td = gitea_api.TarDiff(path)
 
         for name in all_names:
-            src_archive = src_archives_by_name.get(name, (None, None))
-            dst_archive = dst_archives_by_name.get(name, (None, None))
+            head_archive = head_archives_by_name.get(name, (None, None))
+            base_archive = base_archives_by_name.get(name, (None, None))
 
-            if src_archive[0]:
-                td.add_archive(src_archive[0], src_archive[1], git.lfs_cat_file(src_archive[0], ref=pr_obj.head_commit))
+            if head_archive[0]:
+                td.add_archive(head_archive[0], head_archive[1], head_git.lfs_cat_file(head_archive[0], ref=pr_obj.head_commit))
 
-            if dst_archive[0]:
-                td.add_archive(dst_archive[0], dst_archive[1], git.lfs_cat_file(dst_archive[0], ref=pr_obj.base_commit))
+            if base_archive[0]:
+                td.add_archive(base_archive[0], base_archive[1], base_git.lfs_cat_file(base_archive[0], ref=pr_obj.base_commit))
 
             # TODO: max output length / max lines; in such case, it would be great to list all the changed files at least
-            yield from td.diff_archives(*dst_archive, *src_archive)
+            yield from td.diff_archives(*base_archive, *head_archive)
