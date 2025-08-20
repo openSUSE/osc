@@ -10,6 +10,21 @@ GIT_EMPTY_COMMIT = "4b825dc642cb6eb9a060e54bf8d69288fbee4904"
 
 
 class TarDiff:
+    SUFFIXES = [
+        ".7z",
+        ".bz2",
+        ".gz",
+        ".jar",
+        ".lz",
+        ".lzma",
+        ".tbz",
+        ".tbz2",
+        ".tgz",
+        ".txz",
+        ".zip",
+        ".zst",
+    ]
+
     def __init__(self, path):
         self.git = git.Git(path)
         os.makedirs(self.path, exist_ok=True)
@@ -25,14 +40,14 @@ class TarDiff:
         filename = os.path.basename(filename)
         return f"{filename}-{checksum}"
 
-    def add_archive(self, filename: str, checksum: str, data: Iterator[bytes]) -> str:
+    def add_archive(self, path: str, checksum: str, data: Iterator[bytes]) -> str:
         """
         Create a branch with expanded archive.
         The easiest way of obtaining the `checksum` is via running `git lfs ls-files --long`.
         """
 
         # make sure we don't use the path anywhere
-        filename = os.path.basename(filename)
+        filename = os.path.basename(path)
 
         branch = self._get_branch_name(filename, checksum)
 
@@ -63,7 +78,8 @@ class TarDiff:
         for chunk in data:
             proc.stdin.write(chunk)
         proc.communicate()
-        assert proc.returncode == 0
+        if proc.returncode != 0:
+            raise RuntimeError(f"bsdtar returned {proc.returncode} while extracting {path}")
 
         # add files and commit
         self.git.add(["--all"])
@@ -75,21 +91,21 @@ class TarDiff:
 
         return branch
 
-    def diff_archives(self, src_filename, src_checksum, dst_filename, dst_checksum) -> Iterator[bytes]:
-        if src_filename:
-            src_filename = os.path.basename(src_filename)
+    def diff_archives(self, src_path, src_checksum, dst_path, dst_checksum) -> Iterator[bytes]:
+        if src_path:
+            src_filename = os.path.basename(src_path)
             src_branch = self._get_branch_name(src_filename, src_checksum)
             src_branch = f"refs/heads/{src_branch}"
         else:
             src_filename = "/dev/null"
             src_branch = GIT_EMPTY_COMMIT
 
-        if dst_filename:
-            dst_filename = os.path.basename(dst_filename)
+        if dst_path:
+            dst_filename = os.path.basename(dst_path)
             dst_branch = self._get_branch_name(dst_filename, dst_checksum)
             dst_branch = f"refs/heads/{dst_branch}"
         else:
             dst_filename = "/dev/null"
             dst_branch = GIT_EMPTY_COMMIT
 
-        yield from self.git.diff(src_branch, dst_branch, src_prefix=src_filename, dst_prefix=dst_filename)
+        yield from self.git.diff(src_branch, dst_branch, src_prefix=src_path, dst_prefix=dst_path)
