@@ -294,7 +294,13 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                 else:
                     for key in ["branch", "path", "url"]:
                         # we don't expect migrating packages to another paths, branches etc.
-                        assert base_submodules[i].get(key, None) == head_submodules[i].get(key, None)
+                        if key not in base_submodules[i] and key in head_submodules[i]:
+                            # we allow adding new keys in the pull request to fix missing data
+                            pass
+                        else:
+                            base_value = base_submodules[i].get(key, None)
+                            head_value = head_submodules[i].get(key, None)
+                            assert base_value == head_value, f"Submodule metadata has changed: key='{key}', base_value='{base_value}', head_value='{head_value}'"
 
                     base_commit = base_submodules[i].get("commit","")
                     head_commit = head_submodules[i].get("commit","")
