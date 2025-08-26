@@ -24,9 +24,9 @@ class PullRequest:
     @classmethod
     def split_id(cls, pr_id: str) -> Tuple[str, str, int]:
         """
-        Split <owner>/<repo>#<number> into individual components and return them in a tuple.
+        Split <owner>/<repo>#<number> or <owner>/<repo>!<number> into individual components and return them in a tuple.
         """
-        match = re.match(r"^([^/]+)/([^/]+)#([0-9]+)$", pr_id)
+        match = re.match(r"^([^/]+)/([^/]+)[#!]([0-9]+)$", pr_id)
         if not match:
             raise ValueError(f"Invalid pull request id: {pr_id}")
         return match.group(1), match.group(2), int(match.group(3))
