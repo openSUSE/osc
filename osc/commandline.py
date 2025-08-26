@@ -6595,13 +6595,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from . import build as osc_build
         from . import conf
+        from . import store as osc_store
         from .core import ET
         from .core import http_GET
         from .core import makeurl
         from .core import parse_buildlogurl
         from .core import print_buildlog
-        from .core import store_read_package
-        from .core import store_read_project
 
         project = package = repository = arch = None
 
@@ -6621,8 +6620,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 arch = args[1]
         else:
-            project = store_read_project(Path.cwd())
-            package = store_read_package(Path.cwd())
+            store = osc_store.get_store(Path.cwd())
+            store.assert_is_package()
+            project = store.project
+            package = store.package
             if len(args) == 1:
                 repository, arch = self._find_last_repo_arch(args[0], fatal=False)
                 if repository is None:
