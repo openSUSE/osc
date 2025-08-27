@@ -547,7 +547,8 @@ class PullRequest(GiteaModel):
         msg: Optional[str] = None,
         commit: Optional[str] = None,
         reviewer: Optional[str] = None,
-    ) -> GiteaHTTPResponse:
+        schedule_merge: bool = False,
+    ):
         """
         Approve review in a pull request.
         """
@@ -558,9 +559,14 @@ class PullRequest(GiteaModel):
 
         if reviewer:
             # group review bot is controlled via messages in comments
-            msg = f"@{reviewer} : approve\n\n" + (msg or "")
-            msg = msg.strip()
-            return cls.add_comment(conn, owner, repo, number, msg=msg)
+            new_msg = f"@{reviewer} : approve\n"
+            if schedule_merge:
+                new_msg += "merge ok\n"
+            new_msg += "\n"
+            new_msg += msg or ""
+            new_msg = new_msg.strip()
+            cls.add_comment(conn, owner, repo, number, msg=new_msg)
+            return
 
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
         # XXX[dmach]: commit_id has no effect; I thought it's going to approve if the commit matches with head and errors out otherwise
@@ -569,7 +575,10 @@ class PullRequest(GiteaModel):
             "body": msg,
             "commit_id": commit,
         }
-        return conn.request("POST", url, json_data=json_data)
+        conn.request("POST", url, json_data=json_data)
+
+        if schedule_merge:
+            cls.add_comment(conn, owner, repo, number, msg="merge ok")
 
     @classmethod
     def decline_review(
@@ -582,7 +591,7 @@ class PullRequest(GiteaModel):
         msg: str,
         commit: Optional[str] = None,
         reviewer: Optional[str] = None,
-    ) -> GiteaHTTPResponse:
+    ):
         """
         Decline review (request changes) in a pull request.
         """
@@ -590,7 +599,8 @@ class PullRequest(GiteaModel):
             # group review bot is controlled via messages in comments
             msg = f"@{reviewer} : decline\n\n" + (msg or "")
             msg = msg.strip()
-            return cls.add_comment(conn, owner, repo, number, msg=msg)
+            cls.add_comment(conn, owner, repo, number, msg=msg)
+            return
 
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
         json_data = {
@@ -598,7 +608,7 @@ class PullRequest(GiteaModel):
             "body": msg,
             "commit": commit,
         }
-        return conn.request("POST", url, json_data=json_data)
+        conn.request("POST", url, json_data=json_data)
 
     @classmethod
     def merge(
