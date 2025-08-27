@@ -7,7 +7,7 @@ from .. import oscerr
 from .tty import colorize
 
 
-def get_user_input(question: str, answers: Dict[str, str], default_answer: Optional[str] = None) -> str:
+def get_user_input(question: str, answers: Dict[str, str], default_answer: Optional[str] = None, vertical: bool = False) -> str:
     """
     Ask user a question and wait for reply.
 
@@ -27,12 +27,18 @@ def get_user_input(question: str, answers: Dict[str, str], default_answer: Optio
         value = f"{colorize(key, 'bold')}){value}"
         prompt.append(value)
 
-    prompt_str = " / ".join(prompt)
-    if default_answer:
-        prompt_str += f" (default={colorize(default_answer, 'bold')})"
-    prompt_str += ": "
-
-    print(question, file=sys.stderr)
+    if vertical:
+        prompt_str = "\n".join(prompt)
+        if default_answer:
+            prompt_str += f"\n(default={colorize(default_answer, 'bold')})"
+        prompt_str += "\n"
+        prompt_str += question + " "
+    else:
+        prompt_str = " / ".join(prompt)
+        if default_answer:
+            prompt_str += f" (default={colorize(default_answer, 'bold')})"
+        prompt_str += "\n"
+        prompt_str += question + " "
 
     while True:
         try:
