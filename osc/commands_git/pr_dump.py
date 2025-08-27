@@ -7,7 +7,13 @@ import osc.commandline_git
 class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
     """
     Dump a pull request to disk
+
+    Return codes:
+    - 0:   default return code
+    - 1-9: reserved for error states
+    - 11:  pull request(s) skipped due to no longer being open
     """
+    # NOTE: the return codes are according to `git-obs pr review interactive`
 
     name = "dump"
     parent = "PullRequestCommand"
@@ -93,16 +99,22 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         import sys
         from osc import gitea_api
         from osc import obs_api
+        from osc.output import tty
         from osc.util.xml import xml_indent
         from osc.util.xml import ET
 
         self.print_gitea_settings()
 
+        skipped = []
         pull_request_ids = args.id
 
         for pr_id in pull_request_ids:
             owner, repo, number = gitea_api.PullRequest.split_id(pr_id)
             pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)
+
+            if pr_obj.state != "open":
+                skipped.append(f"{owner}/{repo}#{number}")
+                continue
 
             path = args.subdir_fmt.format(
                 pr=pr_obj,
@@ -272,20 +284,16 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
             # TODO: determine if the submodules point to packages or something else; submodules may point to arbitrary git repos such as other packages, projects or anything else
             all_submodules = sorted(set(base_submodules) | set(head_submodules))
-            warnings = 0
             for i in all_submodules:
 
                 if base_submodules[i]:
                     url = base_submodules[i].get("url","")
                     if not url.startswith("../../"):
                         print(f"Warning: incorrect path ({url}) in base submodule ({i})", file=sys.stderr)
-                        warnings += 1
                 else:
                     url = base_submodules[i].get("url","")
                     if url.startswith("../../"):
                         print(f"Warning: incorrect path ({url}) in head submodule ({i})", file=sys.stderr)
-                        warnings += 1
-
 
                 if i in base_submodules and i not in head_submodules:
                     submodule_diff["removed"][i] = base_submodules[i]
@@ -334,6 +342,8 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             ) as f:
                 json.dump(referenced_pull_requests, f, indent=4, sort_keys=True)
 
-            if warnings:
-                return 38
-            return 0
+        if skipped:
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Skipped pull requests that were no longer open: {' '.join(skipped)}", file=sys.stderr)
+            return 11
+
+        return 0
