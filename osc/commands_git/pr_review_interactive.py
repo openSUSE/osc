@@ -109,7 +109,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     f"Select a review action for '{pr_id}':",
                     answers={
                         "a": "approve",
-                        "A": "approve and schedule for merging",
+                        "A": "approve and 'merge ok'",
                         "d": "decline",
                         "C": "close",
                         "m": "comment",
@@ -121,11 +121,10 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
                     vertical=True,
                 )
                 if reply == "a":
-                    self.approve(owner, repo, number, commit=pr_obj.head_commit)
+                    self.approve(owner, repo, number, commit=pr_obj.head_commit, reviewer=args.reviewer)
                     break
                 if reply == "A":
-                    self.approve(owner, repo, number, commit=pr_obj.head_commit)
-                    gitea_api.PullRequest.merge(self.gitea_conn, owner, repo, number, merge_when_checks_succeed=True)
+                    self.approve(owner, repo, number, commit=pr_obj.head_commit, reviewer=args.reviewer, schedule_merge=True)
                     break
                 elif reply == "d":
                     self.decline(owner, repo, number)
@@ -153,10 +152,10 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
         sys.exit(return_code)
 
-    def approve(self, owner: str, repo: str, number: int, *, commit: str, reviewer: Optional[str] = None):
+    def approve(self, owner: str, repo: str, number: int, *, commit: str, reviewer: Optional[str] = None, schedule_merge: bool = False):
         from osc import gitea_api
 
-        gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number, commit=commit, reviewer=reviewer)
+        gitea_api.PullRequest.approve_review(self.gitea_conn, owner, repo, number, commit=commit, reviewer=reviewer, schedule_merge=schedule_merge)
 
     def decline(self, owner: str, repo: str, number: int, reviewer: Optional[str] = None):
         from osc import gitea_api
