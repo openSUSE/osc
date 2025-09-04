@@ -17,10 +17,12 @@ class TarDiff:
         ".jar",
         ".lz",
         ".lzma",
+        ".obscpio",
         ".tbz",
         ".tbz2",
         ".tgz",
         ".txz",
+        ".xz",
         ".zip",
         ".zst",
     ]
