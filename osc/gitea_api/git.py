@@ -136,11 +136,33 @@ class Git:
 
     # REMOTES
 
-    def get_remote_url(self, name: str = "origin") -> str:
+    def get_remote_url(self, name: Optional[str] = None) -> str:
+        if not name:
+            name = self.get_current_remote()
         return self._run_git(["remote", "get-url", name])
 
     def add_remote(self, name: str, url: str):
         self._run_git(["remote", "add", name, url])
+
+    def get_current_remote(self, fallback_to_origin: bool = True) -> Optional[str]:
+        result = None
+        try:
+            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"], mute_stderr=True)
+            if result:
+                result = result.split("/")[0]
+        except subprocess.CalledProcessError:
+            pass
+
+        # the tracking information isn't sometimes set
+        # let's fall back to 'origin' if available
+        if not result and fallback_to_origin:
+            try:
+                self._run_git(["remote", "get-url", "origin"], mute_stderr=True)
+                result = "origin"
+            except subprocess.CalledProcessError:
+                pass
+
+        return result
 
     def fetch(self, name: Optional[str] = None):
         if name:

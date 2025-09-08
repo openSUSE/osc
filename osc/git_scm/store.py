@@ -184,6 +184,9 @@ class GitStore:
         return GitStore(path)
 
     def __init__(self, path, check=True):
+        from ..gitea_api import Git
+
+        self._git = Git(path)
         self.path = path
         self.abspath = os.path.abspath(self.path)
 
@@ -225,7 +228,7 @@ class GitStore:
             raise oscerr.NoWorkingCopy(msg)
 
         # TODO: decide if we need explicit 'git lfs pull' or not
-        # self._run_git(["lfs", "pull"])
+        # self._git._run_git(["lfs", "pull"])
 
     def assert_is_project(self):
         if not self.is_project:
@@ -236,9 +239,6 @@ class GitStore:
         if not self.is_package:
             msg = f"Directory '{self.path}' is not a Git SCM working copy of a package"
             raise oscerr.NoWorkingCopy(msg)
-
-    def _run_git(self, args):
-        return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath).strip()
 
     @property
     def apiurl(self):
@@ -291,8 +291,8 @@ class GitStore:
 
                 if not self._project:
                     # read project from Gitea (identical owner, repo: _ObsPrj, file: project.build)
-                    origin = self._run_git(["remote", "get-url", self.current_remote])
-                    self._project = self.get_build_project(origin)
+                    remote_url = self._git.get_remote_url()
+                    self._project = self.get_build_project(remote_url)
 
             else:
                 # handle _project in a project
@@ -317,8 +317,8 @@ class GitStore:
     @property
     def package(self):
         if self._package is None:
-            origin = self._run_git(["remote", "get-url", self.current_remote])
-            self._package = Path(urllib.parse.urlsplit(origin).path).stem
+            remote_url = self._git.get_remote_url()
+            self._package = Path(urllib.parse.urlsplit(remote_url).path).stem
         return self._package
 
     @package.setter
@@ -327,7 +327,7 @@ class GitStore:
 
     def _get_option(self, name):
         try:
-            result = self._run_git(["config", "--local", "--get", f"osc.{name}"])
+            result = self._git._run_git(["config", "--local", "--get", f"osc.{name}"])
         except subprocess.CalledProcessError:
             result = None
         return result
@@ -337,11 +337,11 @@ class GitStore:
             raise TypeError(f"The option '{name}' should be {expected_type.__name__}, not {type(value).__name__}")
 
     def _set_option(self, name, value):
-        self._run_git(["config", "--local", f"osc.{name}", value])
+        self._git._run_git(["config", "--local", f"osc.{name}", value])
 
     def _unset_option(self, name):
         try:
-            self._run_git(["config", "--local", "--unset", f"osc.{name}"])
+            self._git._run_git(["config", "--local", "--unset", f"osc.{name}"])
         except subprocess.CalledProcessError:
             pass
 
@@ -423,20 +423,6 @@ class GitStore:
     @property
     def scmurl(self):
         try:
-            return self._run_git(["remote", "get-url", self.current_remote])
+            return self._git.get_remote_url()
         except subprocess.CalledProcessError:
             return None
-
-    @property
-    def current_remote(self):
-        result = None
-        try:
-            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"])
-            if result:
-                result = result.split("/")[0]
-        except subprocess.CalledProcessError:
-            pass
-
-        if result:
-            return result
-        return "origin"
