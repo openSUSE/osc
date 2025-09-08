@@ -485,6 +485,26 @@ class BaseModel(metaclass=ModelMeta):
             # we prefer key ordering according to the fields in the model
             json.dump(self.dict(), f, sort_keys=False, indent=4)
 
+    @classmethod
+    def from_string(cls, text: str) -> "Self":
+        """
+        Load model from json string.
+        """
+        import json
+
+        data = json.loads(text)
+        obj = cls(**data)
+        return obj
+
+    def to_string(self) -> str:
+        """
+        Dump model to a json string.
+        """
+        import json
+
+        result = json.dumps(self.dict(), sort_keys=False, indent=4)
+        return result
+
     def do_snapshot(self):
         """
         Save ``self.dict()`` result as a new starting point for detecting changes in the object data.
