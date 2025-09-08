@@ -107,7 +107,7 @@ class Git:
         self,
         pull_number: int,
         *,
-        remote: str = "origin",
+        remote: Optional[str] = None,
         commit: Optional[str] = None,
         force: bool = False,
     ):
@@ -119,6 +119,9 @@ class Git:
         # if the branch exists and the head matches the expected commit, skip running 'git fetch'
         if commit and self.branch_exists(target_branch) and self.get_branch_head(target_branch) == commit:
             return target_branch
+
+        if not remote:
+            remote = self.get_current_remote()
 
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
         if force:
@@ -171,7 +174,7 @@ class Git:
             cmd = ["fetch", "--all"]
         self._run_git(cmd)
 
-    def get_owner_repo(self, remote: str = "origin") -> Tuple[str, str]:
+    def get_owner_repo(self, remote: Optional[str] = None) -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
         if "@" in remote_url:
             # ssh://gitea@example.com:owner/repo.git
