@@ -462,6 +462,29 @@ class BaseModel(metaclass=ModelMeta):
 
         return result
 
+    @classmethod
+    def from_file(cls, path: str) -> "Self":
+        """
+        Load model from a json file.
+        """
+        import json
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        obj = cls(**data)
+        return obj
+
+    def to_file(self, path: str):
+        """
+        Dump model to a json file.
+        """
+        import json
+
+        with open(path, "w", encoding="utf-8") as f:
+            # we prefer key ordering according to the fields in the model
+            json.dump(self.dict(), f, sort_keys=False, indent=4)
+
     def do_snapshot(self):
         """
         Save ``self.dict()`` result as a new starting point for detecting changes in the object data.
