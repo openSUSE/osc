@@ -104,9 +104,10 @@ class ForkCommand(osc.commandline.OscCommand):
 
         # parse gitea url, owner, repo and branch from the scmsync url
         if is_package:
-            parsed_scmsync_url = urllib.parse.urlparse(pkg.scmsync, scheme="https")
+            url_scmsync = pkg.scmsync
         else:
-            parsed_scmsync_url = urllib.parse.urlparse(project.scmsync, scheme="https")
+            url_scmsync = project.scmsync
+        parsed_scmsync_url = urllib.parse.urlparse(url_scmsync, scheme="https")
         url = urllib.parse.urlunparse((parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, "", "", "", ""))
         owner, repo = parsed_scmsync_url.path.strip("/").split("/")
 
@@ -120,6 +121,9 @@ class ForkCommand(osc.commandline.OscCommand):
         # parse the right branch instead from .gitmodules
         #branch = parsed_scmsync_url.fragment or None
         branch = None
+        parsed_scmsync_url_query = urllib.parse.parse_qs(parsed_scmsync_url.query)
+        if "trackingbranch" in parsed_scmsync_url_query:
+            branch = parsed_scmsync_url_query["trackingbranch"][0]
 
         # find a credentials entry for url and OBS user (there can be multiple users configured for a single URL in the config file)
         gitea_conf = gitea_api.Config(args.gitea_config)
@@ -135,12 +139,10 @@ class ForkCommand(osc.commandline.OscCommand):
         print(f"Forking git repo {owner}/{repo} ...", file=sys.stderr)
 
         # the branch was not specified, fetch the default branch from the repo
-        if branch:
-            fork_branch = branch
-        else:
+        if not branch:
             repo_obj = gitea_api.Repo.get(gitea_conn, owner, repo)
             branch = repo_obj.default_branch
-            fork_branch = branch
+        fork_branch = branch
 
         # check if the scmsync branch exists in the source repo
         parent_branch_obj = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch)
