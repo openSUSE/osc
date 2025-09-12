@@ -158,8 +158,18 @@ class IssueTimelineEntry(GiteaModel):
         return f"{msg} the review", self.body
 
     def _format_review_request(self):
-        reviewer = self._data["assignee"]["login"] if  self._data["assignee"] else self._data["assignee_team"]["name"]
-        return f"requested review from {reviewer}", self.body
+        action = "removed" if self._data["removed_assignee"] else "requested"
+
+        if self._data["assignee"]:
+            reviewer = self._data["assignee"]["login"]
+            if self._data["assignee"]["id"] == -1:
+                reviewer += " (DELETED)"
+        elif self._data["assignee_team"]:
+            reviewer = self._data["assignee_team"]["name"]
+        else:
+            reviewer = "Ghost Team (DELETED)"
+
+        return f"{action} review from {reviewer}", self.body
 
     # unused; we are not interested in these types of entries
 
