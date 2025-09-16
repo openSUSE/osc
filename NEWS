@@ -1,3 +1,22 @@
+- 1.20.0
+  - Command-line:
+    - Fix 'osc fork' command to use the right tracking branch
+    - Fix 'osc blt' command by checking if the working copy is a package
+    - Make 'osc buildlog' work outside of osc package directory
+    - Add 'git-obs pr close' and 'git-obs pr reopen' commands
+    - Add 'close' option to 'git-obs pr review interactive'
+    - Change 'git-obs pr review interactive' to work with all archives, not only those in Git LFS
+    - Fix checkout of the base branch in 'git-obs pr review interactive' command
+  - Library:
+    - Support _manifest file in git store
+    - Allow pull request IDs in '<owner>/<repo>!<number>' format
+    - Properly handle deleted users and teams in the git-obs timeline
+    - Handle situations when there's 'None' among timeline entries
+    - Skip binary files in gitea_api.PullRequest.get_patch()
+    - Change get_user_input(), add support for vertically printed list of answers
+  - Spec:
+    - Provide git-obs
+
 - 1.19.1
   - Command-line:
     - Use OSC_PACKAGE_CACHE_DIR env var instead of deprecated OSC_PACKAGECACHEDIR
