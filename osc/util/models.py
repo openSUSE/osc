@@ -312,10 +312,7 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
         # if this is a model field, convert dict to a model instance
         if self.is_model and isinstance(default, dict):
             cls = self.origin_type
-            new_value = cls()  # pylint: disable=not-callable
-            for k, v in default.items():
-                setattr(new_value, k, v)
-            default = new_value
+            default = cls(**default)
 
         obj._defaults[self.name] = default
         return default
