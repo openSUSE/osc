@@ -26,7 +26,13 @@ Create a Gitea token
 - Visit your Gitea user's Applications settings page (Profile picture -> Settings -> Applications):
   `https://src.opensuse.org/user/settings/applications <https://src.opensuse.org/user/settings/applications>`_
 - Generate a new token with a descriptive name and the necessary permissions.
-  For typical use, ``read,write`` permissions for ``repository`` and ``user`` should be sufficient.
+  For typical use, the following permissions should be sufficient:
+
+  - issue: read and write
+  - organization: read
+  - repository: read and write
+  - user: read and write
+
 - Once you hit the "Generate Token" button, the page reloads and the token appears in the blue rectangle on top.
   This is the only chance to copy it because it will never show up again.
 
