@@ -3012,6 +3012,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         "show" will show the request itself, and generate a diff for review, if
         used with the --diff option. The keyword show can be omitted if the ID is numeric.
+        The -v/--verbose options shows comments in the request's history.
 
         "decline" will change the request state to "declined"
 
@@ -3052,7 +3053,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc request list [-M] [-U USER] [-s state] [-D DAYS] [-t type] [-B] [PRJ [PKG]]
             osc request log ID
-            osc request [show] [-d] [-b] ID
+            osc request [show] [-d] [-b] [-v/--verbose] ID
 
             osc request accept [-m TEXT] ID
             osc request approve [-m TEXT] ID
