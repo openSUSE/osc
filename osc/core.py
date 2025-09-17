@@ -990,6 +990,8 @@ class Request:
             lines += ["", "History:"]
             for hist in reversed(self.statehistory):
                 lines += [f"  {hist.when:10} {hist.who:30} {hist.description}"]
+                if conf.config["verbose"] and hist.comment.strip():
+                    lines += [textwrap.indent(hist.comment.strip(), prefix="    | ", predicate=lambda line: True)]
 
         return '\n'.join(lines)
 
