@@ -46,7 +46,7 @@ class TestGitStore(unittest.TestCase):
 
     def test_project(self):
         store = GitStore(self.tmpdir)
-        self.assertEqual(store.project, "openSUSE:Factory")
+        self.assertEqual(store.project, None)
 
     def test_last_buildroot(self):
         store = GitStore(self.tmpdir)
@@ -121,8 +121,7 @@ class TestGitStoreProject(unittest.TestCase):
         self._git_init(pkg_path)
 
         store = GitStore(pkg_path)
-        # fallback to openSUSE:Factory
-        self.assertEqual(store.project, "openSUSE:Factory")
+        self.assertEqual(store.project, None)
         self.assertEqual(store.package, "my-package")
 
     def test_pkg_osc_project(self):
@@ -176,13 +175,7 @@ class TestGitStoreProject(unittest.TestCase):
         pkg_path = os.path.join(prj_path, "group/package")
         os.makedirs(pkg_path, exist_ok=True)
 
-        stdout = io.StringIO()
-        stderr = io.StringIO()
-        with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
-            store = GitStore(pkg_path)
-        self.assertEqual("", stdout.getvalue())
-        self.assertEqual("WARNING: Ignoring '_subdirs' file, using data from '_manifest'\n", stderr.getvalue())
-
+        store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
         self.assertEqual(store.package, "my-package")
 
@@ -193,8 +186,8 @@ class TestGitStoreProject(unittest.TestCase):
         self._write(os.path.join(prj_path, "_config"))
         self._osc_init(prj_path, project="PROJ")
 
-        subdirs = {"packages": ["group/package"]}
-        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(subdirs))
+        manifest_data = {"packages": ["group/package"]}
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(manifest_data))
 
         pkg_path = os.path.join(prj_path, "group/package")
         os.makedirs(pkg_path, exist_ok=True)
@@ -210,14 +203,34 @@ class TestGitStoreProject(unittest.TestCase):
         self._write(os.path.join(prj_path, "_config"))
         self._osc_init(prj_path, project="PROJ")
 
-        subdirs = {"subdirectories": ["group"]}
-        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(subdirs))
+        manifest_data = {"subdirectories": ["group"]}
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(manifest_data))
 
         pkg_path = os.path.join(prj_path, "group/package")
         os.makedirs(pkg_path, exist_ok=True)
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "my-package")
+
+    def test_manifest_apiurl_project(self):
+        # project .git and .osc are next to each other
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+
+        manifest_data = {
+            "packages": ["group/package"],
+            "obs_apiurl": "https://api.example.com",
+            "obs_project": "example-project",
+        }
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(manifest_data))
+
+        pkg_path = os.path.join(prj_path, "group/package")
+        os.makedirs(pkg_path, exist_ok=True)
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.apiurl, "https://api.example.com")
+        self.assertEqual(store.project, "example-project")
         self.assertEqual(store.package, "my-package")
 
     def test_pkg_git_project(self):
@@ -286,59 +299,9 @@ class TestGitStoreProject(unittest.TestCase):
         self._git_init(pkg_path)
 
         store = GitStore(pkg_path)
-        # the parent directory contains arbitrary git repo -> fallback to openSUSE:Factory
-        self.assertEqual(store.project, "openSUSE:Factory")
+        # the parent directory contains arbitrary git repo -> no project
+        self.assertEqual(store.project, None)
         self.assertEqual(store.package, "my-package")
-
-    def test_pkg_git_project_ObsPrj(self):
-        pkg_path = os.path.join(self.tmpdir, "package")
-        self._git_init(pkg_path)
-
-        class Repo:
-            def clone(self, *args, **kwargs):
-                path = kwargs["directory"]
-                with open(os.path.join(path, "_config"), "w", encoding="utf-8") as f:
-                    f.write("")
-                with open(os.path.join(path, "project.build"), "w", encoding="utf-8") as f:
-                    f.write("PROJ")
-
-        with patch("osc.gitea_api.Config"), patch("osc.gitea_api.Connection"):
-            with patch("osc.gitea_api.Repo", new_callable=Repo) as mock_clone:
-                store = GitStore(pkg_path)
-                self.assertEqual(store.project, "PROJ")
-                self.assertEqual(store.package, "my-package")
-
-    def test_pkg_git_project_ObsPrj_no_config(self):
-        pkg_path = os.path.join(self.tmpdir, "package")
-        self._git_init(pkg_path)
-
-        class Repo:
-            def clone(self, *args, **kwargs):
-                path = kwargs["directory"]
-                with open(os.path.join(path, "project.build"), "w", encoding="utf-8") as f:
-                    f.write("PROJ")
-
-        with patch("osc.gitea_api.Config"), patch("osc.gitea_api.Connection"):
-            with patch("osc.gitea_api.Repo", new_callable=Repo) as mock_clone:
-                store = GitStore(pkg_path)
-                self.assertEqual(store.project, "PROJ")
-                self.assertEqual(store.package, "my-package")
-
-    def test_pkg_git_project_ObsPrj_no_project_build(self):
-        pkg_path = os.path.join(self.tmpdir, "package")
-        self._git_init(pkg_path)
-
-        class Repo:
-            def clone(self, *args, **kwargs):
-                path = kwargs["directory"]
-                with open(os.path.join(path, "_config"), "w", encoding="utf-8") as f:
-                    f.write("")
-
-        with patch("osc.gitea_api.Config"), patch("osc.gitea_api.Connection"):
-            with patch("osc.gitea_api.Repo", new_callable=Repo) as mock_clone:
-                store = GitStore(pkg_path)
-                self.assertEqual(store.project, "openSUSE:Factory")
-                self.assertEqual(store.package, "my-package")
 
 
 if __name__ == "__main__":

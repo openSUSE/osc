@@ -51,6 +51,24 @@ class Git:
             return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath, stderr=subprocess.DEVNULL).strip()
         return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath).strip()
 
+    @property
+    def topdir(self) -> Optional[str]:
+        """
+        A custom implementation to `git rev-parse --show-toplevel` to avoid executing git which is sometimes unnecessary expensive.
+        """
+        path = self.abspath
+        while path:
+            if os.path.exists(os.path.join(path, ".git")):
+                break
+
+            path, dirname = os.path.split(path)
+
+            if (path, dirname) == ("/", ""):
+                # no git repo found
+                return None
+
+        return path
+
     def init(self, *, initial_branch: Optional[str] = None, quiet: bool = True, mute_stderr: bool = False):
         cmd = ["init"]
         if initial_branch:
@@ -70,8 +88,11 @@ class Git:
     # BRANCHES
 
     @property
-    def current_branch(self) -> str:
-        return self._run_git(["branch", "--show-current"])
+    def current_branch(self) -> Optional[str]:
+        try:
+            return self._run_git(["branch", "--show-current"], mute_stderr=True)
+        except subprocess.CalledProcessError:
+            return None
 
     def get_branch_head(self, branch: str) -> str:
         return self._run_git(["rev-parse", f"refs/heads/{branch}"])
@@ -139,9 +160,11 @@ class Git:
 
     # REMOTES
 
-    def get_remote_url(self, name: Optional[str] = None) -> str:
+    def get_remote_url(self, name: Optional[str] = None) -> Optional[str]:
         if not name:
             name = self.get_current_remote()
+        if not name:
+            return None
         return self._run_git(["remote", "get-url", name])
 
     def add_remote(self, name: str, url: str):
