@@ -1,16 +1,90 @@
+import fcntl
+import fnmatch
 import json
 import os
-import subprocess
-import sys
-import urllib.parse
 from pathlib import Path
+import typing
+import urllib.parse
+from typing import List
+from typing import Optional
+from typing import Tuple
+from typing import Union
 
-from .. import conf as osc_conf
 from .. import oscerr
-from ..util import yaml as osc_yaml
+from ..util.models import BaseModel
+from ..util.models import Field
 
 
-class GitStore:
+if typing.TYPE_CHECKING:
+    from .core import Repo
+
+
+class Header(BaseModel):
+    type: str = Field()
+    version: str = Field()
+
+
+class Meta(BaseModel):
+    """
+    Metadata about a project or a package managed in git that is stored in .git/obs/<branch>/meta.json
+    """
+
+    header: Header = Field(default={"type": "obs-metadata-store", "version": "1"})
+    apiurl: Optional[str] = Field()
+    project: Optional[str] = Field()
+    package: Optional[str] = Field()
+
+    def update(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+
+class Lock:
+    def __init__(self, path: str):
+        self.path = os.path.abspath(path)
+        self.handle = None
+
+    def __enter__(self):
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        self.handle = open(self.path, "w")
+        fcntl.flock(self.handle, fcntl.LOCK_EX)
+
+    def __exit__(self, type, value, traceback):
+        if self.handle:
+            fcntl.flock(self.handle, fcntl.LOCK_UN)
+            self.handle.close()
+            try:
+                os.remove(self.path)
+            except OSError:
+                pass
+
+
+class BuildRoot(BaseModel):
+    """
+    Model that encapsulates last_buildroot values, providing better API than the original tuple.
+
+    For compatibility, assigning values to repo, arch, vm_type variables is also supported via __iter__()
+    and __eq__ is capable of comparing with a tuple with (repo, arch, vm_type).
+    """
+    repo: str = Field()
+    arch: str = Field()
+    vm_type: Optional[str] = Field()
+
+    def __iter__(self):
+        for field in self.__fields__:
+            yield getattr(self, field)
+
+    def __eq__(self, other):
+        if isinstance(other, tuple) and len(other) == 3:
+            return (self.repo, self.arch, self.vm_type) == other
+        return super().__eq__(other)
+
+
+class LocalGitStore:
+    """
+    A class for managing OBS metadata in .git.
+    It is not supposed to be used directly, it's a base class for GitStore that adds logic for resolving the values from multiple places.
+    """
 
     @classmethod
     def is_project_dir(cls, path):
@@ -28,401 +102,369 @@ class GitStore:
             return False
         return store.is_package
 
-    @staticmethod
-    def get_build_project(git_repo_url: str):
-        """
-        Get the project we use for building from _ObsPrj git repo.
-        The _ObsPrj is located under the same owner as the repo with the package.
-        They share the same branch.
-        """
-        import tempfile
-
-        from osc import gitea_api
-
-        # parse the git_repo_url (which usually corresponds with the url of the 'origin' remote of the local git repo)
-        scheme, netloc, path, params, query, fragment = gitea_api.Git.urlparse(git_repo_url)
-
-        # scheme + host
-        gitea_host = urllib.parse.urlunparse((scheme, netloc, "", None, None, None))
-
-        # OBS and Gitea usernames are identical
-        # XXX: we're using the configured apiurl; it would be great to have a mapping from -G/--gitea-login to -A/--apiurl so we don't have to provide -A on the command-line
-        apiurl = osc_conf.config["apiurl"]
-        gitea_user = osc_conf.get_apiurl_usr(apiurl)
-
-        # remove trailing ".git" from path
-        if path.endswith(".git"):
-            path = path[:-4]
-
-        gitea_owner, gitea_repo = path.strip("/").split("/")[-2:]
-
-        # replace gitea_repo with _ObsPrj
-        gitea_repo = "_ObsPrj"
-
-        # XXX: we assume that the _ObsPrj project has the same branch as the package
-        gitea_branch = fragment
-
-        gitea_conf = gitea_api.Config()
-        try:
-            gitea_login = gitea_conf.get_login_by_url_user(url=gitea_host, user=gitea_user)
-        except gitea_api.Login.DoesNotExist:
-            # matching login entry doesn't exist in git-obs config
-            return None
-
-        gitea_conn = gitea_api.Connection(gitea_login)
-
-        with tempfile.TemporaryDirectory(prefix="osc_devel_project_git") as tmp_dir:
-            try:
-                gitea_api.Repo.clone(gitea_conn, gitea_owner, gitea_repo, branch=gitea_branch, quiet=True, directory=tmp_dir)
-                return GitStore(tmp_dir, check=False).project
-            except gitea_api.GiteaException:
-                # "_ObsPrj" repo doesn't exist
-                return None
-            except subprocess.CalledProcessError:
-                # branch doesn't exist
-                return None
-            except FileNotFoundError:
-                # "project.build" file doesn't exist
-                return None
-
-    def get_project_obs_scm_store(self):
-        from ..obs_scm import Store
-
-        if not self.is_package:
-            return None
-
-        try:
-            store = Store(os.path.join(self.abspath, ".."))
-            store.assert_is_project()
-            return store
-        except oscerr.NoWorkingCopy:
-            return None
-
-    def get_project_git_scm_store(self):
-        path = self.abspath
-        while path:
-            if path == "/":
-                # no git repo found
-                return None
-
-            path, _ = os.path.split(path)
-
-            if os.path.exists(os.path.join(path, ".git")):
-                break
-
-        config_path = os.path.join(path, "_config")
-        pbuild_path = os.path.join(path, "_pbuild")
-        subdirs_path = os.path.join(path, "_subdirs")
-        manifest_path = os.path.join(path, "_manifest")
-
-        # we always stop at the top-most directory that contains .git subdir
-        if not (os.path.isfile(config_path) or os.path.isfile(pbuild_path)):
-            # it's not a project, stop traversing and return
-            return None
-
-        if os.path.isfile(manifest_path):
-            if os.path.isfile(subdirs_path):
-                print("WARNING: Ignoring '_subdirs' file, using data from '_manifest'", file=sys.stderr)
-
-            # the _manifest file contains a list of project subdirs that contain packages and list of dirs which are packages
-            with open(manifest_path, "r") as f:
-                data = osc_yaml.yaml_load(f)
-
-            # ``packages`` is a list of directories which are packages
-            packages = data.get("packages", [])
-            packages_abspath = [os.path.abspath(os.path.join(path, i)) for i in packages]
-
-            # ``subdirectories`` is a list of directories, which have subdirectories which are packages
-            subdirs = data.get("subdirectories", [])
-            subdirs_abspath = [os.path.abspath(os.path.join(path, i)) for i in subdirs]
-
-            common_paths = set(packages) & set(subdirs)
-            if common_paths:
-                print(f"WARNING: _manifest contains conflicting entries between 'packages' and 'subdirectories': {sorted(common_paths)}", file=sys.stderr)
-
-            if self.abspath in packages_abspath:
-                # we're in a path defined in 'packages' -> it's a package
-                pass
-            elif self.abspath in subdirs_abspath:
-                # paths listed in ``subdirectories`` are never packages, their subdirs are
-                return None
-            elif os.path.abspath(os.path.join(self.abspath, "..")) not in subdirs_abspath:
-                # we're outside paths specified in 'subdirectories' -> not a package
-                return None
-            else:
-                # we're in a subdir of a directory listed in 'subdirectories' -> it's a package
-                pass
-
-        elif os.path.isfile(subdirs_path):
-            # the _subdirs file contains a list of project subdirs that contain packages
-            with open(subdirs_path, "r") as f:
-                data = osc_yaml.yaml_load(f)
-
-                # ``subdirs`` is a list of directories, which have subdirectories which are packages
-                subdirs = data.get("subdirs", [])
-
-                # if set to "include", then all top-level directories are packages in addition to ``subdirs``
-                toplevel = data.get("toplevel", "")
-
-            if toplevel == "include":
-                subdirs.append(".")
-
-            subdirs_abspath = [os.path.abspath(os.path.join(path, subdir)) for subdir in subdirs]
-
-            # paths listed in ``subdirs`` are never packages, their subdirs are
-            if self.abspath in subdirs_abspath:
-                return None
-
-            # we're outside paths specified in subdirs -> not a package
-            if os.path.abspath(os.path.join(self.abspath, "..")) not in subdirs_abspath:
-                return None
-        else:
-            # no _subdirs file and self.abspath is not directly under the project dir -> not a valid package
-            if path != os.path.abspath(os.path.join(self.abspath, "..")):
-                return None
-
-        return GitStore(path)
-
-    def __init__(self, path, check=True):
+    def __init__(self, path: str, *, check: bool = True):
         from ..gitea_api import Git
+        from ..obs_scm import Store
+        from .manifest import Manifest
+        from .manifest import Subdirs
 
         self._git = Git(path)
-        self.path = path
-        self.abspath = os.path.abspath(self.path)
 
-        self._apiurl = None
-        self._package = None
-        self._project = None
+        if not self._git.topdir:
+            msg = f"Directory '{path}' is not a Git SCM working copy"
+            raise oscerr.NoWorkingCopy(msg)
 
-        self.is_project = False
-        self.is_package = False
+        if not self._git.current_branch:
+            # branch is required for determining and storing metadata
+            msg = f"Directory '{path}' is not a Git SCM working copy because it has no branch or is in a detached HEAD state"
+            raise oscerr.NoWorkingCopy(msg)
 
-        if os.path.exists(os.path.join(self.abspath, ".git")):
-            # NOTE: we have only one store in project-git for all packages
-            config_path = os.path.join(self.abspath, "_config")
-            pbuild_path = os.path.join(self.abspath, "_pbuild")
-            if os.path.isfile(config_path) or os.path.isfile(pbuild_path):
-                # there's .git and _config/_pbuild in the working directory -> it's a project
-                self.is_project = True
-            else:
-                # there's .git and no _config/_pbuild in the working directory -> it's a package
-                self.is_package = True
+        # 'package' is the default type that applies to all git repos that are not projects (we have no means of detecting packages)
+        self._type = "package"
+        self._topdir = self._git.topdir
+
+        self.manifest = None
+
+        # we detect projects by looking for certain file names next to .git
+        files = ["_manifest", "_config", "_pbuild", "_subdirs"]
+        for fn in files:
+            path = os.path.join(self._git.topdir, fn)
+            if os.path.exists(path):
+                self._type = "project"
+                break
+
+        if self.type == "project":
+            if self._git.topdir != self.abspath:
+                manifest_path = os.path.join(self._git.topdir, "_manifest")
+                subdirs_path = os.path.join(self._git.topdir, "_subdirs")
+
+                if os.path.exists(manifest_path):
+                    self.manifest = Manifest.from_file(manifest_path)
+                elif os.path.exists(subdirs_path):
+                    self.manifest = Subdirs.from_file(subdirs_path)
+                else:
+                    # empty manifest considers all top-level directories as packages
+                    self.manifest = Manifest()
+
+                package_topdir = self.manifest.resolve_package_path(project_path=self._git.topdir, package_path=self.abspath)
+                if package_topdir:
+                    self._type = "package"
+                    self._topdir = package_topdir
 
         self.project_store = None
+        if self.type == "package":
+            # load either .osc or .git project store from the directory above topdir
+            for cls in (Store, self.__class__):
+                try:
+                    store = cls(os.path.join(self.topdir, ".."))
+                    store.assert_is_project()
+                    self.project_store = store
+                    break
+                except oscerr.NoWorkingCopy:
+                    pass
+        elif self.type == "project":
+            # load .osc project store that is next to .git and may provide medatata we don't have
+            try:
+                store = Store(self.topdir)
+                store.assert_is_project()
+                self.project_store = store
+            except oscerr.NoWorkingCopy:
+                pass
 
-        if self.project_store is None:
-            self.project_store = self.get_project_obs_scm_store()
+    @property
+    def abspath(self) -> str:
+        return self._git.abspath
 
-        if self.project_store is None:
-            self.project_store = self.get_project_git_scm_store()
+    @property
+    def topdir(self) -> str:
+        return self._topdir
 
-        if self.project_store:
-            self.is_package = True
+    def reset(self, *, branch: Optional[str] = None):
+        self._delete_meta(branch=branch)
 
-        if check and not any([self.is_project, self.is_package]):
-            msg = f"Directory '{self.path}' is not a Git SCM working copy"
-            raise oscerr.NoWorkingCopy(msg)
+    def _get_path(self, path: List[str], *, branch: Optional[str] = None):
+        assert isinstance(path, list)
+        # sanitization for os.path.join()
+        branch = branch if branch is not None else self._git.current_branch
+        branch = branch.strip("/")
+        branch = branch.replace("/", "__")
+        path = [i.strip("/") for i in path]
 
-        if check and not self.scmurl:
-            msg = f"Directory '{self.path}' is a Git SCM repo that lacks the 'origin' remote"
-            raise oscerr.NoWorkingCopy(msg)
+        result = self._git._run_git(["rev-parse", "--path-format=absolute", "--git-path", "obs"])
+        result = os.path.join(result, branch, *path)
+        return result
 
-        # TODO: decide if we need explicit 'git lfs pull' or not
-        # self._git._run_git(["lfs", "pull"])
+    def _lock(self):
+        return Lock(self._get_path([".lock"]))
+
+    def _delete_meta(self, *, branch: Optional[str] = None):
+        path = self._get_path(["meta.json"], branch=branch)
+        try:
+            os.unlink(path)
+        except FileNotFoundError:
+            pass
+
+    def _read_meta(self, *, branch: Optional[str] = None) -> Meta:
+        path = self._get_path(["meta.json"], branch=branch)
+        try:
+            with self._lock():
+                return Meta.from_file(path)
+        except FileNotFoundError:
+            return Meta()
+
+    def _write_meta(self, *, branch: Optional[str] = None, **kwargs):
+        path = self._get_path(["meta.json"], branch=branch)
+        with self._lock():
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            try:
+                meta = Meta.from_file(path)
+            except FileNotFoundError:
+                meta = Meta()
+            meta.update(**kwargs)
+            meta.to_file(path)
+
+    @property
+    def type(self):
+        return self._type
+
+    @property
+    def is_project(self) -> bool:
+        return self.type == "project"
+
+    @property
+    def is_package(self) -> bool:
+        return self.type == "package"
 
     def assert_is_project(self):
         if not self.is_project:
-            msg = f"Directory '{self.path}' is not a Git SCM working copy of a project"
+            msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a project"
             raise oscerr.NoWorkingCopy(msg)
 
     def assert_is_package(self):
         if not self.is_package:
-            msg = f"Directory '{self.path}' is not a Git SCM working copy of a package"
+            msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a package"
             raise oscerr.NoWorkingCopy(msg)
 
+    # APIURL
+
     @property
-    def apiurl(self):
-        from ..obs_scm import Store
-
-        if not self._apiurl:
-            if not self._apiurl and self.project_store:
-                # get apiurl from .osc that is at the same level as project .git
-                try:
-                    store = Store(self.project_store.abspath)
-                    store.assert_is_project()
-                    self._apiurl = store.apiurl
-                except oscerr.NoWorkingCopy:
-                    pass
-
-            if not self._apiurl and self.is_package and self.project_store:
-                # read apiurl from parent directory that contains a project with .osc metadata
-                self._apiurl = self.project_store.apiurl
-
-            if not self._apiurl:
-                # HACK: use the currently configured apiurl
-                self._apiurl = osc_conf.config["apiurl"]
-
-        return self._apiurl
+    def apiurl(self) -> Optional[str]:
+        return self.get_apiurl()
 
     @apiurl.setter
-    def apiurl(self, value):
-        self._apiurl = value
+    def apiurl(self, value: Optional[str]):
+        self.set_apiurl(value)
+
+    def get_apiurl(self, *, branch: Optional[str] = None) -> Optional[str]:
+        return self._read_meta(branch=branch).apiurl
+
+    def set_apiurl(self, value: Optional[str], *, branch: Optional[str] = None):
+        self._write_meta(apiurl=value, branch=branch)
+
+    # PROJECT
 
     @property
-    def project(self):
-        from ..obs_scm import Store
-
-        if not self._project:
-            if self.is_package:
-                # handle _project in a package
-
-                if not self._project and self.project_store:
-                    # get project from .osc that is at the same level as project .git
-                    try:
-                        store = Store(self.project_store.abspath)
-                        store.assert_is_project()
-                        self._project = store.project
-                    except oscerr.NoWorkingCopy:
-                        pass
-
-                if not self._project and self.project_store:
-                    # read project from detected project store
-                    self._project = self.project_store.project
-
-                if not self._project:
-                    # read project from Gitea (identical owner, repo: _ObsPrj, file: project.build)
-                    remote_url = self._git.get_remote_url()
-                    self._project = self.get_build_project(remote_url)
-
-            else:
-                # handle _project in a project
-
-                if not self._project:
-                    # read project from "project.build" file
-                    path = os.path.join(self.abspath, "project.build")
-                    if os.path.exists(path):
-                        with open(path, "r", encoding="utf-8") as f:
-                            self._project = f.readline().strip()
-
-            if not self._project:
-                # HACK: assume openSUSE:Factory project if project metadata is missing
-                self._project = "openSUSE:Factory"
-
-        return self._project
+    def project(self) -> Optional[str]:
+        return self.get_project()
 
     @project.setter
-    def project(self, value):
-        self._project = value
+    def project(self, value: Optional[str]):
+        self.set_project(value)
+
+    def get_project(self, *, branch: Optional[str] = None) -> Optional[str]:
+        return self._read_meta(branch=branch).project
+
+    def set_project(self, value: Optional[str], *, branch: Optional[str] = None):
+        self._write_meta(project=value, branch=branch)
+
+    # PACKAGE
 
     @property
-    def package(self):
-        if self._package is None:
-            remote_url = self._git.get_remote_url()
-            self._package = Path(urllib.parse.urlsplit(remote_url).path).stem
-        return self._package
+    def package(self) -> Optional[str]:
+        return self.get_package()
 
     @package.setter
-    def package(self, value):
-        self._package = value
+    def package(self, value: Optional[str]):
+        self.set_package(value)
 
-    def _get_option(self, name):
-        try:
-            result = self._git._run_git(["config", "--local", "--get", f"osc.{name}"])
-        except subprocess.CalledProcessError:
-            result = None
-        return result
+    def get_package(self, *, branch: Optional[str] = None) -> Optional[str]:
+        return self._read_meta(branch=branch).package
 
-    def _check_type(self, name, value, expected_type):
-        if not isinstance(value, expected_type):
-            raise TypeError(f"The option '{name}' should be {expected_type.__name__}, not {type(value).__name__}")
+    def set_package(self, value: Optional[str], *, branch: Optional[str] = None):
+        self.assert_is_package()
+        self._write_meta(package=value, branch=branch)
 
-    def _set_option(self, name, value):
-        self._git._run_git(["config", "--local", f"osc.{name}", value])
+    # CACHE
+    # buildinfo and buildconfig files are considered a cache, they can be safely deleted at any time
 
-    def _unset_option(self, name):
-        try:
-            self._git._run_git(["config", "--local", "--unset", f"osc.{name}"])
-        except subprocess.CalledProcessError:
-            pass
+    def cache_list_files(self, *, pattern: Optional[str] = None, branch: Optional[str] = None):
+        path = self._get_path(["cache"], branch=branch)
+        files = os.listdir(path)
+        if pattern:
+            files = [i for i in files if fnmatch.fnmatch(i, pattern)]
+        return files
 
-    def _get_dict_option(self, name):
-        result = self._get_option(name)
-        if result is None:
-            return None
-        result = json.loads(result)
-        self._check_type(name, result, dict)
-        return result
+    def cache_read_file(self, filename: str, *, branch: Optional[str] = None) -> Optional[bytes]:
+        assert "/" not in filename
+        branch = branch or self._git.current_branch
+        path = self._get_path(["cache", filename], branch=branch)
+        with self._lock():
+            try:
+                with open(path, "rb") as f:
+                    return f.read()
+            except FileNotFoundError:
+                return None
 
-    def _set_dict_option(self, name, value):
-        if value is None:
-            self._unset_option(name)
-            return
-        self._check_type(name, value, dict)
-        value = json.dumps(value)
-        self._set_option(name, value)
+    def cache_write_file(self, filename: str, data: bytes, *, branch: Optional[str] = None):
+        assert "/" not in filename
+        branch = branch or self._git.current_branch
+        path = self._get_path(["cache", filename], branch=branch)
+        with self._lock():
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+            with open(path, "wb") as f:
+                f.write(data)
 
-    def _get_list_option(self, name):
-        result = self._get_option(name)
-        if result is None:
-            return None
-        result = json.loads(result)
-        self._check_type(name, result, list)
-        return result
+    def cache_delete_files(self, filenames: List[str], *, branch: Optional[str] = None):
+        branch = branch or self._git.current_branch
+        with self._lock():
+            for filename in filenames:
+                assert "/" not in filename
+                path = self._get_path(["cache", filename], branch=branch)
+                os.unlink(path)
 
-    def _set_list_option(self, name, value):
-        if value is None:
-            self._unset_option(name)
-            return
-        self._check_type(name, value, list)
-        value = json.dumps(value)
-        self._set_option(name, value)
+    # LAST BUILDROOT
+
+    _LAST_BUILDROOT_FILE = "last-buildroot.json"
+    _LAST_BUILDROOT_VALUE_TYPE = Union[Optional[Tuple[str, str, Optional[str]]], BuildRoot]
 
     @property
-    def last_buildroot(self):
-        self.assert_is_package()
-        result = self._get_dict_option("last-buildroot")
-        if result is not None:
-            result = (result["repo"], result["arch"], result["vm_type"])
-        return result
+    def last_buildroot(self) -> _LAST_BUILDROOT_VALUE_TYPE:
+        return self.get_last_buildroot()
 
     @last_buildroot.setter
-    def last_buildroot(self, value):
-        self.assert_is_package()
-        if len(value) != 3:
-            raise ValueError("A tuple with exactly 3 items is expected: (repo, arch, vm_type)")
-        value = {
-            "repo": value[0],
-            "arch": value[1],
-            "vm_type": value[2],
-        }
-        self._set_dict_option("last-buildroot", value)
+    def last_buildroot(self, value: _LAST_BUILDROOT_VALUE_TYPE):
+        self.set_last_buildroot(value)
+
+    def get_last_buildroot(self, *, branch: Optional[str] = None) -> _LAST_BUILDROOT_VALUE_TYPE:
+        result = self.cache_read_file(self._LAST_BUILDROOT_FILE, branch=branch)
+        if result is None:
+            return None
+        obj = BuildRoot.from_string(result.decode("utf-8"))
+        return obj
+
+    def set_last_buildroot(self, value: _LAST_BUILDROOT_VALUE_TYPE, *, branch: Optional[str] = None):
+        if value is None:
+            self.cache_delete_files([self._LAST_BUILDROOT_FILE])
+            return
+
+        if isinstance(value, tuple):
+            if len(value) != 3:
+                raise ValueError("A tuple with exactly 3 items is expected: (repo, arch, vm_type)")
+            obj = BuildRoot(repo=value[0], arch=value[1], vm_type=value[2])
+        else:
+            obj = value
+
+        data = json.dumps(obj.dict()).encode("utf-8")
+        self.cache_write_file(self._LAST_BUILDROOT_FILE, data, branch=branch)
+
+    # BUILD REPOSITORIES
+
+    _BUILD_REPOSITORIES_FILE = "build-repositories.json"
+    _BUILD_REPOSITORIES_VALUE_TYPE = Optional[List["Repo"]]
 
     @property
-    def build_repositories(self):
-        from ..core import Repo
-
-        self.assert_is_package()
-        repos = self._get_list_option("build-repositories")
-        if repos is None:
-            return None
-        return [Repo(**i) for i in repos]
+    def build_repositories(self) -> _BUILD_REPOSITORIES_VALUE_TYPE:
+        return self.get_build_repositories()
 
     @build_repositories.setter
-    def build_repositories(self, value):
+    def build_repositories(self, value: Optional[List["Repo"]]):
+        return self.set_build_repositories(value)
+
+    def get_build_repositories(self, *, branch: Optional[str] = None) -> Optional[List["Repo"]]:
         from ..core import Repo
 
-        self.assert_is_package()
+        result = self.cache_read_file(self._BUILD_REPOSITORIES_FILE, branch=branch)
+        if result is None:
+            return None
+        result = json.loads(result)
+        return [Repo(**i) for i in result]
+
+    def set_build_repositories(self, value: Optional[List["Repo"]], *, branch: Optional[str] = None):
+        from ..core import Repo
+
+        if value is None:
+            self.cache_delete_files([self._BUILD_REPOSITORIES_FILE])
+            return
+
         repos = []
         if value is not None:
             for i in value:
                 if not isinstance(i, Repo):
                     raise ValueError(f"The value is not an instance of 'Repo': {i}")
                 repos.append(i.dict())
-        self._set_list_option("build-repositories", repos)
+        self.cache_write_file(self._BUILD_REPOSITORIES_FILE, json.dumps(repos).encode("utf-8"), branch=branch)
+
+
+class GitStore(LocalGitStore):
+    """
+    A class for managing OBS metadata in .git that also reads the values from additional locations
+    such as the parent project's metadata or the _manifest file.
+    """
+    def __init__(self, path: str, check: bool = True, *, cached: bool = True):
+        super().__init__(path, check=check)
+        self.cached = cached
+        self._cache = {}
+
+    def _resolve_meta(self, field_name: str, *, allow_none: bool = False):
+        result = None
+
+        # values cached in the object
+        if self.cached:
+            result = self._cache.get(field_name, None)
+
+        # local git store
+        if result is None:
+            result = getattr(super(), field_name)
+
+        # _manifest file in the project
+        if result is None and self.is_project and self.manifest:
+            result = getattr(self.manifest, f"obs_{field_name}", None) or None
+
+        # project.build file in the project
+        if result is None and self.is_project and field_name == "project":
+            path = os.path.join(self.topdir, "project.build")
+            if os.path.exists(path):
+                with open(path, "r", encoding="utf-8") as f:
+                    result = f.read().strip() or None
+
+        # package = repo name from the current remote url
+        if result is None and self.is_package and field_name == "package":
+            remote_url = self._git.get_remote_url()
+            if remote_url:
+                result = Path(urllib.parse.urlsplit(remote_url).path).stem
+
+        # project: get value from .osc which is next to .git
+        # package: get value from the parent project's store
+        if result is None and self.project_store:
+            result = getattr(self.project_store, field_name, None)
+
+        if self.cached:
+            self._cache[field_name] = result
+
+        return result
 
     @property
-    def scmurl(self):
-        try:
-            return self._git.get_remote_url()
-        except subprocess.CalledProcessError:
-            return None
+    def apiurl(self) -> Optional[str]:
+        return self._resolve_meta("apiurl")
+
+    @property
+    def project(self) -> Optional[str]:
+        return self._resolve_meta("project")
+
+    @property
+    def package(self) -> Optional[str]:
+        return self._resolve_meta("package")
+
+    @property
+    def scmurl(self) -> Optional[str]:
+        return self._git.get_remote_url()
