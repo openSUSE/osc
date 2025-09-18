@@ -240,9 +240,31 @@ class LocalGitStore:
             msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a project"
             raise oscerr.NoWorkingCopy(msg)
 
+        missing = []
+        for name in ["apiurl", "project"]:
+            if not getattr(self, name):
+                missing.append(name)
+        if missing:
+            msg = (
+                f"Git SCM project working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
+            )
+            raise oscerr.NoWorkingCopy(msg)
+
     def assert_is_package(self):
         if not self.is_package:
             msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a package"
+            raise oscerr.NoWorkingCopy(msg)
+
+        missing = []
+        for name in ["apiurl", "project", "package"]:
+            if not getattr(self, name):
+                missing.append(name)
+        if missing:
+            msg = (
+                f"Git SCM package working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
+            )
             raise oscerr.NoWorkingCopy(msg)
 
     # APIURL
@@ -414,6 +436,12 @@ class GitStore(LocalGitStore):
         super().__init__(path, check=check)
         self.cached = cached
         self._cache = {}
+
+        if check:
+            if self.is_project:
+                self.assert_is_project()
+            else:
+                self.assert_is_package()
 
     def _resolve_meta(self, field_name: str, *, allow_none: bool = False):
         result = None
