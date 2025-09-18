@@ -109,6 +109,7 @@ class LocalGitStore:
         from .manifest import Subdirs
 
         self._git = Git(path)
+        self._check = check
 
         if not self._git.topdir:
             msg = f"Directory '{path}' is not a Git SCM working copy"
@@ -240,9 +241,31 @@ class LocalGitStore:
             msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a project"
             raise oscerr.NoWorkingCopy(msg)
 
+        missing = []
+        for name in ["apiurl", "project"]:
+            if not getattr(self, name):
+                missing.append(name)
+        if missing:
+            msg = (
+                f"Git SCM project working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
+            )
+            raise oscerr.NoWorkingCopy(msg)
+
     def assert_is_package(self):
         if not self.is_package:
             msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a package"
+            raise oscerr.NoWorkingCopy(msg)
+
+        missing = []
+        for name in ["apiurl", "project", "package"]:
+            if not getattr(self, name):
+                missing.append(name)
+        if missing:
+            msg = (
+                f"Git SCM package working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
+            )
             raise oscerr.NoWorkingCopy(msg)
 
     # APIURL
@@ -291,7 +314,8 @@ class LocalGitStore:
         return self._read_meta(branch=branch).package
 
     def set_package(self, value: Optional[str], *, branch: Optional[str] = None):
-        self.assert_is_package()
+        if self._check:
+            self.assert_is_package()
         self._write_meta(package=value, branch=branch)
 
     # CACHE
@@ -414,6 +438,12 @@ class GitStore(LocalGitStore):
         super().__init__(path, check=check)
         self.cached = cached
         self._cache = {}
+
+        if self._check:
+            if self.is_project:
+                self.assert_is_project()
+            else:
+                self.assert_is_package()
 
     def _resolve_meta(self, field_name: str, *, allow_none: bool = False):
         result = None

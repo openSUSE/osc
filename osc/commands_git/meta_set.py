@@ -30,7 +30,7 @@ class MetaSetCommand(osc.commandline_git.GitObsCommand):
     def run(self, args):
         from osc.git_scm import LocalGitStore
 
-        store = LocalGitStore(".")
+        store = LocalGitStore(".", check=False)
         branch = args.branch or store._git.current_branch
 
         # just retrieve keys from an authoritative source

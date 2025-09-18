@@ -7,7 +7,9 @@ import tempfile
 import unittest
 
 import osc.conf
+from osc import oscerr
 from osc.git_scm.store import GitStore
+from osc.git_scm.store import LocalGitStore
 from osc.util import yaml as osc_yaml
 
 from .common import patch
@@ -41,31 +43,31 @@ class TestGitStore(unittest.TestCase):
             pass
 
     def test_package(self):
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.package, "my-package")
 
     def test_project(self):
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.project, None)
 
     def test_last_buildroot(self):
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.last_buildroot, None)
         store.last_buildroot = ("repo", "arch", "vm_type")
 
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.last_buildroot, ("repo", "arch", "vm_type"))
 
     def test_last_buildroot_empty_vm_type(self):
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.last_buildroot, None)
         store.last_buildroot = ("repo", "arch", None)
 
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.last_buildroot, ("repo", "arch", None))
 
     def test_scmurl(self):
-        store = GitStore(self.tmpdir)
+        store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.scmurl, "https://example.com/packages/my-package.git")
 
 
@@ -95,7 +97,7 @@ class TestGitStoreProject(unittest.TestCase):
         except OSError:
             pass
 
-    def _git_init(self, path, separate_git_dir=None):
+    def _git_init(self, path, *, separate_git_dir=None):
         os.makedirs(path, exist_ok=True)
         git_init_cmd = ["git", "init", "-q"]
         if separate_git_dir:
@@ -104,11 +106,30 @@ class TestGitStoreProject(unittest.TestCase):
         subprocess.check_output(["git", "checkout", "-b", "factory", "-q"], cwd=path)
         subprocess.check_output(["git", "remote", "add", "origin", "https://example.com/packages/my-package.git"], cwd=path)
 
-    def _osc_init(self, path, project, package=None):
+    def _setup_project(self, path, *, apiurl="https://api.example.com", project=None):
+        store = LocalGitStore(path, check=False)
+        store._type = "project"
+        if apiurl:
+            store.apiurl = apiurl
+        if project:
+            store.project = project
+
+    def _setup_package(self, path, *, apiurl="https://api.example.com", project=None, package=None):
+        store = LocalGitStore(path, check=False)
+        store._type = "package"
+        if apiurl:
+            store.apiurl = apiurl
+        if project:
+            store.project = project
+        if package:
+            store.package = package
+
+    def _osc_init(self, path, *, apiurl="https://api.example.com", project=None, package=None):
         from osc.store import Store
 
         os.makedirs(path, exist_ok=True)
         store = Store(path, check=False)
+        store.apiurl = apiurl
         store.project = project
         store.package = package
 
@@ -120,7 +141,10 @@ class TestGitStoreProject(unittest.TestCase):
         pkg_path = os.path.join(self.tmpdir, "pkg")
         self._git_init(pkg_path)
 
-        store = GitStore(pkg_path)
+        with self.assertRaises(oscerr.NoWorkingCopy):
+            GitStore(pkg_path)
+
+        store = GitStore(pkg_path, check=False)
         self.assertEqual(store.project, None)
         self.assertEqual(store.package, "my-package")
 
@@ -236,8 +260,8 @@ class TestGitStoreProject(unittest.TestCase):
     def test_pkg_git_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
         self._git_init(prj_path)
+        self._setup_project(prj_path, project="PROJ")
         self._write(os.path.join(prj_path, "_config"))
-        self._write(os.path.join(prj_path, "project.build"), "PROJ")
 
         pkg_path = os.path.join(prj_path, "package")
         self._git_init(pkg_path)
@@ -249,8 +273,8 @@ class TestGitStoreProject(unittest.TestCase):
     def test_pkg_git_project_with_config_without_pbuild(self):
         prj_path = os.path.join(self.tmpdir, "project")
         self._git_init(prj_path)
+        self._setup_project(prj_path, project="PROJ")
         self._write(os.path.join(prj_path, "_config"))
-        self._write(os.path.join(prj_path, "project.build"), "PROJ")
 
         pkg_path = os.path.join(prj_path, "package")
         self._git_init(pkg_path)
@@ -262,8 +286,8 @@ class TestGitStoreProject(unittest.TestCase):
     def test_pkg_git_project_without_config_with_pbuild(self):
         prj_path = os.path.join(self.tmpdir, "project")
         self._git_init(prj_path)
+        self._setup_project(prj_path, project="PROJ")
         self._write(os.path.join(prj_path, "_pbuild"))
-        self._write(os.path.join(prj_path, "project.build"), "PROJ")
 
         pkg_path = os.path.join(prj_path, "package")
         self._git_init(pkg_path)
@@ -275,14 +299,14 @@ class TestGitStoreProject(unittest.TestCase):
     def test_pkg_separate_git_dir_git_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
         self._git_init(prj_path)
+        self._setup_project(prj_path, project="PROJ")
         self._write(os.path.join(prj_path, "_config"))
-        self._write(os.path.join(prj_path, "project.build"), "PROJ")
 
         # .git is not a directory, it's a file that contains "gitdir: <path>"
         pkg_path = os.path.join(prj_path, "package")
         self._git_init(pkg_path, separate_git_dir="../package-git-dir")
 
-        store = GitStore(pkg_path)
+        store = GitStore(pkg_path, check=False)
         self.assertEqual(store.project, "PROJ")
         self.assertEqual(store.package, "my-package")
 
@@ -298,10 +322,9 @@ class TestGitStoreProject(unittest.TestCase):
         pkg_path = os.path.join(git_subdir_path, "package")
         self._git_init(pkg_path)
 
-        store = GitStore(pkg_path)
         # the parent directory contains arbitrary git repo -> no project
-        self.assertEqual(store.project, None)
-        self.assertEqual(store.package, "my-package")
+        with self.assertRaises(oscerr.NoWorkingCopy):
+            GitStore(pkg_path)
 
 
 if __name__ == "__main__":
