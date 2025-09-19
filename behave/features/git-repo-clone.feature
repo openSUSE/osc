@@ -33,6 +33,7 @@ Scenario: Clone and build with non-default origin
     Then the exit code is 0
     When I set working directory to "{context.osc.temp}/test-GitPkgA"
      And I execute "git remote rename origin myorigin"
+     And I execute git-obs with args "meta set --apiurl='https://localhost:{context.podman.container.ports[obs_https]}' --project=foo"
      And I execute osc with args "build --just-print-buildroot --alternative-project test:factory"
     Then the exit code is 0
 
