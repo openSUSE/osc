@@ -1,6 +1,7 @@
 import sys
 
 from .store import GitStore
+from .store import LocalGitStore
 
 
 def warn_experimental():

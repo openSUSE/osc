@@ -34,6 +34,8 @@ def get_store(path, check=True, print_warnings=False):
             if print_warnings:
                 git_scm.warn_experimental()
         except oscerr.NoWorkingCopy:
+            if not os.path.exists(os.path.join(path, ".osc")):
+                raise
             pass
 
     if not store:

@@ -51,6 +51,24 @@ class Git:
             return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath, stderr=subprocess.DEVNULL).strip()
         return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath).strip()
 
+    @property
+    def topdir(self) -> Optional[str]:
+        """
+        A custom implementation to `git rev-parse --show-toplevel` to avoid executing git which is sometimes unnecessary expensive.
+        """
+        path = self.abspath
+        while path:
+            if os.path.exists(os.path.join(path, ".git")):
+                break
+
+            path, dirname = os.path.split(path)
+
+            if (path, dirname) == ("/", ""):
+                # no git repo found
+                return None
+
+        return path
+
     def init(self, *, initial_branch: Optional[str] = None, quiet: bool = True, mute_stderr: bool = False):
         cmd = ["init"]
         if initial_branch:
@@ -70,8 +88,11 @@ class Git:
     # BRANCHES
 
     @property
-    def current_branch(self) -> str:
-        return self._run_git(["branch", "--show-current"])
+    def current_branch(self) -> Optional[str]:
+        try:
+            return self._run_git(["branch", "--show-current"], mute_stderr=True)
+        except subprocess.CalledProcessError:
+            return None
 
     def get_branch_head(self, branch: str) -> str:
         return self._run_git(["rev-parse", f"refs/heads/{branch}"])
@@ -107,7 +128,7 @@ class Git:
         self,
         pull_number: int,
         *,
-        remote: str = "origin",
+        remote: Optional[str] = None,
         commit: Optional[str] = None,
         force: bool = False,
     ):
@@ -119,6 +140,9 @@ class Git:
         # if the branch exists and the head matches the expected commit, skip running 'git fetch'
         if commit and self.branch_exists(target_branch) and self.get_branch_head(target_branch) == commit:
             return target_branch
+
+        if not remote:
+            remote = self.get_current_remote()
 
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
         if force:
@@ -136,11 +160,35 @@ class Git:
 
     # REMOTES
 
-    def get_remote_url(self, name: str = "origin") -> str:
+    def get_remote_url(self, name: Optional[str] = None) -> Optional[str]:
+        if not name:
+            name = self.get_current_remote()
+        if not name:
+            return None
         return self._run_git(["remote", "get-url", name])
 
     def add_remote(self, name: str, url: str):
         self._run_git(["remote", "add", name, url])
+
+    def get_current_remote(self, fallback_to_origin: bool = True) -> Optional[str]:
+        result = None
+        try:
+            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"], mute_stderr=True)
+            if result:
+                result = result.split("/")[0]
+        except subprocess.CalledProcessError:
+            pass
+
+        # the tracking information isn't sometimes set
+        # let's fall back to 'origin' if available
+        if not result and fallback_to_origin:
+            try:
+                self._run_git(["remote", "get-url", "origin"], mute_stderr=True)
+                result = "origin"
+            except subprocess.CalledProcessError:
+                pass
+
+        return result
 
     def fetch(self, name: Optional[str] = None):
         if name:
@@ -149,7 +197,7 @@ class Git:
             cmd = ["fetch", "--all"]
         self._run_git(cmd)
 
-    def get_owner_repo(self, remote: str = "origin") -> Tuple[str, str]:
+    def get_owner_repo(self, remote: Optional[str] = None) -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
         if "@" in remote_url:
             # ssh://gitea@example.com:owner/repo.git

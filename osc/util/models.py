@@ -312,10 +312,7 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
         # if this is a model field, convert dict to a model instance
         if self.is_model and isinstance(default, dict):
             cls = self.origin_type
-            new_value = cls()  # pylint: disable=not-callable
-            for k, v in default.items():
-                setattr(new_value, k, v)
-            default = new_value
+            default = cls(**default)
 
         obj._defaults[self.name] = default
         return default
@@ -460,6 +457,49 @@ class BaseModel(metaclass=ModelMeta):
             else:
                 result[name] = value
 
+        return result
+
+    @classmethod
+    def from_file(cls, path: str) -> "Self":
+        """
+        Load model from a json file.
+        """
+        import json
+
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        obj = cls(**data)
+        return obj
+
+    def to_file(self, path: str):
+        """
+        Dump model to a json file.
+        """
+        import json
+
+        with open(path, "w", encoding="utf-8") as f:
+            # we prefer key ordering according to the fields in the model
+            json.dump(self.dict(), f, sort_keys=False, indent=4)
+
+    @classmethod
+    def from_string(cls, text: str) -> "Self":
+        """
+        Load model from json string.
+        """
+        import json
+
+        data = json.loads(text)
+        obj = cls(**data)
+        return obj
+
+    def to_string(self) -> str:
+        """
+        Dump model to a json string.
+        """
+        import json
+
+        result = json.dumps(self.dict(), sort_keys=False, indent=4)
         return result
 
     def do_snapshot(self):
