@@ -328,10 +328,17 @@ class LocalGitStore:
             files = [i for i in files if fnmatch.fnmatch(i, pattern)]
         return files
 
-    def cache_read_file(self, filename: str, *, branch: Optional[str] = None) -> Optional[bytes]:
-        assert "/" not in filename
+    def cache_get_path(self, filename: str, *, branch: Optional[str] = None, makedirs: bool = False) -> str:
+        if "/" in filename:
+            raise ValueError(f"Filename must not contain path: {filename}")
         branch = branch or self._git.current_branch
         path = self._get_path(["cache", filename], branch=branch)
+        if makedirs:
+            os.makedirs(os.path.dirname(path), exist_ok=True)
+        return path
+
+    def cache_read_file(self, filename: str, *, branch: Optional[str] = None) -> Optional[bytes]:
+        path = self.cache_get_path(filename, branch=branch)
         with self._lock():
             try:
                 with open(path, "rb") as f:
@@ -340,9 +347,7 @@ class LocalGitStore:
                 return None
 
     def cache_write_file(self, filename: str, data: bytes, *, branch: Optional[str] = None):
-        assert "/" not in filename
-        branch = branch or self._git.current_branch
-        path = self._get_path(["cache", filename], branch=branch)
+        path = self.cache_get_path(filename, branch=branch)
         with self._lock():
             os.makedirs(os.path.dirname(path), exist_ok=True)
             with open(path, "wb") as f:
@@ -352,9 +357,11 @@ class LocalGitStore:
         branch = branch or self._git.current_branch
         with self._lock():
             for filename in filenames:
-                assert "/" not in filename
-                path = self._get_path(["cache", filename], branch=branch)
-                os.unlink(path)
+                path = self.cache_get_path(filename, branch=branch)
+                try:
+                    os.unlink(path)
+                except FileNotFoundError:
+                    pass
 
     # LAST BUILDROOT
 
