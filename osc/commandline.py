@@ -875,6 +875,10 @@ class Osc(cmdln.Cmdln):
         from .core import show_files_meta
         from .core import show_scmsync
         from .core import store_write_string
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git."
+        git_is_unsupported(".", msg)
 
         project = opts.project
         package = opts.package
@@ -1319,6 +1323,11 @@ class Osc(cmdln.Cmdln):
         """
 
         from .core import show_devel_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -1365,6 +1374,11 @@ class Osc(cmdln.Cmdln):
         """
 
         from .core import set_devel_project
+        from .store import git_is_unsupported
+
+        if len(args) <= 1:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -1987,6 +2001,11 @@ class Osc(cmdln.Cmdln):
         from .core import show_devel_project
         from .core import slash_split
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if len(args) <= 2:
+            msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git-obs pr create' instead."
+            git_is_unsupported(".", msg)
 
         def _check_service(root):
             serviceinfo = root.find('serviceinfo')
@@ -2750,6 +2769,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if len(args) <= 1:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         args = slash_split(args)
         apiurl = self.get_api_url()
@@ -2838,6 +2862,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         args = slash_split(args)
 
@@ -3583,6 +3612,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import meta_get_packagelist
         from .core import parseRevisionOption
         from .core import set_link_rev
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -3640,6 +3674,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from .core import Package
         from .core import link_to_branch
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -3678,6 +3717,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import delete_files
         from .core import show_files_meta
         from .core import show_package_meta
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -3750,6 +3794,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import link_pac
         from .core import parseRevisionOption
         from .core import show_upstream_rev_vrev
+        from .store import git_is_unsupported
+
+        if len(args) <= 2:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -4004,6 +4053,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import show_project_meta
         from .core import slash_split
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         # FIXME: additional parameters can be a certain repo list to create a partitial release
 
@@ -4164,6 +4218,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         args = slash_split(args)
         apiurl = self.get_api_url()
@@ -4453,6 +4512,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git. Use 'osc fork' or 'git-obs repo fork' instead."
+            git_is_unsupported(".", msg)
 
         if subcmd in ('getpac', 'branchco', 'bco'):
             opts.checkout = True
@@ -4697,6 +4761,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from .core import Package
         from .core import parseargs
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git."
+        git_is_unsupported(".", msg)
 
         args = parseargs(args)
         if opts.specfile and len(args) == 1:
@@ -4759,6 +4827,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import run_pager
         from .core import server_diff
         from .core import server_diff_noex
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git diff' instead."
+        git_is_unsupported(".", msg)
 
         if (subcmd in ('ldiff', 'linkdiff')):
             opts.link = True
@@ -5053,6 +5125,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
         args = slash_split(args)
@@ -5438,6 +5515,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import statfrmt
         from .core import store_read_project
+        from .store import git_is_unsupported
 
         if opts.unexpand_link:
             expand_link = False
@@ -5473,6 +5551,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 pass
 
             if len(args) == 1 and is_project_dir(Path.cwd()):
+                msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git-obs repo clone' instead."
+                git_is_unsupported(".", msg)
+
                 project = store_read_project(Path.cwd())
                 project_dir = Path.cwd()
                 package = args[0]
@@ -5612,6 +5693,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_project_dir
         from .core import parseargs
         from .core import statfrmt
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. User 'git status' instead."
+        git_is_unsupported(".", msg)
 
         args = parseargs(args)
         lines = []
@@ -5668,6 +5753,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import addFiles
         from .core import addGitSource
         from .core import parseargs
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git add' instead."
+        git_is_unsupported(".", msg)
 
         if not args:
             self.argparse_error("Incorrect number of arguments.")
@@ -5694,6 +5783,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from . import conf
         from .core import createPackageDir
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Add a submodule with a package instead."
+        git_is_unsupported(".", msg)
 
         if not conf.config['do_package_tracking']:
             print("to use this feature you have to enable \'do_package_tracking\' "
@@ -5726,6 +5819,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_project_dir
         from .core import parseargs
         from .core import statfrmt
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git add' and 'git rm' instead."
+        git_is_unsupported(".", msg)
 
         args = parseargs(args)
         arg_list = args[:]
@@ -5826,6 +5923,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parseargs
         from .core import raw_input
         from .core import store_unlink_file
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git commit' and 'git push' instead."
+        git_is_unsupported(".", msg)
 
         args = parseargs(args)
 
@@ -6004,6 +6105,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import print_request_list
         from .core import show_files_meta
         from .core import show_upstream_rev
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git."
+        git_is_unsupported(".", msg)
 
         if opts.expand_link and opts.unexpand_link:
             raise oscerr.WrongOptions('Sorry, the options --expand-link and '
@@ -6139,6 +6244,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_project_dir
         from .core import parseargs
         from .core import statfrmt
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git rm' instead."
+        git_is_unsupported(".", msg)
 
         if not args:
             self.argparse_error("Incorrect number of arguments.")
@@ -6207,6 +6316,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from .core import Package
         from .core import parseargs
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git."
+        git_is_unsupported(".", msg)
 
         if not args:
             self.argparse_error("Incorrect number of arguments.")
@@ -8193,6 +8306,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parseRevisionOption
         from .core import revision_is_empty
         from .output import pipe_to_pager
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
 
@@ -9360,7 +9478,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_project
         from .core import unpack_srcrpm
         from .grabber import OscFileGrabber
+        from .store import git_is_unsupported
         from .util import rpmquery
+
+        msg = f"Command 'osc {subcmd}' is not supported with git."
+        git_is_unsupported(".", msg)
 
         srpm = opts.srpm
 
@@ -9617,6 +9739,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import slash_split
         from .core import store_read_package
         from .core import store_read_project
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         def get_maintainer_data(apiurl, maintainer, verbose=False):
             tags = ('email',)
@@ -9922,6 +10049,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_package_dir
         from .core import is_project_dir
         from .core import store_read_project
+        from .store import get_store
 
         apiurl = self.get_api_url()
         project = None
@@ -9977,6 +10105,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_package
         from .core import store_read_project
         from .core import streamfile
+        from .store import git_is_unsupported
 
         if len(args) == 1 and (args[0].startswith('http://') or
                                args[0].startswith('https://')):
@@ -9993,6 +10122,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = args[1]
             filename = args[2]
         elif len(args) == 1 and is_package_dir(Path.cwd()):
+            msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git show <revision>:<path>' instead."
+            git_is_unsupported(".", msg)
+
             project = store_read_project(Path.cwd())
             package = store_read_package(Path.cwd())
             filename = args[0]
@@ -10075,6 +10207,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_package
         from .core import store_read_project
         from .core import store_write_string
+        from .store import git_is_unsupported
+
+        if not args:
+            msg = f"Command 'osc {subcmd}' is not supported with git."
+            git_is_unsupported(".", msg)
 
         apiurl = self.get_api_url()
         args = slash_split(args)
@@ -10264,6 +10401,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import run_external
         from .core import statfrmt
         from .core import store_write_string
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git fetch' and 'git rebase' instead."
+        git_is_unsupported(".", msg)
 
         p = Package('.')
         # check if everything is committed
@@ -10596,6 +10737,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from .core import Package
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git mv' instead."
+        git_is_unsupported(".", msg)
 
         source = opts.source
         dest = opts.dest
@@ -10739,6 +10884,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from .core import Package
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git checkout' instead."
+        git_is_unsupported(".", msg)
 
         files = opts.file
         pacs = Package.from_paths(files)
@@ -10771,6 +10920,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parseargs
         from .core import raw_input
         from .store import Store
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git."
+        git_is_unsupported(".", msg)
 
         def get_apiurl(apiurls):
             print('No apiurl is defined for this working copy.\n'
@@ -10848,6 +11001,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import getTransActPath
         from .core import is_package_dir
         from .core import parseargs
+        from .store import git_is_unsupported
+
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git reset' instead."
+        git_is_unsupported(".", msg)
 
         pacs = parseargs(args)
         # do a sanity check first

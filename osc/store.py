@@ -43,3 +43,18 @@ def get_store(path, check=True, print_warnings=False):
         raise oscerr.NoWorkingCopy(msg)
 
     return store
+
+
+def git_is_unsupported(path: str, msg: str):
+    store = None
+    try:
+        store = get_store(path)
+    except oscerr.NoWorkingCopy:
+        pass
+
+    if not store:
+        # not a working copy, we're not handling it
+        return
+
+    if isinstance(store, git_scm.GitStore) or store.scmurl:
+        raise oscerr.NoWorkingCopy(msg)
