@@ -27,7 +27,7 @@ class Manifest:
         obj = cls(data)
         return obj
 
-    def __init__(self, data: dict):
+    def __init__(self, data: dict = None):
         self._data = data
 
     @property
