@@ -156,6 +156,26 @@ Workflow: Retrieving sources of an existing pull request
 
     git-obs -G opensuse pr checkout PULL_NUMBER [--force]
 
+4. **Set metadata:**
+
+.. note::
+   This always needs to be done after switching to a new branch.
+
+.. code::
+
+    git-obs -G opensuse meta pull
+    # or
+    git-obs meta set [--apiurl=...] [--project=...] [--package=...]
+
+
+5. **Use osc or git-obs with the local checkout**
+
+.. code::
+
+    osc build
+    osc repos
+    ...
+
 
 Workflow: Querying pull requests
 --------------------------------
