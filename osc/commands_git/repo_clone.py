@@ -19,6 +19,12 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
         self.add_argument_owner_repo(nargs="+")
 
         self.add_argument(
+            "-b",
+            "--branch",
+            help="Checkout the specified branch",
+        )
+
+        self.add_argument(
             "-a",
             "--anonymous",
             action="store_true",
@@ -63,6 +69,7 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
                     self.gitea_conn,
                     owner,
                     repo,
+                    branch=args.branch,
                     directory=args.directory,
                     use_http=args.anonymous or self.gitea_login.git_uses_http,
                     add_remotes=True,
