@@ -255,11 +255,28 @@ class LocalGitStore:
         for name in ["apiurl", "project"]:
             if not getattr(self, name):
                 missing.append(name)
+
         if missing:
-            msg = (
-                f"Git SCM project working copy doesn't have the following metadata set: {', '.join(missing)}\n"
-                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
-            )
+            msg = f"Git SCM project working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+
+            if "apiurl" in missing:
+                msg += (
+                    "\n"
+                    "To fix apiurl:\n"
+                    " - Run 'git-obs meta pull' to retrieve the 'obs_apiurl' value from 'obs/configuration' repo, 'main' branch, 'configuration.yaml' file\n"
+                    " - Run 'git-obs meta set --apiurl=...\n"
+                )
+
+            if "project" in missing:
+                msg += (
+                    "\n"
+                    "To fix project:\n"
+                    " - Set 'obs_project' in '_manifest' file\n"
+                    " - Run 'git-obs meta set --project=...\n"
+                )
+
+            msg += "\nCheck git-obs-metadata man page for more details"
+
             raise oscerr.NoWorkingCopy(msg)
 
     def assert_is_package(self):
@@ -271,11 +288,46 @@ class LocalGitStore:
         for name in ["apiurl", "project", "package"]:
             if not getattr(self, name):
                 missing.append(name)
+
         if missing:
-            msg = (
-                f"Git SCM package working copy doesn't have the following metadata set: {', '.join(missing)}\n"
-                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
-            )
+            msg = f"Git SCM package working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+
+            if self.project_store:
+                msg += f" - The package has a parent project checkout: {self.project_store.abspath}\n"
+            else:
+                msg += " - The package has no parent project checkout\n"
+
+            if "apiurl" in missing:
+                msg += "\n"
+                msg += "To fix apiurl:\n"
+                if self.project_store:
+                    msg += (
+                        " - Run 'git-obs meta pull' IN THE PROJECT in the parent directory to retrieve the 'obs_apiurl' value from 'obs/configuration' repo, 'main' branch, 'configuration.yaml' file\n"
+                        " - run 'git-obs meta set --apiurl=...' IN THE PROJECT\n"
+                    )
+                else:
+                    msg += (
+                        " - Run 'git-obs meta set --apiurl=...'\n"
+                    )
+
+            if "project" in missing:
+                msg += "\n"
+                msg += "To fix project:\n"
+
+                if self.project_store:
+                    msg += (
+                        " - Set 'obs_project' in '_manifest' file IN THE PROJECT\n"
+                        " - Run 'git-obs meta set --project=...' IN THE PROJECT\n"
+                    )
+                else:
+                    msg += (
+                        f" - Set 'obs_project' in the matching _ObsPrj git repo, '{self._git.current_branch}' branch, '_manifest' file\n"
+                        "   Run 'git-obs meta pull'\n"
+                        " - Run 'git-obs meta set --project=...'\n"
+                    )
+
+            msg += "\nCheck git-obs-metadata man page for more details"
+
             raise oscerr.NoWorkingCopy(msg)
 
     # APIURL
