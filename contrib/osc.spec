@@ -239,6 +239,7 @@ install -Dm0644 macros.osc %{buildroot}%{_rpmmacrodir}/macros.osc
 
 # install man page
 %if %{with man}
+install -Dm0644 git-obs-metadata.1 %{buildroot}%{_mandir}/man1/git-obs-metadata.1
 install -Dm0644 git-obs-quickstart.1 %{buildroot}%{_mandir}/man1/git-obs-quickstart.1
 install -Dm0644 osc.1 %{buildroot}%{_mandir}/man1/osc.1
 install -Dm0644 git-obs.1 %{buildroot}%{_mandir}/man1/git-obs.1
