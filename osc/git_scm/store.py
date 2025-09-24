@@ -135,22 +135,23 @@ class LocalGitStore:
                 break
 
         if self.type == "project":
+            manifest_path = os.path.join(self._git.topdir, "_manifest")
+            subdirs_path = os.path.join(self._git.topdir, "_subdirs")
+
+            if os.path.exists(manifest_path):
+                self.manifest = Manifest.from_file(manifest_path)
+            elif os.path.exists(subdirs_path):
+                self.manifest = Subdirs.from_file(subdirs_path)
+            else:
+                # empty manifest considers all top-level directories as packages
+                self.manifest = Manifest({})
+
             if self._git.topdir != self.abspath:
-                manifest_path = os.path.join(self._git.topdir, "_manifest")
-                subdirs_path = os.path.join(self._git.topdir, "_subdirs")
-
-                if os.path.exists(manifest_path):
-                    self.manifest = Manifest.from_file(manifest_path)
-                elif os.path.exists(subdirs_path):
-                    self.manifest = Subdirs.from_file(subdirs_path)
-                else:
-                    # empty manifest considers all top-level directories as packages
-                    self.manifest = Manifest()
-
                 package_topdir = self.manifest.resolve_package_path(project_path=self._git.topdir, package_path=self.abspath)
                 if package_topdir:
                     self._type = "package"
                     self._topdir = package_topdir
+                    self.manifest = None
 
         self.project_store = None
         if self.type == "package":
