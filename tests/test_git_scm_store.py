@@ -103,6 +103,9 @@ class TestGitStoreProject(unittest.TestCase):
         if separate_git_dir:
             git_init_cmd += ["--separate-git-dir", separate_git_dir]
         subprocess.check_output(git_init_cmd, cwd=path)
+        subprocess.check_output(["git", "config", "user.email", "user@example.com"], cwd=path)
+        subprocess.check_output(["git", "config", "user.name", "User Name"], cwd=path)
+        subprocess.check_output(["git", "commit", "-m", "empty", "--allow-empty"], cwd=path)
         subprocess.check_output(["git", "checkout", "-b", "factory", "-q"], cwd=path)
         subprocess.check_output(["git", "remote", "add", "origin", "https://example.com/packages/my-package.git"], cwd=path)
 
@@ -325,6 +328,27 @@ class TestGitStoreProject(unittest.TestCase):
         # the parent directory contains arbitrary git repo -> no project
         with self.assertRaises(oscerr.NoWorkingCopy):
             GitStore(pkg_path)
+
+    def test_pkg_git_in_submodule(self):
+        import subprocess
+
+        pkg_upstream_path = os.path.join(self.tmpdir, "pkg-upstream")
+        self._git_init(pkg_upstream_path)
+
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        manifest_data = {
+            "obs_apiurl": "https://api.example.com",
+            "obs_project": "PROJ",
+        }
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(manifest_data))
+
+        subprocess.check_output(["git", "-c", "protocol.file.allow=always", "submodule", "add", pkg_upstream_path, "pkg"], cwd=prj_path, stderr=subprocess.DEVNULL)
+        pkg_path = os.path.join(prj_path, "pkg")
+
+        store = GitStore(pkg_path)
+        self.assertEqual(store.project, "PROJ")
+        self.assertEqual(store.package, "pkg-upstream")
 
 
 if __name__ == "__main__":

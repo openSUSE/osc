@@ -156,14 +156,23 @@ class LocalGitStore:
         self.project_store = None
         if self.type == "package":
             # load either .osc or .git project store from the directory above topdir
-            for cls in (Store, self.__class__):
+            if not self.project_store:
                 try:
-                    store = cls(os.path.join(self.topdir, ".."))
+                    store = Store(os.path.join(self.topdir, ".."))
                     store.assert_is_project()
                     self.project_store = store
-                    break
                 except oscerr.NoWorkingCopy:
                     pass
+
+            if not self.project_store:
+                try:
+                    # turn off 'check' because we want at least partial metadata to be inherited to the package
+                    store = GitStore(os.path.join(self.topdir, ".."), check=False)
+                    if store.type == "project":
+                        self.project_store = store
+                except oscerr.NoWorkingCopy:
+                    pass
+
         elif self.type == "project":
             # load .osc project store that is next to .git and may provide medatata we don't have
             try:
