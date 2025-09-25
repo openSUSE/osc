@@ -77,7 +77,17 @@ class GitObsCommand(osc.commandline_common.Command):
     def gitea_conn(self, value):
         self.main_command.gitea_conn = value
 
+    @property
+    def quiet(self):
+        if self.main_command._args.quiet:
+            return True
+        if self.gitea_login and self.gitea_login.quiet:
+            return True
+        return False
+
     def print_gitea_settings(self):
+        if self.quiet:
+            return
         print(f"Using the following Gitea settings:", file=sys.stderr)
         print(f" * Config path: {self.gitea_conf.path}", file=sys.stderr)
         print(f" * Login (name of the entry in the config file): {self.gitea_login.name}", file=sys.stderr)
@@ -176,6 +186,13 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         self._gitea_conn = None
 
     def init_arguments(self):
+        self.add_argument(
+            "-q",
+            "--quiet",
+            action="store_true",
+            help="Mute unnecessary output",
+        )
+
         self.add_argument(
             "--gitea-config",
             help="Path to gitea config. Default: $GIT_OBS_CONFIG or ~/.config/tea/config.yml.",

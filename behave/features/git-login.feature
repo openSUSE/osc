@@ -97,7 +97,7 @@ Scenario: Remove a credentials login entry
 
 
 Scenario: Update a credentials login entry
-    When I execute git-obs with args "login update alice --new-name=NEW_NAME --new-url=NEW_URL --new-user=NEW_USER --new-token=1234567890123456789012345678901234567890 --new-ssh-key= --set-as-default"
+    When I execute git-obs with args "login update alice --new-name=NEW_NAME --new-url=NEW_URL --new-user=NEW_USER --new-token=1234567890123456789012345678901234567890 --new-ssh-key= --new-quiet=1 --set-as-default"
     Then the exit code is 0
      And stderr is
          """
@@ -117,6 +117,7 @@ Scenario: Update a credentials login entry
         Default              : true
         URL                  : NEW_URL
         User                 : NEW_USER
+        Quiet                : yes
         """
     When I execute git-obs with args "login list"
     Then stdout is
@@ -130,6 +131,7 @@ Scenario: Update a credentials login entry
         Default              : true
         URL                  : NEW_URL
         User                 : NEW_USER
+        Quiet                : yes
 
         Name                 : bob
         URL                  : http://localhost:{context.podman.container.ports[gitea_http]}
