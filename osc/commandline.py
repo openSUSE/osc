@@ -9,6 +9,7 @@ import glob
 import importlib
 import importlib.util
 import inspect
+import json
 import os
 import pkgutil
 import re
@@ -26,12 +27,14 @@ from tempfile import NamedTemporaryFile
 from typing import Optional, List, NoReturn
 from urllib.parse import urlsplit
 from urllib.error import HTTPError
+from .connection import http_request
 
 from . import commands as osc_commands
 from . import oscerr
 from .commandline_common import *
 from .util.xml import xml_fromstring
 from .util.xml import xml_parse
+from . import core
 
 
 class OscCommand(Command):
@@ -131,11 +134,6 @@ class OscMainCommand(MainCommand):
             action="store_true",
             help="disable usage of desktop keyring system",
         )
-        self.add_argument(
-            "--no-pager",
-            action="store_true",
-            help="disable pager in stdout output",
-        )
 
     def post_parse_args(self, args):
         from . import conf
@@ -145,6 +143,7 @@ class OscMainCommand(MainCommand):
         if args.command == "help":
             # HACK: never ask for credentials when displaying help
             return
+
 
         overrides = {}
         for i in args.setopt:
@@ -817,12 +816,6 @@ class Osc(cmdln.Cmdln):
             action='store_true',
             help='disable usage of desktop keyring system',
         ))
-        arguments.append(dict(
-            names=['--no-pager'],
-            action="store_true",
-            help="disable pager in stdout output",
-        ))
-
 
         _add_parser_arguments_from_data(parser, arguments)
 
@@ -904,7 +897,7 @@ class Osc(cmdln.Cmdln):
             print(f'Initializing {Path.cwd()} (Project: {project})')
         else:
             Package.init_package(apiurl, project, package, Path.cwd())
-            store_write_string(Path.cwd(), '_files', show_files_meta(apiurl, project, package))
+            store_write_string(Path.cwd(), '_files', show_files_meta(apiurl, project, package) + b'\n')
             print(f'Initializing {Path.cwd()} (Project: {project}, Package: {package})')
 
     @cmdln.alias('ls')
@@ -1677,19 +1670,17 @@ class Osc(cmdln.Cmdln):
         attributepath = []
         if cmd in ['prj', 'prjconf']:
             if len(args) < 1:
-                store = osc_store.get_store(Path.cwd())
-                apiurl = store.apiurl
-                project = store.project
+                apiurl = osc_store.Store(Path.cwd()).apiurl
+                project = store_read_project(Path.cwd())
             else:
                 project = self._process_project_name(args[0])
 
         elif cmd == 'pkg':
             if len(args) < 2:
-                store = osc_store.get_store(Path.cwd())
-                apiurl = store.apiurl
-                project = store.project
+                apiurl = osc_store.Store(Path.cwd()).apiurl
+                project = store_read_project(Path.cwd())
                 if len(args) < 1:
-                    package = store.package
+                    package = store_read_package(Path.cwd())
                 else:
                     package = args[0]
             else:
@@ -2241,12 +2232,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 rdiff = b''
 
         if opts.diff:
-            hldiff = highlight_diff(rdiff)
-            if opts.no_pager:
-                sys.stdout.buffer.write(hldiff)
-            else:
-                run_pager(hldiff)
-
+            run_pager(highlight_diff(rdiff))
             return
         if rdiff is not None:
             rdiff = decode_it(rdiff)
@@ -3450,11 +3436,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                                                action.tgt_project.encode(), action.tgt_package.encode())
                         diff += submit_action_diff(apiurl, action)
                         diff += b'\n\n'
-                hldiff = highlight_diff(diff)
-                if opts.no_pager:
-                    sys.stdout.buffer.write(hldiff)
-                else:
-                    run_pager(hldiff, tmp_suffix="")
+                run_pager(highlight_diff(diff), tmp_suffix="")
 
         # checkout
         elif cmd in ('checkout', 'co'):
@@ -4861,7 +4843,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.revision = baserev
 
             print(f"diff committed package against linked revision {baserev}\n")
-            hldiff = highlight_diff(server_diff(
+            run_pager(
+                highlight_diff(
+                    server_diff(
                         self.get_api_url(),
                         linkinfo.get("project"),
                         linkinfo.get("package"),
@@ -4873,10 +4857,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         opts.missingok,
                     )
                 )
-            if opts.no_pager:
-                sys.stdout.buffer.write(hldiff)
-            else:
-                run_pager(hldiff)
+            )
             return
 
         if opts.change:
@@ -4910,12 +4891,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
                                          pac.prjname, pac.name, rev2,
                                          not opts.plain, opts.missingok, opts.meta, not opts.unexpand, files=files)
-        hldiff = highlight_diff(diff)
-        if opts.no_pager:
-            sys.stdout.buffer.write(hldiff)
-        else:
-            run_pager(hldiff)
-
+        run_pager(highlight_diff(diff))
 
     @cmdln.option('--issues-only', action='store_true',
                   help='show only issues in diff')
@@ -5009,13 +4985,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  xml=opts.xml)
         if opts.issues_only:
             print(decode_it(rdiff))
-            return
-
-        hldiff = highlight_diff(rdiff)
-        if opts.no_pager:
-            sys.stdout.buffer.write(hldiff)
         else:
-            run_pager(hldiff)
+            run_pager(highlight_diff(rdiff))
 
     def _pdiff_raise_non_existing_package(self, project, package, msg=None):
         raise oscerr.PackageMissing(project, package, msg or f'{project}/{package} does not exist.')
@@ -5185,11 +5156,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         rdiff = server_diff(apiurl, parent_project, parent_package, None, project,
                             package, None, unified=unified, missingok=noparentok)
-        hldiff = highlight_diff(rdiff)
-        if opts.no_pager:
-            sys.stdout.buffer.write(hldiff)
-        else:
-            run_pager(hldiff)
+
+        run_pager(highlight_diff(rdiff))
 
     def _get_branch_parent(self, prj):
         m = re.match('^home:[^:]+:branches:(.+)', prj)
@@ -6494,6 +6462,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             opts.hide_legend = None
             opts.name_filter = None
             opts.show_non_building = None
+            opts.show_excluded = None
             return self.do_prjresults('prjresults', opts, *args)
 
         if opts.xml and opts.csv:
@@ -7504,7 +7473,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     def parse_repoarchdescr(self, args, noinit=False, alternative_project=None, ignore_descr=False, vm_type=None, multibuild_package=None):
         from . import build as osc_build
         from . import conf
-        from . import store as osc_store
         from .core import Package
         from .core import Repo
         from .core import decode_it
@@ -7557,12 +7525,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         self._debug("arg_repository: ", arg_repository)
         self._debug("arg_descr: ", arg_descr)
 
-        store_obj = osc_store.get_store(".")
-
         repositories = []
         # store list of repos for potential offline use
+        repolistfile = os.path.join(Path.cwd(), store, "_build_repositories")
         if noinit:
-            repositories = store_obj.build_repositories
+            repositories = Repo.fromfile(repolistfile)
         else:
             project = alternative_project or store_read_project('.')
             apiurl = self.get_api_url()
@@ -7571,7 +7538,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs(f'no repositories defined for project \'{project}\'')
             if alternative_project is None:
                 # only persist our own repos
-                store_obj.build_repositories = repositories
+                Repo.tofile(repolistfile, repositories)
 
         no_repo = False
         repo_names = sorted({r.name for r in repositories})
@@ -7726,7 +7693,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--pkg-ccache', metavar='/path/to/_ccache.tar',
                   help='path to an existing uncompressed archive ccache. Using this option implies --ccache')
     @cmdln.option('--sccache', action='store_true',
-                  help='use sccache to speed up rebuilds. Conflicts with --ccache')
+                  help='use sccache to speed up rebuilds. Conflicts with --cache')
     @cmdln.option('--sccache-uri', metavar='redis://127.0.0.1:6389',
                   help='Optional remote URI for sccache storage. Implies --sccache.')
     @cmdln.option('--with', metavar='X', dest='_with', action='append',
@@ -7879,7 +7846,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         # Configuration can be overridden by envvars, e.g.
         # OSC_SU_WRAPPER overrides the setting of su-wrapper.
         # OSC_BUILD_ROOT overrides the setting of build-root.
-        # OSC_PACKAGE_CACHE_DIR overrides the setting of packagecachedir.
+        # OSC_PACKAGECACHEDIR overrides the setting of packagecachedir.
         """
 
         from . import build as osc_build
@@ -8144,7 +8111,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         # 3.) call osc build
         osc_cmd = "osc"
-        for var in ('OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGE_CACHE_DIR'):
+        for var in ('OSC_SU_WRAPPER', 'OSC_BUILD_ROOT', 'OSC_PACKAGECACHEDIR'):
             if os.getenv(var):
                 osc_cmd = f"{var}={os.getenv(var)} {osc_cmd}"
 
@@ -8585,10 +8552,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 4:
             if is_package_dir(Path.cwd()):
-                store = osc_store.get_store(Path.cwd())
-                project = store.project
-                package = store.package
-                apiurl = store.apiurl
+                project = store_read_project(Path.cwd())
+                package = store_read_package(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
                 repo = args[0]
                 arch = args[1]
                 sysrq = args[2]
@@ -8651,14 +8617,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) < 1:
             if is_package_dir(Path.cwd()):
-                store = osc_store.get_store(Path.cwd())
-                project = store.project
-                package = store.package
-                apiurl = store.apiurl
+                project = store_read_project(Path.cwd())
+                package = store_read_package(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
             elif is_project_dir(Path.cwd()):
-                store = osc_store.get_store(Path.cwd())
-                project = store.project
-                apiurl = store.apiurl
+                project = store_read_project(Path.cwd())
+                apiurl = osc_store.Store(Path.cwd()).apiurl
             else:
                 raise oscerr.WrongArgs('Too few arguments.')
         else:
@@ -9542,8 +9506,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             createPackageDir(os.path.join(project.dir, pac), project)
         else:
             if not os.path.exists(os.path.join(project_dir, pac)):
-                store = osc_store.get_store(project_dir)
-                apiurl = store.apiurl
+                apiurl = osc_store.Store(project_dir).apiurl
                 user = conf.get_apiurl_usr(apiurl)
                 data = meta_exists(metatype='pkg',
                                    path_args=(project, pac),
@@ -9776,6 +9739,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         pac = None
         metaroot = None
         searchresult = None
+        devel_maintainers = None
+        prj_in_gitea = False
+        develprj_in_gitea = False
+        devel_prj = None
+        devel_pkg = None
+        scmsync = None
         roles = ['bugowner', 'maintainer']
         if len(opts.role):
             roles = opts.role
@@ -9802,6 +9771,28 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
         apiurl = self.get_api_url()
+
+        if (prj == "openSUSE:Factory" or prj == "openSUSE.org:openSUSE:Factory"):
+            devel_prj, devel_pkg = core.show_devel_project(apiurl, prj, pac)
+            if devel_prj is None or devel_pkg is None:
+                raise oscerr.NotFoundAPIError('No devel project found for package %s in project %s' % (pac, prj))
+            print("openSUSE:Factory package", pac, " has devel project ", devel_prj)
+            print("Searching for maintainers in ", devel_prj)
+            prj = devel_prj
+            search_term = None
+            dev_meta = show_project_meta(apiurl, devel_prj)
+            dev_metaroot = xml_fromstring(b''.join(dev_meta))
+            if dev_metaroot.find("scmsync") is not None:
+                scmsync = dev_metaroot.find("scmsync").text
+                if opts.verbose:
+                    print("Devel project scmsync URL: ", scmsync)
+                if (not scmsync is None):
+                    split_scmsync = urlsplit(scmsync)
+                    if not split_scmsync.netloc is None:
+                        if opts.verbose:
+                            print("Devel project scmsync netloc: ", split_scmsync.netloc)
+                        if ("src.opensuse.org".lower() == split_scmsync.netloc.lower()):
+                            develprj_in_gitea = True
 
         # Try the OBS 2.4 way first.
         if search_term or opts.user or opts.group:
@@ -9910,7 +9901,30 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if pac:
                 m = show_package_meta(apiurl, prj, pac)
                 metaroot = xml_fromstring(b''.join(m))
-                if not opts.nodevelproject:
+                if develprj_in_gitea:
+                    # Generate URL of the maintainership file by pulling package and branch name from devel project's scmsync attribute
+                    # The repository name is the second part of the path in the scmsync URL
+                    # e.g. https://src.opensuse.org/<repo>/_ObsPrj/raw/<branch_or_commit>/<fragment>/_maintainership.json
+                    repo = urlsplit(scmsync)[2].split('/')[1]
+                    # The #fragment at the end is either a branch name or a commit hash
+                    fragment = urlsplit(scmsync)[4]
+                    if fragment is None or len(fragment) == 0:
+                        raise oscerr.NotFoundAPIError('Devel project contains incomplete scmsync data')
+                    if re.fullmatch(r'[0-9a-fA-F]{40}', fragment):
+                        branch_or_commit = 'commit'
+                    else:
+                        branch_or_commit = 'branch'
+                    maint_file_url = f"https://src.opensuse.org/{repo}/_ObsPrj/raw/{branch_or_commit}/{fragment}/_maintainership.json"
+                    if opts.verbose:
+                        print(f"Fetching maintainership file from {maint_file_url}")
+                    response = http_request("GET", maint_file_url)
+                    response.auto_close = False
+                    if response.status == 200:
+                        devel_maintainers = json.loads(response.read().decode('utf-8'))
+                    else:
+                        raise oscerr.NotFoundAPIError(f"Maintainership file not found.\nDerived maintainership file URL {maint_file_url} from scmsync attribute {scmsync}\nHTTP response code: {response.status}")
+
+                elif not opts.nodevelproject:
                     while metaroot.findall('devel'):
                         d = metaroot.find('devel')
                         prj = d.get('project', prj)
@@ -9952,6 +9966,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     maintainers.setdefault(person.get('role'), []).append(person.get('userid'))
                 for group in metaroot.findall('group'):
                     maintainers.setdefault(group.get('role'), []).append("group:" + group.get('groupid'))
+                projects = [maintainers]
+            # from gitea devel project
+            if develprj_in_gitea:
+                maintainers = {}
+                for person in devel_maintainers[""]:
+                    maintainers.setdefault('maintainer', []).append(person)
                 projects = [maintainers]
 
             # showing the maintainers
@@ -10316,7 +10336,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         os.mkdir(destdir)
 
         Package.init_package(apiurl, target_prj, target_package, destdir)
-        store_write_string(destdir, '_files', b''.join(meta))
+        store_write_string(destdir, '_files', b''.join(meta) + b'\n')
         store_write_string(destdir, '_linkrepair', '')
         pac = Package(destdir)
 
@@ -10520,7 +10540,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         p.write_addlist()
         p.write_conflictlist()
         # store new linkrev
-        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5'))
+        store_write_string(p.absdir, '_pulled', linkinfo_new.get('srcmd5') + '\n')
         p.unmark_frozen()
         print()
         if p.in_conflict:
@@ -10695,8 +10715,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return 1
 
         if args and is_package_dir(args[0]):
-            store = osc_store.get_store(args[0])
-            apiurl = store.apiurl
+            apiurl = osc_store.Store(args[0]).apiurl
         else:
             apiurl = self.get_api_url()
 
