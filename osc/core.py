@@ -6490,9 +6490,15 @@ class MultibuildFlavorResolver:
 
         root = xml_fromstring(s)
         for node in root.findall("flavor"):
+            if node.text is None:
+                result.add("")
+                continue
             result.add(node.text)
         # <package> is deprecated according to OBS Multibuild.pm, but it is widely used
         for node in root.findall("package"):
+            if node.text is None:
+                result.add("")
+                continue
             result.add(node.text)
         return result
 
