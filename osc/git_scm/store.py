@@ -117,7 +117,10 @@ class LocalGitStore:
 
         if not self._git.current_branch:
             # branch is required for determining and storing metadata
-            msg = f"Directory '{path}' is not a Git SCM working copy because it has no branch or is in a detached HEAD state"
+            msg = (
+                f"Directory '{path}' contains a git repo that has no branch or is in a detached HEAD state.\n"
+                "If it is a Git SCM working copy, switch to a branch to continue."
+            )
             raise oscerr.NoWorkingCopy(msg)
 
         # 'package' is the default type that applies to all git repos that are not projects (we have no means of detecting packages)
