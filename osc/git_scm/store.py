@@ -117,7 +117,10 @@ class LocalGitStore:
 
         if not self._git.current_branch:
             # branch is required for determining and storing metadata
-            msg = f"Directory '{path}' is not a Git SCM working copy because it has no branch or is in a detached HEAD state"
+            msg = (
+                f"Directory '{path}' contains a git repo that has no branch or is in a detached HEAD state.\n"
+                "If it is a Git SCM working copy, switch to a branch to continue."
+            )
             raise oscerr.NoWorkingCopy(msg)
 
         # 'package' is the default type that applies to all git repos that are not projects (we have no means of detecting packages)
@@ -135,34 +138,44 @@ class LocalGitStore:
                 break
 
         if self.type == "project":
+            manifest_path = os.path.join(self._git.topdir, "_manifest")
+            subdirs_path = os.path.join(self._git.topdir, "_subdirs")
+
+            if os.path.exists(manifest_path):
+                self.manifest = Manifest.from_file(manifest_path)
+            elif os.path.exists(subdirs_path):
+                self.manifest = Subdirs.from_file(subdirs_path)
+            else:
+                # empty manifest considers all top-level directories as packages
+                self.manifest = Manifest({})
+
             if self._git.topdir != self.abspath:
-                manifest_path = os.path.join(self._git.topdir, "_manifest")
-                subdirs_path = os.path.join(self._git.topdir, "_subdirs")
-
-                if os.path.exists(manifest_path):
-                    self.manifest = Manifest.from_file(manifest_path)
-                elif os.path.exists(subdirs_path):
-                    self.manifest = Subdirs.from_file(subdirs_path)
-                else:
-                    # empty manifest considers all top-level directories as packages
-                    self.manifest = Manifest()
-
                 package_topdir = self.manifest.resolve_package_path(project_path=self._git.topdir, package_path=self.abspath)
                 if package_topdir:
                     self._type = "package"
                     self._topdir = package_topdir
+                    self.manifest = None
 
         self.project_store = None
         if self.type == "package":
             # load either .osc or .git project store from the directory above topdir
-            for cls in (Store, self.__class__):
+            if not self.project_store:
                 try:
-                    store = cls(os.path.join(self.topdir, ".."))
+                    store = Store(os.path.join(self.topdir, ".."))
                     store.assert_is_project()
                     self.project_store = store
-                    break
                 except oscerr.NoWorkingCopy:
                     pass
+
+            if not self.project_store:
+                try:
+                    # turn off 'check' because we want at least partial metadata to be inherited to the package
+                    store = GitStore(os.path.join(self.topdir, ".."), check=False)
+                    if store.type == "project":
+                        self.project_store = store
+                except oscerr.NoWorkingCopy:
+                    pass
+
         elif self.type == "project":
             # load .osc project store that is next to .git and may provide medatata we don't have
             try:
@@ -245,11 +258,28 @@ class LocalGitStore:
         for name in ["apiurl", "project"]:
             if not getattr(self, name):
                 missing.append(name)
+
         if missing:
-            msg = (
-                f"Git SCM project working copy doesn't have the following metadata set: {', '.join(missing)}\n"
-                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
-            )
+            msg = f"Git SCM project working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+
+            if "apiurl" in missing:
+                msg += (
+                    "\n"
+                    "To fix apiurl:\n"
+                    " - Run 'git-obs meta pull' to retrieve the 'obs_apiurl' value from 'obs/configuration' repo, 'main' branch, 'configuration.yaml' file\n"
+                    " - Run 'git-obs meta set --apiurl=...\n"
+                )
+
+            if "project" in missing:
+                msg += (
+                    "\n"
+                    "To fix project:\n"
+                    " - Set 'obs_project' in '_manifest' file\n"
+                    " - Run 'git-obs meta set --project=...\n"
+                )
+
+            msg += "\nCheck git-obs-metadata man page for more details"
+
             raise oscerr.NoWorkingCopy(msg)
 
     def assert_is_package(self):
@@ -261,11 +291,46 @@ class LocalGitStore:
         for name in ["apiurl", "project", "package"]:
             if not getattr(self, name):
                 missing.append(name)
+
         if missing:
-            msg = (
-                f"Git SCM package working copy doesn't have the following metadata set: {', '.join(missing)}\n"
-                "Use 'git-obs meta pull' or 'git-obs meta set' to fix that"
-            )
+            msg = f"Git SCM package working copy doesn't have the following metadata set: {', '.join(missing)}\n"
+
+            if self.project_store:
+                msg += f" - The package has a parent project checkout: {self.project_store.abspath}\n"
+            else:
+                msg += " - The package has no parent project checkout\n"
+
+            if "apiurl" in missing:
+                msg += "\n"
+                msg += "To fix apiurl:\n"
+                if self.project_store:
+                    msg += (
+                        " - Run 'git-obs meta pull' IN THE PROJECT in the parent directory to retrieve the 'obs_apiurl' value from 'obs/configuration' repo, 'main' branch, 'configuration.yaml' file\n"
+                        " - run 'git-obs meta set --apiurl=...' IN THE PROJECT\n"
+                    )
+                else:
+                    msg += (
+                        " - Run 'git-obs meta set --apiurl=...'\n"
+                    )
+
+            if "project" in missing:
+                msg += "\n"
+                msg += "To fix project:\n"
+
+                if self.project_store:
+                    msg += (
+                        " - Set 'obs_project' in '_manifest' file IN THE PROJECT\n"
+                        " - Run 'git-obs meta set --project=...' IN THE PROJECT\n"
+                    )
+                else:
+                    msg += (
+                        f" - Set 'obs_project' in the matching _ObsPrj git repo, '{self._git.current_branch}' branch, '_manifest' file\n"
+                        "   Run 'git-obs meta pull'\n"
+                        " - Run 'git-obs meta set --project=...'\n"
+                    )
+
+            msg += "\nCheck git-obs-metadata man page for more details"
+
             raise oscerr.NoWorkingCopy(msg)
 
     # APIURL

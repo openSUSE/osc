@@ -20,6 +20,7 @@ API:
    :maxdepth: 2
 
    git-obs-quickstart
+   git-obs-metadata
    api/modules
    plugins/index
    oscrc
