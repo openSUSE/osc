@@ -35,6 +35,13 @@
 %bcond_with fdupes
 %endif
 
+# use typeguard during build on distros where typeguard is available
+%if (0%{?suse_version} > 1500 || 0%{?fedora} >= 37)
+%bcond_without typeguard
+%else
+%bcond_with typeguard
+%endif
+
 # the macro exists only on openSUSE based distros
 %if %{undefined python3_fix_shebang}
 %define python3_fix_shebang %nil
@@ -87,6 +94,9 @@ BuildRequires:  %{use_python_pkg}-cryptography
 BuildRequires:  %{use_python_pkg}-devel >= 3.6
 BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
+%if %{with typeguard}
+BuildRequires:  %{use_python_pkg}-typeguard
+%endif
 BuildRequires:  %{use_python_pkg}-urllib3
 BuildRequires:  %{yaml_pkg}
 BuildRequires:  diffstat
