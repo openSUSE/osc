@@ -21,6 +21,7 @@ class Login(BaseModel):
     token: str = Field()  # type: ignore[assignment]
     ssh_key: Optional[str] = Field()  # type: ignore[assignment]
     git_uses_http: Optional[bool] = Field()  # type: ignore[assignment]
+    quiet: Optional[bool] = Field()  # type: ignore[assignment]
     default: Optional[bool] = Field()  # type: ignore[assignment]
 
     class AlreadyExists(oscerr.OscBaseError):
@@ -69,6 +70,8 @@ class Login(BaseModel):
             table.add("Private SSH key path", self.ssh_key)
         if self.git_uses_http:
             table.add("Git uses http(s)", "yes" if self.git_uses_http else "no")
+        if self.quiet:
+            table.add("Quiet", "yes" if self.quiet else "no")
         if show_token:
             # tokens are stored in the plain text, there's not reason to protect them too much
             # let's only hide them from the output by default
@@ -212,6 +215,7 @@ class Config:
         new_token: Optional[str] = None,
         new_ssh_key: Optional[str] = None,
         new_git_uses_http: Optional[bool] = None,
+        new_quiet: Optional[bool] = None,
         set_as_default: Optional[bool] = None,
     ) -> Login:
         login = self.get_login(name)
@@ -235,6 +239,9 @@ class Config:
         else:
             # remove from the config instead of setting to False
             login.git_uses_http = None
+
+        if new_quiet is not None:
+            login.quiet = new_quiet
 
         if set_as_default:
             login.default = True

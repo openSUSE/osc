@@ -19,6 +19,13 @@ class ForkCommand(osc.commandline.OscCommand):
     post_parse_args = osc.commandline_git.GitObsMainCommand.post_parse_args
     print_gitea_settings = osc.commandline_git.GitObsCommand.print_gitea_settings
 
+    def quiet(self):
+        if self.main_command.args.quiet:
+            return True
+        if self.gitea_login and self.gitea_login.quiet:
+            return True
+        return False
+
     def init_arguments(self):
         # inherit global options from the main git-obs command
         osc.commandline_git.GitObsMainCommand.init_arguments(self)
