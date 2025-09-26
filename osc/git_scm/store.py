@@ -111,7 +111,7 @@ class LocalGitStore:
         self._git = Git(path)
         self._check = check
 
-        if not self._git.topdir:
+        if not os.path.isdir(self.abspath) or not self._git.topdir:
             msg = f"Directory '{path}' is not a Git SCM working copy"
             raise oscerr.NoWorkingCopy(msg)
 
