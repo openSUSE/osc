@@ -203,7 +203,9 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             "--gitea-login",
             help=(
                 "Name of the login entry in the config file. Default: $GIT_OBS_LOGIN or the default entry from the config file.\n"
-                "Alternatively, you can omit this argument and set GIT_OBS_GITEA_URL, GIT_OBS_GITEA_USER, and GIT_OBS_GITEA_TOKEN environmental variables instead.\n"
+                "Alternatively, you can use gitea url as long as there's only a single matching entry in the config file.\n"
+                "\n"
+                "You can omit this argument and set GIT_OBS_GITEA_URL, GIT_OBS_GITEA_USER, and GIT_OBS_GITEA_TOKEN environmental variables instead.\n"
                 "Optional variables: GIT_OBS_GITEA_SSH_KEY\n"
                 "\n"
                 "To override the existing values from the config file, you can specify the following environmental variables:\n"
@@ -262,8 +264,17 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
 
     @property
     def gitea_login(self):
+        from . import gitea_api
+
         if self._gitea_login is None:
-            self._gitea_login = self.gitea_conf.get_login(name=self._args.gitea_login)
+            try:
+                self._gitea_login = self.gitea_conf.get_login(name=self._args.gitea_login)
+            except gitea_api.Login.DoesNotExist as e:
+                try:
+                    self._gitea_login = self.gitea_conf.get_login_by_url_user(url=self._args.gitea_login)
+                except gitea_api.Login.DoesNotExist:
+                    raise e
+
         return self._gitea_login
 
     @gitea_login.setter

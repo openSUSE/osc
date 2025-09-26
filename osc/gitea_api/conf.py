@@ -44,11 +44,20 @@ class Login(BaseModel):
                     " * either set the default entry by running `git-obs login update <login> --set-as-default`\n"
                     " * or run the command with `-G/--gitea-login <login>` option"
                 )
-            kwargs_str = ", ".join([f"{key}={value}" for key, value in self.kwargs.items()])
+            kwargs_str = ", ".join([f"{key}={value}" for key, value in self.kwargs.items() if value])
             return (
                 f"Could not find a matching Gitea config entry: {kwargs_str}\n"
                 " * see `git-obs login list` for valid entries"
             )
+
+    class MultipleEntriesReturned(oscerr.OscBaseError):
+        def __init__(self, **kwargs):
+            super().__init__()
+            self.kwargs = kwargs
+
+        def __str__(self):
+            kwargs_str = ", ".join([f"{key}={value}" for key, value in self.kwargs.items() if value])
+            return f"Multiple login entries returned for the following args: {kwargs_str}"
 
     def __init__(self, **kwargs):
         # ignore extra fields
@@ -150,16 +159,25 @@ class Config:
                 return login
         raise Login.DoesNotExist(name=name)
 
-    def get_login_by_url_user(self, url: str, user: str) -> Login:
+    def get_login_by_url_user(self, url: str, user: Optional[str] = None) -> Login:
         """
         Return ``Login`` object for the given ``url`` and ``user``.
         """
         from .git import Git
 
         # exact match
+        matches = []
         for login in self.list_logins():
-            if (login.url, login.user) == (url, user):
-                return login
+            if user is None:
+                if login.url == url:
+                    matches.append(login)
+            elif (login.url, login.user) == (url, user):
+                matches.append(login)
+
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) >= 2:
+            raise Login.MultipleEntriesReturned(url=url, user=user)
 
         def url_to_hostname(value):
             netloc = Git.urlparse(value).netloc
@@ -175,9 +193,18 @@ class Config:
             return netloc
 
         # match only hostname (netloc without 'user@' and ':port') + user
+        matches = []
         for login in self.list_logins():
-            if (url_to_hostname(login.url), login.user) == (url_to_hostname(url), user):
-                return login
+            if user is None:
+                if url_to_hostname(login.url) == url_to_hostname(url):
+                    matches.append(login)
+            elif (url_to_hostname(login.url), login.user) == (url_to_hostname(url), user):
+                matches.append(login)
+
+        if len(matches) == 1:
+            return matches[0]
+        if len(matches) >= 2:
+            raise Login.MultipleEntriesReturned(url=url, user=user)
 
         raise Login.DoesNotExist(url=url, user=user)
 
