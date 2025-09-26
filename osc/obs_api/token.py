@@ -94,7 +94,7 @@ class Token(XmlModel):
         ),
     )
 
-    triggered_at: str = Field(
+    triggered_at: Optional[str] = Field(
         xml_attribute=True,
         description=textwrap.dedent(
             """
