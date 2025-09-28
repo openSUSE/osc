@@ -285,15 +285,6 @@ Scenario: Run 'osc status'
         """
 
 
-Scenario: Run 'osc submitrequest'
-    When I execute osc with args "submitrequest"
-    Then the exit code is 1
-     And stderr is
-        """
-        Command 'osc submitrequest' is not supported with git. Use 'git-obs pr create' instead.
-        """
-
-
 Scenario: Run 'osc update'
     When I execute osc with args "update"
     Then the exit code is 1

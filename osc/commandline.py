@@ -2003,10 +2003,6 @@ class Osc(cmdln.Cmdln):
         from .core import store_read_project
         from .store import git_is_unsupported
 
-        if len(args) <= 2:
-            msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git-obs pr create' instead."
-            git_is_unsupported(".", msg)
-
         def _check_service(root):
             serviceinfo = root.find('serviceinfo')
             if serviceinfo is not None:
