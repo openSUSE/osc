@@ -56,5 +56,5 @@ def git_is_unsupported(path: str, msg: str):
         # not a working copy, we're not handling it
         return
 
-    if isinstance(store, git_scm.GitStore) or store.scmurl:
+    if isinstance(store, git_scm.GitStore) or (store.is_project and store.scmurl):
         raise oscerr.NoWorkingCopy(msg)
