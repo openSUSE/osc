@@ -13,7 +13,6 @@ openSUSE Commander (osc) is a command-line interface to the
 
 ## Installation
 
-
 Use osc directly from git if you're developing or testing it:
 
     # clone the sources
@@ -27,7 +26,6 @@ Use osc directly from git if you're developing or testing it:
     ./osc-wrapper.py ...
     ./git-obs.py ...
 
-
 RPM packages are available in the [openSUSE:Tools](http://download.opensuse.org/repositories/openSUSE:/Tools/) repository.
 
     zypper addrepo --repo http://download.opensuse.org/repositories/openSUSE:/Tools/openSUSE_Tumbleweed/openSUSE:Tools.repo
@@ -37,6 +35,12 @@ RPM packages are available in the [openSUSE:Tools](http://download.opensuse.org/
 
     zypper addrepo --repo http://download.opensuse.org/repositories/OBS:/Server:/Unstable/openSUSE_Factory/OBS:Server:Unstable.repo
     zypper install osc
+
+To install from git, do
+
+    pip3 install build
+    python3 -m build
+    pip3 install dist/osc-*.whl
 
 
 ## Configuration
