@@ -87,9 +87,12 @@ BuildRequires:  %{use_python_pkg}-cryptography
 BuildRequires:  %{use_python_pkg}-devel >= 3.6
 BuildRequires:  %{use_python_pkg}-rpm
 BuildRequires:  %{use_python_pkg}-setuptools
+BuildRequires:  %{use_python_pkg}-pip
+BuildRequires:  %{use_python_pkg}-wheel
 BuildRequires:  %{use_python_pkg}-urllib3
 BuildRequires:  %{yaml_pkg}
 BuildRequires:  diffstat
+BuildRequires:  python-rpm-macros
 %if %{with fdupes}
 BuildRequires:  fdupes
 %endif
@@ -177,7 +180,7 @@ for a general introduction.
     sed -i 's/ruamel\.yaml/PyYAML/g' setup.cfg
 %endif
 
-%{use_python} setup.py build
+%{expand:%%%{use_python_pkg}_pyproject_wheel}
 
 # write rpm macros
 cat << EOF > macros.osc
@@ -212,7 +215,7 @@ sphinx-build -b man doc .
 %endif
 
 %install
-%{use_python} setup.py install -O1 --skip-build --force --root %{buildroot} --prefix %{_prefix}
+%{expand:%%%{use_python_pkg}_pyproject_install}
 
 # symlink /usr/bin/git-obs to /usr/libexec/git/obs
 mkdir -p %{buildroot}%{_libexecdir}/git
