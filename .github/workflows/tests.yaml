@@ -151,6 +151,7 @@ jobs:
             sudo apt-get -y --no-install-recommends install libwww-perl
             # obs-scm-bridge is not available as a package at the moment, install it from github
             sudo pip3 config set global.break-system-packages 1
+            sudo pip3 install typeguard
             sudo pip3 install git+https://github.com/openSUSE/obs-scm-bridge
             sudo chmod a+x /usr/local/lib/*/*/obs_scm_bridge
             sudo mkdir -p /usr/lib/obs/service
@@ -173,4 +174,4 @@ jobs:
       - name: "Run tests"
         run: |
           cd behave
-          behave -Dosc=../osc-wrapper.py -Dgit-obs=../git-obs.py -Dgit-osc-precommit-hook=../git-osc-precommit-hook.py -Dpodman_max_containers=2
+          OSC_TYPEGUARD=1 behave -Dosc=../osc-wrapper.py -Dgit-obs=../git-obs.py -Dgit-osc-precommit-hook=../git-osc-precommit-hook.py -Dpodman_max_containers=2

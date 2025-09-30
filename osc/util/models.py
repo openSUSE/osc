@@ -834,7 +834,7 @@ class XmlModel(BaseModel):
         apiurl: str,
         path: List[str],
         query: Optional[dict] = None,
-        headers: Optional[str] = None,
+        headers: Optional[dict] = None,
         data: Optional[str] = None,
     ) -> urllib3.response.HTTPResponse:
         from ..connection import http_request
