@@ -10,6 +10,64 @@ from .connection import GiteaHTTPResponse
 from .user import User
 
 
+class PullRequestReview(GiteaModel):
+    @property
+    def state(self) -> str:
+        return self._data["state"]
+
+    @property
+    def user(self) -> Optional[str]:
+        if not self._data["user"]:
+            return None
+        return self._data["user"]["login"]
+
+    @property
+    def team(self) -> Optional[str]:
+        if not self._data["team"]:
+            return None
+        return self._data["team"]["name"]
+
+    @property
+    def who(self) -> str:
+        return self.user if self.user else f"@{self.team}"
+
+    @property
+    def submitted_at(self) -> str:
+        return self._data["submitted_at"]
+
+    @property
+    def updated_at(self) -> str:
+        return self._data["updated_at"]
+
+    @property
+    def body(self) -> str:
+        return self._data["body"]
+
+    @classmethod
+    def list(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+    ) -> List["PullRequestReview"]:
+        """
+        List reviews associated with a pull request.
+
+        :param conn: Gitea ``Connection`` instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request in owner/repo.
+        """
+        q = {
+            "limit": -1,
+        }
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews", query=q)
+        response = conn.request("GET", url)
+        obj_list = [cls(i, response=response) for i in response.json()]
+        return obj_list
+
+
 @functools.total_ordering
 class PullRequest(GiteaModel):
     def __eq__(self, other):
@@ -25,6 +83,9 @@ class PullRequest(GiteaModel):
         """
         match = re.match(r"^([^/]+)/([^/]+)[#!]([0-9]+)$", pr_id)
         if not match:
+            match = re.match(r"^([^/]+)/([^/]+)/pulls/([0-9]+)$", pr_id)
+
+        if not match:
             raise ValueError(f"Invalid pull request id: {pr_id}")
         return match.group(1), match.group(2), int(match.group(3))
 
@@ -39,8 +100,33 @@ class PullRequest(GiteaModel):
         parsed_url = urllib.parse.urlparse(url)
         path = parsed_url.path
         owner, repo, pulls, number = path.strip("/").split("/")
-        assert pulls in ("pulls", "issues")
+        if pulls not in ("pulls", "issues"):
+            raise ValueError(f"URL doesn't point to a pull request or an issue: {url}")
         return owner, repo, int(number)
+
+    def parse_pr_references(self) -> List[Tuple[str, str, int]]:
+        refs = re.findall(r"^PR: *(.*)$", self.body, re.M)
+        result = []
+
+        for ref in refs:
+            # try owner/repo#number first
+            try:
+                result.append(PullRequest.split_id(ref))
+                continue
+            except ValueError:
+                pass
+
+            # parse owner, repo, number from a pull request url
+            if ref.startswith(f"{self._conn.login.url.rstrip('/')}/"):
+                try:
+                    result.append(PullRequest.get_owner_repo_number(ref))
+                    continue
+                except ValueError:
+                    pass
+
+            raise ValueError(f"Unable to parse pull request reference: {ref}")
+
+        return result
 
     @property
     def is_pull_request(self):
@@ -124,6 +210,12 @@ class PullRequest(GiteaModel):
         return self._data["base"]["repo"]["ssh_url"]
 
     @property
+    def merge_base(self) -> Optional[str]:
+        if not self.is_pull_request:
+            return None
+        return self._data["merge_base"]
+
+    @property
     def head_owner(self) -> Optional[str]:
         if not self.is_pull_request:
             return None
@@ -197,6 +289,12 @@ class PullRequest(GiteaModel):
 
         return str(table)
 
+    def to_light_dict(self, exclude_columns: Optional[list] = None):
+        x = ["allow_maintainer_edit", "body"]
+        if exclude_columns:
+            x += exclude_columns
+        return self.dict(x)
+
     def dict(self, exclude_columns: Optional[list] = None):
         import inspect
 
@@ -260,7 +358,7 @@ class PullRequest(GiteaModel):
             "body": description,
         }
         response = conn.request("POST", url, json_data=data)
-        obj = cls(response.json(), response=response)
+        obj = cls(response.json(), response=response, conn=conn)
         return obj
 
     @classmethod
@@ -281,7 +379,7 @@ class PullRequest(GiteaModel):
         """
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
         response = conn.request("GET", url)
-        obj = cls(response.json(), response=response)
+        obj = cls(response.json(), response=response, conn=conn)
         return obj
 
     @classmethod
@@ -314,7 +412,7 @@ class PullRequest(GiteaModel):
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
         response = conn.request("PATCH", url, json_data=json_data)
-        obj = cls(response.json(), response=response)
+        obj = cls(response.json(), response=response, conn=conn)
         return obj
 
     @classmethod
@@ -343,7 +441,7 @@ class PullRequest(GiteaModel):
         }
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
         response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json()]
+        obj_list = [cls(i, response=response, conn=conn) for i in response.json()]
         return obj_list
 
     @classmethod
@@ -387,7 +485,7 @@ class PullRequest(GiteaModel):
         url = conn.makeurl("repos", "issues", "search", query=q)
         obj_list = []
         for response in conn.request_all_pages("GET", url):
-            obj_list.extend([cls(i, response=response) for i in response.json()])
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json()])
         return obj_list
 
     @classmethod
@@ -432,16 +530,11 @@ class PullRequest(GiteaModel):
         }
         return conn.request("POST", url, json_data=json_data)
 
-    @classmethod
     def get_reviews(
-        cls,
+        self,
         conn: Connection,
-        owner: str,
-        repo: str,
-        number: int,
-    ):
-        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
-        return conn.request("GET", url)
+    ) -> List[PullRequestReview]:
+        return PullRequestReview.list(conn, self.base_owner, self.base_repo, self.number)
 
     @classmethod
     def approve_review(
@@ -454,7 +547,8 @@ class PullRequest(GiteaModel):
         msg: Optional[str] = None,
         commit: Optional[str] = None,
         reviewer: Optional[str] = None,
-    ) -> GiteaHTTPResponse:
+        schedule_merge: bool = False,
+    ):
         """
         Approve review in a pull request.
         """
@@ -465,9 +559,14 @@ class PullRequest(GiteaModel):
 
         if reviewer:
             # group review bot is controlled via messages in comments
-            msg = f"@{reviewer} : approve\n\n" + (msg or "")
-            msg = msg.strip()
-            return cls.add_comment(conn, owner, repo, number, msg=msg)
+            new_msg = f"@{reviewer} : approve\n"
+            if schedule_merge:
+                new_msg += "merge ok\n"
+            new_msg += "\n"
+            new_msg += msg or ""
+            new_msg = new_msg.strip()
+            cls.add_comment(conn, owner, repo, number, msg=new_msg)
+            return
 
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
         # XXX[dmach]: commit_id has no effect; I thought it's going to approve if the commit matches with head and errors out otherwise
@@ -476,7 +575,10 @@ class PullRequest(GiteaModel):
             "body": msg,
             "commit_id": commit,
         }
-        return conn.request("POST", url, json_data=json_data)
+        conn.request("POST", url, json_data=json_data)
+
+        if schedule_merge:
+            cls.add_comment(conn, owner, repo, number, msg="merge ok")
 
     @classmethod
     def decline_review(
@@ -489,7 +591,7 @@ class PullRequest(GiteaModel):
         msg: str,
         commit: Optional[str] = None,
         reviewer: Optional[str] = None,
-    ) -> GiteaHTTPResponse:
+    ):
         """
         Decline review (request changes) in a pull request.
         """
@@ -497,7 +599,8 @@ class PullRequest(GiteaModel):
             # group review bot is controlled via messages in comments
             msg = f"@{reviewer} : decline\n\n" + (msg or "")
             msg = msg.strip()
-            return cls.add_comment(conn, owner, repo, number, msg=msg)
+            cls.add_comment(conn, owner, repo, number, msg=msg)
+            return
 
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews")
         json_data = {
@@ -505,7 +608,7 @@ class PullRequest(GiteaModel):
             "body": msg,
             "commit": commit,
         }
-        return conn.request("POST", url, json_data=json_data)
+        conn.request("POST", url, json_data=json_data)
 
     @classmethod
     def merge(

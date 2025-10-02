@@ -74,6 +74,11 @@ class IssueTimelineEntry(GiteaModel):
 
         return PullRequest.get_owner_repo_number(self._data["pull_request_url"])[2]
 
+    def is_empty(self) -> bool:
+        if self._data:
+            return not self._data.get("type", False)
+        return True
+
     def format(self):
         handler = getattr(self, f"_format_{self.type}", None)
         if handler is None:

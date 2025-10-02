@@ -9,9 +9,15 @@ from typing import Optional
 from typing import Tuple
 
 
+class SshParseResult(urllib.parse.ParseResult):
+    """
+    Class to distinguish parsed SSH URLs
+    """
+
+
 class Git:
     @staticmethod
-    def urlparse(url) -> urllib.parse.ParseResult:
+    def urlparse(url: str) -> urllib.parse.ParseResult:
         """
         Parse git url.
 
@@ -32,7 +38,7 @@ class Git:
             params = ''
             query = ''
             fragment = ''
-            result = urllib.parse.ParseResult(scheme, netloc, path, params, query, fragment)
+            result = SshParseResult(scheme, netloc, path, params, query, fragment)
             return result
 
         result = urllib.parse.urlparse(url)
@@ -41,6 +47,28 @@ class Git:
             result = urllib.parse.urlparse("https://" + url)
             result = urllib.parse.ParseResult("", *list(result)[1:])
         return result
+
+    @staticmethod
+    def urljoin(url: str, path: str) -> str:
+        """
+        Append ``path`` to ``url``.
+        """
+        parts = Git.urlparse(url)
+        # we're using os.path.normpath() and os.path.join() for working with URL paths, which may not be ideal, but seems to be working fine (on Linux)
+        # we need to remove leading forward slash from ``parts.path`` because ``os.path.normpath("/../")`` resolves to "/" and we don't want that
+        new_path = os.path.normpath(os.path.join(parts.path.lstrip("/"), path.lstrip("/")))
+
+        parts = parts._replace(path=new_path)
+
+        if isinstance(parts, SshParseResult):
+            new_url = f"{parts.netloc}:{parts.path}"
+        else:
+            new_url = urllib.parse.urlunparse(parts)
+
+        if new_path.startswith("../") or "/../" in new_path:
+            raise ValueError(f"URL must not contain relative path: {new_url}")
+
+        return new_url
 
     def __init__(self, workdir):
         self.abspath = os.path.abspath(workdir)
@@ -77,10 +105,21 @@ class Git:
             cmd += ["-q"]
         self._run_git(cmd, mute_stderr=mute_stderr)
 
-    def clone(self, url, directory: Optional[str] = None, quiet: bool = True):
+    def clone(self,
+        url: str,
+        *,
+        directory: Optional[str] = None,
+        reference: Optional[str] = None,
+        reference_if_able: Optional[str] = None,
+        quiet: bool = True
+    ):
         cmd = ["clone", url]
         if directory:
             cmd += [directory]
+        if reference:
+            cmd += ["--reference", reference]
+        if reference_if_able:
+            cmd += ["--reference-if-able", reference_if_able]
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd)
@@ -94,7 +133,27 @@ class Git:
         except subprocess.CalledProcessError:
             return None
 
-    def get_branch_head(self, branch: str) -> str:
+    def branch_contains_commit(self, commit: str, branch: Optional[str] = None, remote: Optional[str] = None) -> bool:
+        if not branch:
+            branch = self.current_branch
+
+        if remote:
+            try:
+                self._run_git(["merge-base", "--is-ancestor", commit, f"{remote}/{branch}"], mute_stderr=True)
+                return True
+            except subprocess.CalledProcessError:
+                return False
+
+        try:
+            stdout = self._run_git(["branch", branch, "--contains", commit, "--format", "%(objectname) %(objecttype) %(refname)"])
+            return stdout.strip() == f"{commit} commit refs/heads/{branch}"
+        except subprocess.CalledProcessError:
+            return False
+
+    def get_branch_head(self, branch: Optional[str] = None) -> str:
+        if not branch:
+            branch = self.current_branch
+
         return self._run_git(["rev-parse", f"refs/heads/{branch}"])
 
     def branch_exists(self, branch: str) -> bool:
@@ -199,12 +258,16 @@ class Git:
 
     def get_owner_repo(self, remote: Optional[str] = None) -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
-        if "@" in remote_url:
+        return self.get_owner_repo_from_url(remote_url)
+
+    @staticmethod
+    def get_owner_repo_from_url(url: str) -> Tuple[str, str]:
+        if "@" in url:
             # ssh://gitea@example.com:owner/repo.git
             # ssh://gitea@example.com:22/owner/repo.git
-            remote_url = remote_url.rsplit("@", 1)[-1]
-        parsed_remote_url = urllib.parse.urlparse(remote_url)
-        path = parsed_remote_url.path
+            url = url.rsplit("@", 1)[-1]
+        parsed_url = urllib.parse.urlparse(url)
+        path = parsed_url.path
         if path.endswith(".git"):
             path = path[:-4]
         owner, repo = path.strip("/").split("/")[-2:]
@@ -316,3 +379,54 @@ class Git:
         if porcelain:
             cmd += ["--porcelain"]
         return self._run_git(cmd)
+
+    # SUBMODULES
+
+    def get_submodules(self) -> dict:
+        SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
+        STATUS_RE = re.compile(r"^.(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
+
+        result = {}
+
+        try:
+            lines = self._run_git(["config", "--blob", "HEAD:.gitmodules", "--list"], mute_stderr=True).splitlines()
+        except subprocess.CalledProcessError:
+            # .gitmodules file is missing
+            return {}
+
+        for line in lines:
+            match = SUBMODULE_RE.match(line)
+            if not match:
+                continue
+            submodule = match.groupdict()["submodule"]
+            key = match.groupdict()["key"]
+            value = match.groupdict()["value"]
+            #if key == "url":
+            #    assert value.startswith("../../")
+            submodule_entry = result.setdefault(submodule, {})
+            submodule_entry[key] = value
+
+        lines = self._run_git(["submodule", "status"]).splitlines()
+
+        for line in lines:
+            match = STATUS_RE.match(line)
+            if not match:
+                continue
+            submodule = match.groupdict()["submodule"]
+            commit = match.groupdict()["commit"]
+            result[submodule]["commit"] = commit
+
+        remote_url = self.get_remote_url()
+        for submodule_entry in result.values():
+            url = submodule_entry["url"]
+            if not url.startswith("../../"):
+                submodule_entry["clone_url"] = url
+                continue
+ 
+            clone_url = self.urljoin(remote_url, submodule_entry["url"])
+            owner, repo = self.get_owner_repo_from_url(clone_url)
+            submodule_entry["clone_url"] = clone_url
+            submodule_entry["owner"] = owner
+            submodule_entry["repo"] = repo
+
+        return result
