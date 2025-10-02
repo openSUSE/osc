@@ -56,7 +56,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         if not pr_number and not branch:
             raise ValueError("Either 'pr_number' or 'branch' must be specified")
 
-        if not os.path.isdir(os.path.join(directory, ".git")):
+        if not os.path.exists(os.path.join(directory, ".git")):
             gitea_api.Repo.clone(
                 self.gitea_conn,
                 owner,
