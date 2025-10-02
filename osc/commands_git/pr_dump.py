@@ -291,14 +291,15 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             all_submodules = sorted(set(base_submodules) | set(head_submodules))
             for i in all_submodules:
 
-                if base_submodules[i]:
-                    url = base_submodules[i].get("url","")
+                if i in base_submodules:
+                    url = base_submodules[i].get("url", "")
                     if not url.startswith("../../"):
-                        print(f"Warning: incorrect path ({url}) in base submodule ({i})", file=sys.stderr)
-                else:
-                    url = base_submodules[i].get("url","")
-                    if url.startswith("../../"):
-                        print(f"Warning: incorrect path ({url}) in head submodule ({i})", file=sys.stderr)
+                        print(f"Warning: incorrect path '{url}' in base submodule '{i}'", file=sys.stderr)
+
+                if i in head_submodules:
+                    url = head_submodules[i].get("url", "")
+                    if not url.startswith("../../"):
+                        print(f"Warning: incorrect path '{url}' in head submodule '{i}'", file=sys.stderr)
 
                 if i in base_submodules and i not in head_submodules:
                     submodule_diff["removed"][i] = base_submodules[i]
