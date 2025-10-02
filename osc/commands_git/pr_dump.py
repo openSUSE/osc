@@ -95,7 +95,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
     def run(self, args):
         import json
-        import re
+        import shutil
         import sys
         from osc import gitea_api
         from osc import obs_api
@@ -236,6 +236,11 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     )
 
             metadata_dir = os.path.join(path, "metadata")
+            try:
+                # remove old metadata first to ensure that we never keep any of the old files on an update
+                shutil.rmtree(metadata_dir)
+            except FileNotFoundError:
+                pass
             os.makedirs(metadata_dir, exist_ok=True)
 
             with open(os.path.join(metadata_dir, "obs-request.xml"), "wb") as f:
