@@ -56,7 +56,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         if not pr_number and not branch:
             raise ValueError("Either 'pr_number' or 'branch' must be specified")
 
-        if not os.path.isdir(os.path.join(directory, ".git")):
+        if not os.path.exists(os.path.join(directory, ".git")):
             gitea_api.Repo.clone(
                 self.gitea_conn,
                 owner,
@@ -72,6 +72,9 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         assert git_repo == repo, f"repo does not match: {git_repo} != {repo}"
 
         if pr_number:
+            # ``git reset`` is required for fetching the pull request into an existing branch correctly
+            # without it, ``git submodule status`` is broken and returns old data
+            git.reset()
             # checkout the pull request and check if HEAD matches head/sha from Gitea
             pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
             git.switch(pr_branch)

@@ -170,8 +170,10 @@ class Git:
         except subprocess.CalledProcessError:
             return -1
 
-    def reset(self, commit: str, hard: bool = False):
-        cmd = ["reset", commit]
+    def reset(self, commit: Optional[str] = None, *, hard: bool = False):
+        cmd = ["reset"]
+        if commit:
+            cmd += [commit]
         if hard:
             cmd += ["--hard"]
         self._run_git(cmd)
