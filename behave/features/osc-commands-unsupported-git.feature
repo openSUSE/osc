@@ -281,7 +281,7 @@ Scenario: Run 'osc status'
     Then the exit code is 1
      And stderr is
         """
-        Command 'osc status' is not supported with git. User 'git status' instead.
+        Command 'osc status' is not supported with git. Use 'git status' instead.
         """
 
 

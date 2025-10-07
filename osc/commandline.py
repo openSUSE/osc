@@ -5691,7 +5691,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import statfrmt
         from .store import git_is_unsupported
 
-        msg = f"Command 'osc {subcmd}' is not supported with git. User 'git status' instead."
+        msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git status' instead."
         git_is_unsupported(".", msg)
 
         args = parseargs(args)
