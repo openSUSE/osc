@@ -308,7 +308,7 @@ class Git:
         """
         A generator function that returns chunks of bytes of the requested file.
         """
-        with subprocess.Popen(["git", "cat-file", "--filters", f"{ref}:{filename}"], stdout=subprocess.PIPE, cwd=self.abspath) as proc:
+        with subprocess.Popen(["git", "cat-file", "--filters", f"{ref}:{filename}"], stdout=subprocess.PIPE, stderr=subprocess.DEVNULL, cwd=self.abspath) as proc:
             assert proc.stdout is not None
             while True:
                 # 1MiB chunks are probably a good balance between memory consumption and performance
