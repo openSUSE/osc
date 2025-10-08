@@ -64,7 +64,11 @@ class TarDiff:
         for fn in os.listdir(self.path):
             if fn == ".git":
                 continue
-            shutil.rmtree(os.path.join(self.path, fn))
+            path = os.path.join(self.path, fn)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
         # extract archive
         # We use bsdtar, because tar cannot determine compression from stdin automatically.
