@@ -70,17 +70,13 @@ class TarDiff:
         # We use bsdtar, because tar cannot determine compression from stdin automatically.
         # Stripping the first path component works fine for regular source archives with %{name}/%{version}/ prefix
         # but it may need an improvement for other archives.
-        proc = subprocess.Popen(
-            ["bsdtar", "xf", "-", "--strip-components=1"],
-            stdin=subprocess.PIPE,
-            cwd=self.path,
-        )
-        assert proc.stdin is not None
-        for chunk in data:
-            proc.stdin.write(chunk)
-        proc.communicate()
-        if proc.returncode != 0:
-            raise RuntimeError(f"bsdtar returned {proc.returncode} while extracting {path}")
+        with subprocess.Popen(["bsdtar", "xf", "-", "--strip-components=1"], stdin=subprocess.PIPE, cwd=self.path) as proc:
+            assert proc.stdin is not None
+            for chunk in data:
+                proc.stdin.write(chunk)
+            proc.communicate()
+            if proc.returncode != 0:
+                raise RuntimeError(f"bsdtar returned {proc.returncode} while extracting {path}")
 
         # add files and commit
         self.git.add(["--all"])
