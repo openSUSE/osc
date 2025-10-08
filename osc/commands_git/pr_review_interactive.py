@@ -324,7 +324,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
             #   - ``git cat-file --format <commit>:<path>`` returns lfs metadata instead of the actual file while switched to another branch
             #   - ``git cat-file blob <oid> | git lfs smudge`` prints errors when a file is not part of lfs: Pointer file error: Unable to parse pointer at: "<unknown file>"
             pr_branch = f"pull/{number}"
-            base_git._run_git(["worktree", "add", "--force", head_path, pr_branch])
+            base_git._run_git(["worktree", "add", "--force", head_path, pr_branch], mute_stderr=True)
 
         head_git = gitea_api.Git(head_path)
 
