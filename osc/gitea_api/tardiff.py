@@ -58,8 +58,7 @@ class TarDiff:
             return branch
 
         # create an empty branch
-        self.git.switch(branch, orphan=True)
-        # TODO: mute stdout
+        self.git.switch(branch, orphan=True, quiet=True)
 
         # remove any existing contents but ".git" directory
         for fn in os.listdir(self.path):
@@ -87,7 +86,7 @@ class TarDiff:
         self.git.add(["--all"])
         self.git.commit(msg=f"import {filename} with checksum {checksum}")
 
-        self.git.switch("empty")
+        self.git.switch("empty", quiet=True)
 
         # TODO: git gc?
 

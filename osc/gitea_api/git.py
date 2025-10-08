@@ -178,8 +178,10 @@ class Git:
             cmd += ["--hard"]
         self._run_git(cmd)
 
-    def switch(self, branch: str, orphan: bool = False):
+    def switch(self, branch: str, *, orphan: bool = False, quiet: bool = False):
         cmd = ["switch"]
+        if quiet:
+            cmd += ["--quiet"]
         if orphan:
             cmd += ["--orphan"]
         cmd += [branch]

@@ -307,7 +307,7 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
         # the repo might be outdated, make sure the commits are available
         base_git.fetch()
-        base_git.switch(pr_obj.base_branch)
+        base_git.switch(pr_obj.base_branch, quiet=True)
         base_git.reset(pr_obj.base_commit, hard=True)
 
         head_path = self.get_git_repo_path(owner, repo, number, subdir="head")
