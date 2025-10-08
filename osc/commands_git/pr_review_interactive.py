@@ -239,60 +239,61 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
         if pr_obj is None:
             pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)
 
-        # the process works with bytes rather than with strings
-        # because the diffs may contain character sequences that cannot be decoded as utf-8 strings
-        proc = subprocess.Popen(["less"], stdin=subprocess.PIPE)
-        assert proc.stdin is not None
+        # The process works with bytes rather than with strings
+        # because the diffs may contain character sequences that cannot be decoded as utf-8 strings.
+        # It is also important to open the process as a context manager to properly terminate the pager if an exception occurs.
+        with subprocess.Popen(["less"], stdin=subprocess.PIPE) as proc:
+            assert proc.stdin is not None
 
-        # heading
-        heading = tty.colorize(f"[{pr_index + 1}/{pr_count}] Reviewing pull request '{owner}/{repo}#{number}'...\n", "yellow,bold")
-        proc.stdin.write(heading.encode("utf-8"))
-        proc.stdin.write(b"\n")
+            # heading
+            heading = tty.colorize(f"[{pr_index + 1}/{pr_count}] Reviewing pull request '{owner}/{repo}#{number}'...\n", "yellow,bold")
+            proc.stdin.write(heading.encode("utf-8"))
+            proc.stdin.write(b"\n")
 
-        # pr details
-        proc.stdin.write(pr_obj.to_human_readable_string().encode("utf-8"))
-        proc.stdin.write(b"\n")
-        proc.stdin.write(b"\n")
+            # pr details
+            proc.stdin.write(pr_obj.to_human_readable_string().encode("utf-8"))
+            proc.stdin.write(b"\n")
+            proc.stdin.write(b"\n")
 
-        # timeline
-        timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, number)
-        timeline_lines = []
-        timeline_lines.append(tty.colorize("Timeline:", "bold"))
-        for entry in timeline:
-            if entry._data is None:
-                timeline_lines.append(f"{tty.colorize('ERROR', 'red,bold,blink')}: Gitea returned ``None`` instead of a timeline entry")
-                continue
-            text, body = entry.format()
-            if text is None:
-                continue
-            timeline_lines.append(f"{gitea_api.dt_sanitize(entry.created_at)} {entry.user} {text}")
-            for line in (body or "").strip().splitlines():
-                timeline_lines.append(f"    | {line}")
-        proc.stdin.write(b"\n".join((line.encode("utf-8") for line in timeline_lines)))
-        proc.stdin.write(b"\n")
-        proc.stdin.write(b"\n")
+            # timeline
+            timeline = gitea_api.IssueTimelineEntry.list(self.gitea_conn, owner, repo, number)
+            timeline_lines = []
+            timeline_lines.append(tty.colorize("Timeline:", "bold"))
+            for entry in timeline:
+                if entry._data is None:
+                    timeline_lines.append(f"{tty.colorize('ERROR', 'red,bold,blink')}: Gitea returned ``None`` instead of a timeline entry")
+                    continue
+                text, body = entry.format()
+                if text is None:
+                    continue
+                timeline_lines.append(f"{gitea_api.dt_sanitize(entry.created_at)} {entry.user} {text}")
+                for line in (body or "").strip().splitlines():
+                    timeline_lines.append(f"    | {line}")
+            proc.stdin.write(b"\n".join((line.encode("utf-8") for line in timeline_lines)))
+            proc.stdin.write(b"\n")
+            proc.stdin.write(b"\n")
 
-        # patch
-        proc.stdin.write(tty.colorize("Patch:\n", "bold").encode("utf-8"))
-        patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, number)
-        patch = sanitize_text(patch)
-        patch = highlight_diff(patch)
-        proc.stdin.write(patch)
-        proc.stdin.write(b"\n")
+            # patch
+            proc.stdin.write(tty.colorize("Patch:\n", "bold").encode("utf-8"))
+            patch = gitea_api.PullRequest.get_patch(self.gitea_conn, owner, repo, number)
+            patch = sanitize_text(patch)
+            patch = highlight_diff(patch)
+            proc.stdin.write(patch)
+            proc.stdin.write(b"\n")
 
-        # tardiff
-        proc.stdin.write(tty.colorize("Archive diffs:\n", "bold").encode("utf-8"))
-        tardiff_chunks = self.tardiff(owner, repo, number, pr_obj=pr_obj)
-        for chunk in tardiff_chunks:
-            chunk = sanitize_text(chunk)
-            chunk = highlight_diff(chunk)
-            try:
-                proc.stdin.write(chunk)
-            except BrokenPipeError:
-                # user exits less before all data is written
-                break
+            # tardiff
+            proc.stdin.write(tty.colorize("Archive diffs:\n", "bold").encode("utf-8"))
+            tardiff_chunks = self.tardiff(owner, repo, number, pr_obj=pr_obj)
+            for chunk in tardiff_chunks:
+                chunk = sanitize_text(chunk)
+                chunk = highlight_diff(chunk)
+                try:
+                    proc.stdin.write(chunk)
+                except BrokenPipeError:
+                    # user exits less before all data is written
+                    break
 
-        proc.communicate()
+            proc.communicate()
 
     def get_tardiff_path(self):
         path = os.path.join("~", ".cache", "git-obs", "tardiff")
