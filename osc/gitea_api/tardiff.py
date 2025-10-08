@@ -58,36 +58,35 @@ class TarDiff:
             return branch
 
         # create an empty branch
-        self.git.switch(branch, orphan=True)
-        # TODO: mute stdout
+        self.git.switch(branch, orphan=True, quiet=True)
 
         # remove any existing contents but ".git" directory
         for fn in os.listdir(self.path):
             if fn == ".git":
                 continue
-            shutil.rmtree(os.path.join(self.path, fn))
+            path = os.path.join(self.path, fn)
+            if os.path.isdir(path):
+                shutil.rmtree(path)
+            else:
+                os.unlink(path)
 
         # extract archive
         # We use bsdtar, because tar cannot determine compression from stdin automatically.
         # Stripping the first path component works fine for regular source archives with %{name}/%{version}/ prefix
         # but it may need an improvement for other archives.
-        proc = subprocess.Popen(
-            ["bsdtar", "xf", "-", "--strip-components=1"],
-            stdin=subprocess.PIPE,
-            cwd=self.path,
-        )
-        assert proc.stdin is not None
-        for chunk in data:
-            proc.stdin.write(chunk)
-        proc.communicate()
-        if proc.returncode != 0:
-            raise RuntimeError(f"bsdtar returned {proc.returncode} while extracting {path}")
+        with subprocess.Popen(["bsdtar", "xf", "-", "--strip-components=1"], stdin=subprocess.PIPE, cwd=self.path) as proc:
+            assert proc.stdin is not None
+            for chunk in data:
+                proc.stdin.write(chunk)
+            proc.communicate()
+            if proc.returncode != 0:
+                raise RuntimeError(f"bsdtar returned {proc.returncode} while extracting {path}")
 
         # add files and commit
         self.git.add(["--all"])
         self.git.commit(msg=f"import {filename} with checksum {checksum}")
 
-        self.git.switch("empty")
+        self.git.switch("empty", quiet=True)
 
         # TODO: git gc?
 
