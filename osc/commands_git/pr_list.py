@@ -44,6 +44,12 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             help="Filter by draft flag. Exclude pull requests with draft flag set.",
         )
         self.add_argument(
+            "--label",
+            dest="labels",
+            action="append",
+            help="Filter by label. Can be specified multiple times.",
+        )
+        self.add_argument(
             "--export",
             action="store_true",
             help="Show json objects instead of human readable text",
@@ -62,6 +68,15 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             if args.no_draft:
                 pr_obj_list = [i for i in pr_obj_list if not i.draft]
 
+            if args.labels:
+                # Keep PRs that contain all the labels specified by the user
+                required_labels = set(args.labels)
+                print(f"Filtering by labels: {', '.join(required_labels)}", file=sys.stderr)
+                pr_obj_list = [
+                    pr for pr in pr_obj_list 
+                    if not required_labels.isdisjoint(set(pr.labels))
+                ]
+            
             if args.target_branches:
                 pr_obj_list = [i for i in pr_obj_list if i.base_branch in args.target_branches]
 
