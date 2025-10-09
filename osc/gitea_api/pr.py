@@ -1,5 +1,6 @@
 import functools
 import re
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -262,6 +263,10 @@ class PullRequest(GiteaModel):
         # HACK: search API returns issues, the URL needs to be transformed to a pull request URL
         return re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", self._data["url"])
 
+    @property
+    def labels(self) -> List[str]:
+        return [label["name"] for label in self._data.get("labels", [])]
+
     def to_human_readable_string(self):
         from osc.output import KeyValueTable
 
@@ -273,6 +278,8 @@ class PullRequest(GiteaModel):
         table.add("URL", self.url)
         table.add("Title", self.title)
         table.add("State", self.state)
+        if self.labels:
+            table.add("Labels", " ".join(self.labels))
         if self.is_pull_request:
             table.add("Draft", yes_no(self.draft))
             table.add("Merged", yes_no(self.merged))
@@ -698,3 +705,96 @@ class PullRequest(GiteaModel):
         response = conn.request("PATCH", url, json_data=json_data, context={"owner": owner, "repo": repo})
         obj = cls(response.json(), response=response, conn=conn)
         return obj
+
+    @classmethod
+    def _get_label_ids(cls, conn: Connection, owner: str, repo: str) -> Dict[str, int]:
+        """
+        Helper to map labels to their IDs
+        """
+        result = {}
+        url = conn.makeurl("repos", owner, repo, "labels")
+        response = conn.request("GET", url)
+        labels = response.json()
+        for label in labels:
+            result[label["id"]] = label["name"]
+        return result
+
+    @classmethod
+    def add_labels(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        labels: List[str],
+    ) -> "GiteaHTTPResponse":
+        """
+        Add one or more labels to a pull request.
+
+        :param conn: Gitea Connection instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request.
+        :param labels: A list of label names to add.
+        """
+        from .exceptions import GitObsRuntimeError
+
+        label_id_list = []
+        invalid_labels = []
+        label_name_id_map = cls._get_label_ids(conn, owner, repo)
+        for label in labels:
+            label_id = label_name_id_map.get(label, None)
+            if not label_id:
+                invalid_labels.append(label)
+                continue
+            label_id_list.append(label_id)
+        if invalid_labels:
+            msg = f"The following labels do not exist in {owner}/{repo}: {' '.join(invalid_labels)}"
+            raise GitObsRuntimeError(msg)
+
+        url = conn.makeurl("repos", owner, repo, "issues", str(number), "labels")
+        json_data = {
+            "labels": label_id_list,
+        }
+        return conn.request("POST", url, json_data=json_data)
+
+    @classmethod
+    def remove_labels(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        labels: List[str],
+    ):
+        """
+        Remove labels from a pull request.
+
+        :param conn: Gitea Connection instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request.
+        :param labels: A list of label names to remove.
+        """
+        from .exceptions import GitObsRuntimeError
+
+        label_id_list = []
+        invalid_labels = []
+        label_name_id_map = cls._get_label_ids(conn, owner, repo)
+        for label in labels:
+            label_id = label_name_id_map.get(label, None)
+            if not label_id:
+                invalid_labels.append(label)
+                continue
+            label_id_list.append(label_id)
+        if invalid_labels:
+            msg = f"The following labels do not exist in {owner}/{repo}: {' '.join(invalid_labels)}"
+            raise GitObsRuntimeError(msg)
+
+        # DELETE /repos/<owner>/<repo>/issues/<number>/labels with data == {"labels": [1, 2, 3, ...]} doesn't work and always deletes all labels.
+        # Retrieving all labels, filtering them and sending back is prone to race conditions.
+        # Let's trigger DELETE /repos/<owner>/<repo>/issues/<number>/labels/<id> instead to stay at the safe side.
+
+        for label_id in label_id_list:
+            url = conn.makeurl("repos", owner, repo, "issues", str(number), "labels", str(label_id))
+            conn.request("DELETE", url)
