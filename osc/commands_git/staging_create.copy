@@ -1,0 +1,175 @@
+import sys
+import osc.commandline_git
+
+import re
+from typing import List, Tuple, Optional
+import os
+
+## debugging
+from IPython import embed
+import pprint
+
+
+class StagingCommandGroup(osc.commandline_git.GitObsCommand):
+    """
+    Group together staging pull requests
+    """
+
+    name = "group"
+    aliases = []  # for compatibility with osc
+    parent = "StagingCommand"
+
+    def init_arguments(self):
+        from osc.commandline_git import complete_pr
+
+        self.add_argument_owner_repo_pull(dest="prs", nargs="+").completer = complete_pr
+        self.add_argument('--newtitle', required=False, help="The new title for the master PR.")
+        
+    def update_pr_comment(self, original_message: str, pr_list: List[Tuple[str, str, int]]) -> str:
+        """
+        Updates a message body with a new, consolidated list of PR references.
+
+        Returns:
+            The updated message string with the new PR list.
+        """
+        # 1. Format the list of tuples into a multi-line string block.
+        # Each line will be in the format "PR: org/repo!num".
+        new_pr_block = '\n'.join([f"PR: {org}/{repo}!{num}" for org, repo, num in pr_list])
+        new_pr_block = new_pr_block + '\n'  # Ensure it ends with a newline
+
+        # 2. Define a regex pattern to find the entire existing block of PR lines.
+        # (?:^PR:.*\r?\n?)+ looks for one or more consecutive lines starting with "PR:".
+        # The 're.MULTILINE' flag is essential for '^' to match the start of each line.
+        pattern = re.compile(r'(?:^PR:.*\r?\n?)+', re.MULTILINE)
+
+        # 3. Use re.subn() to replace the found block with our new one.
+        # re.subn() is useful because it tells us if a replacement was made.
+        updated_message, num_replacements = pattern.subn(new_pr_block, original_message, count=1)
+
+        # 4. If no replacements were made, it means there was no existing block.
+        if num_replacements == 0:
+            updated_message = new_pr_block
+
+        return updated_message.strip() 
+    
+    def clone_or_update(
+        self,
+        owner: str,
+        repo: str,
+        *,
+        pr_number: Optional[int] = None,
+        branch: Optional[str] = None,
+        commit: str,
+        directory: str,
+        reference: Optional[str] = None,
+    ):
+        from osc import gitea_api
+
+        if not pr_number and not branch:
+            raise ValueError("Either 'pr_number' or 'branch' must be specified")
+
+        if not os.path.exists(os.path.join(directory, ".git")):
+            gitea_api.Repo.clone(
+                self.gitea_conn,
+                owner,
+                repo,
+                directory=directory,
+                add_remotes=True,
+                reference=reference,
+            )
+
+        git = gitea_api.Git(directory)
+        git_owner, git_repo = git.get_owner_repo()
+        assert git_owner == owner, f"owner does not match: {git_owner} != {owner}"
+        assert git_repo == repo, f"repo does not match: {git_repo} != {repo}"
+
+        if pr_number:
+            # ``git reset`` is required for fetching the pull request into an existing branch correctly
+            # without it, ``git submodule status`` is broken and returns old data
+            git.reset()
+            # checkout the pull request and check if HEAD matches head/sha from Gitea
+            pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
+            git.switch(pr_branch)
+            head_commit = git.get_branch_head()
+            assert (
+                head_commit == commit
+            ), f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
+        elif branch:
+            git.switch(branch)
+
+            # run 'git fetch' only when the branch head is different to the expected commit
+            head_commit = git.get_branch_head()
+            if head_commit != commit:
+                git.fetch()
+
+            if not git.branch_contains_commit(commit=commit, remote="origin"):
+                raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
+            git.reset(commit, hard=True)
+        else:
+            raise ValueError("Either 'pr_number' or 'branch' must be specified")
+    
+    def run(self, args):
+        from osc import gitea_api
+        from osc.core import highlight_diff
+        from osc.output import tty
+
+        self.print_gitea_settings()
+
+        #pr_obj._data['labels'] 
+        num_entries = 0
+        failed_entries = []
+        all_pkg_prs : List[Tuple[str, str, int]] = []  
+        
+        all_prs: List[Tuple[str, str, str]] = [(args.master_pr[0], args.master_pr[1], args.master_pr[2])] + args.prs
+        
+        is_master = True
+        master_body = ""
+        
+        for owner, repo, pull in all_prs:
+            try:
+                pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, int(pull))
+                
+                if is_master:
+                    is_master = False
+                    master_owner = owner
+                    master_repo =   repo
+                    master_pr_obj = pr_obj
+                    master_body = pr_obj.body
+                
+                pkg_prs = pr_obj.parse_pr_references()
+                
+                if not pkg_prs:
+                    print(f"{tty.colorize('ERROR', 'red,bold')}: Couldn't find any package references in pull request {owner}/{repo}#{pull}", file=sys.stderr)
+                    sys.exit(1)
+                    
+                all_pkg_prs.extend(pkg_prs)
+                
+                pkg_prs_str = ', '.join(f"{org}/{repo}!{num}" for org, repo, num in pkg_prs)                
+                print(f"Pull request {owner}/{repo}#{pull} references packages: {pkg_prs_str}")  
+                
+                #pprint.pprint(vars(pr_obj))
+                #embed()
+                num_entries += 1
+            except gitea_api.GiteaException as e:
+                if e.status == 404:
+                    failed_entries.append(f"{owner}/{repo}#{pull}")
+                    continue
+                raise
+
+        new_master_body = self.update_pr_comment(master_body, all_pkg_prs)
+        print(new_master_body)
+        
+        print(pr_obj.base_branch)
+        print(pr_obj.merge_base)
+        
+        clone_dir = os.path.join(".", "base")
+        self.clone_or_update(master_owner, master_repo,  pr_number=master_pr_obj.number, commit=master_pr_obj.head_commit, directory=clone_dir)
+
+        
+        #print(f"Total entries: {num_entries}", file=sys.stderr)
+        if failed_entries:
+            print(
+                f"{tty.colorize('ERROR', 'red,bold')}: Couldn't retrieve the following pull requests: {', '.join(failed_entries)}",
+                file=sys.stderr,
+            )
+            sys.exit(1)

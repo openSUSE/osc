@@ -123,6 +123,17 @@ class Git:
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd)
+        
+    def checkout (self, ref: str, *, create_new: bool = False, track: bool = False, force: bool = False):
+        cmd = ["checkout"]
+        if create_new:
+            cmd += ["-b"]
+        if track:
+            cmd += ["--track"]
+        if force:
+            cmd += ["-f"]
+        cmd += [ref]
+        return self._run_git(cmd)
 
     # BRANCHES
 
@@ -316,6 +327,9 @@ class Git:
                 yield data
 
     # FILES
+    def has_changes(self) -> bool:
+        status = self.status(porcelain=True, untracked_files=True)
+        return bool(status.strip())
 
     def add(self, files: List[str]):
         self._run_git(["add", *files])
@@ -326,6 +340,16 @@ class Git:
             cmd += ["--allow-empty"]
         self._run_git(cmd)
 
+    def push(self, remote: Optional[str] = None, branch: Optional[str] = None, *, force: bool = False):
+        cmd = ["push"]
+        if force:
+            cmd += ["--force"]
+        if remote:
+            cmd += [remote]
+            if branch:
+                cmd += [branch]
+        self._run_git(cmd)
+        
     def ls_files(self, ref: str = "HEAD", suffixes: Optional[List[str]] = None) -> Dict[str, str]:
         out = self._run_git(["ls-tree", "-r", "--format=%(objectname) %(path)", ref])
         regex = re.compile(r"^(?P<checksum>[0-9a-f]+) (?P<path>.*)$")
@@ -383,6 +407,32 @@ class Git:
         return self._run_git(cmd)
 
     # SUBMODULES
+    
+    def submodule_status(self, submod: str) -> str:
+        try:
+            return self._run_git(["submodule", "status", "--", submod], mute_stderr=True)
+        except subprocess.CalledProcessError:
+            return None
+        
+    def submodule_update(self, submod, *, init: bool = False, recursive: bool = False, quiet: bool = True):
+        cmd = ["submodule", "update"]
+        if init:
+            cmd += ["--init"]
+        if recursive:
+            cmd += ["--recursive"]
+        if quiet:
+            cmd += ["-q"]
+        cmd += ["--", submod]
+        self._run_git(cmd)
+         
+    def submodule_add (self, url: str, path: str, *, branch: Optional[str] = None, quiet: bool = True):
+        cmd = ["submodule", "add"]
+        if branch:
+            cmd += ["-b", branch]
+        if quiet:
+            cmd += ["-q"]
+        cmd += [url, path]
+        self._run_git(cmd)  
 
     def get_submodules(self) -> dict:
         SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
