@@ -60,6 +60,7 @@ class GiteaModel:
 def get_editor() -> List[str]:
     import shutil
     import shlex
+    from .exceptions import GitObsRuntimeError
 
     editor = os.getenv("EDITOR", None)
     if editor:
@@ -80,7 +81,7 @@ def get_editor() -> List[str]:
             break
 
     if not editor_path:
-        raise RuntimeError(f"Unable to start editor '{candidates[0]}'")
+        raise GitObsRuntimeError(f"Unable to start editor '{candidates[0]}'")
 
     res = [editor_path]
     if args:

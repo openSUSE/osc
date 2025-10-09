@@ -146,7 +146,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             message = message.strip()
 
             if not message:
-                raise RuntimeError("Aborting operation due to empty title and description.")
+                raise gitea_api.GitObsRuntimeError("Aborting operation due to empty title and description.")
 
             parts = re.split(r"\n\n", message, 1)
             if len(parts) == 1:

@@ -61,6 +61,10 @@ class GiteaException(oscerr.OscBaseError):
         return result
 
 
+class GitObsRuntimeError(oscerr.OscBaseError):
+    pass
+
+
 class MovedPermanently(GiteaException):
     RESPONSE_STATUS = 301
     RESPONSE_MESSAGE_RE = [
