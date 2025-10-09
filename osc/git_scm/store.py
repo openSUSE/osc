@@ -541,6 +541,10 @@ class GitStore(LocalGitStore):
                 with open(path, "r", encoding="utf-8") as f:
                     result = f.read().strip() or None
 
+        # package = directory name; package must be part of a project checkout
+        if result is None and self.is_package and self.project_store is not None and field_name == "package":
+            result = os.path.basename(self.topdir)
+
         # package = repo name from the current remote url
         if result is None and self.is_package and field_name == "package":
             remote_url = self._git.get_remote_url()
