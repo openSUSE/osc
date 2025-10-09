@@ -584,11 +584,11 @@ class GitStore(LocalGitStore):
         # read apiurl and project from _manifest that lives in <owner>/_ObsPrj, matching <branch>
         # XXX: when the target branch doesn't exist, file from the default branch is returned
         if self.is_package:
-            try:
-                owner, _ = self._git.get_owner_repo()
-                repo = "_ObsPrj"
-                branch = self._git.current_branch
+            owner, _ = self._git.get_owner_repo()
+            repo = "_ObsPrj"
+            branch = self._git.current_branch
 
+            try:
                 url = gitea_conn.makeurl("repos", owner, repo, "raw", "_manifest", query={"ref": branch})
                 response = gitea_conn.request("GET", url)
                 if response.data:
@@ -601,7 +601,19 @@ class GitStore(LocalGitStore):
                 if e.status != 404:
                     raise
 
-        # read apiurl from the global configuration in obs/configuration. branch
+            if not project:
+                try:
+                    url = gitea_conn.makeurl("repos", owner, repo, "raw", "project.build", query={"ref": branch})
+                    response = gitea_conn.request("GET", url)
+                    if response.data:
+                        value = response.data.decode("utf-8").strip()
+                        if value:
+                            project = value
+                except gitea_api.GiteaException as e:
+                    if e.status != 404:
+                        raise
+
+        # read apiurl from the global configuration in obs/configuration, 'main' branch, 'configuration.yaml' file
         if not apiurl:
             try:
                 url = gitea_conn.makeurl("repos", "obs", "configuration", "raw", "configuration.yaml", query={"ref": "main"})
