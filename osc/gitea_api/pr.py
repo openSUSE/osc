@@ -552,10 +552,12 @@ class PullRequest(GiteaModel):
         """
         Approve review in a pull request.
         """
+        from .exceptions import GitObsRuntimeError
+
         if commit:
             pr_obj = cls.get(conn, owner, repo, number)
             if pr_obj.head_commit != commit:
-                raise RuntimeError("The pull request '{owner}/{repo}#{number}' has changed during the review")
+                raise GitObsRuntimeError("The pull request '{owner}/{repo}#{number}' has changed during the review")
 
         if reviewer:
             # group review bot is controlled via messages in comments

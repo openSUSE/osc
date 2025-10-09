@@ -5,6 +5,7 @@ from .exceptions import BranchDoesNotExist
 from .exceptions import BranchExists
 from .exceptions import ForkExists
 from .exceptions import GiteaException
+from .exceptions import GitObsRuntimeError
 from .exceptions import RepoExists
 from .exceptions import UserDoesNotExist
 from .exceptions import response_to_exception
