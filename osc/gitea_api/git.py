@@ -8,6 +8,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from . import exceptions
+
 
 class SshParseResult(urllib.parse.ParseResult):
     """
@@ -262,6 +264,8 @@ class Git:
 
     def get_owner_repo(self, remote: Optional[str] = None) -> Tuple[str, str]:
         remote_url = self.get_remote_url(name=remote)
+        if not remote_url:
+            raise exceptions.GitObsRuntimeError("Couldn't determine owner and repo due to a missing remote")
         return self.get_owner_repo_from_url(remote_url)
 
     @staticmethod
