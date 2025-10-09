@@ -7710,7 +7710,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('-X', '--extra-pkgs-from', metavar='FILE', action='append',
                   help='Add packages listed in this file when installing the build-root')
     @cmdln.option('--root', metavar='ROOT',
-                  help='Build in specified directory')
+                  help='Build in the specified directory. See oscrc(5) for supported substitutions.')
     @cmdln.option('-j', '--jobs', metavar='N',
                   help='Compile with N jobs')
     @cmdln.option('-t', '--threads', metavar='N',
@@ -7938,30 +7938,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if not opts.vm_type:
                 opts.vm_type = store.last_buildroot[2]
 
-        if opts.just_print_buildroot:
+        def get_build_root():
             if opts.root:
-                build_root = opts.root
-            else:
-                args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
-                repo, arch, build_descr = args
-                prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
-                apihost = urlsplit(self.get_api_url())[1]
-                user = osc_build.calculate_build_root_user(opts.vm_type)
-                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
+                conf.config["build-root"] = opts.root
+            repo, arch, build_descr = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
+            prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
+            apihost = urlsplit(self.get_api_url())[1]
+            user = osc_build.calculate_build_root_user(opts.vm_type)
+            return osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
+
+        if opts.just_print_buildroot:
+            build_root = get_build_root()
             print(build_root)
             return
 
         vm_chroot = opts.vm_type or conf.config['build-type']
         if (subcmd in ('shell', 'chroot') or opts.shell or opts.wipe) and not vm_chroot:
-            if opts.root:
-                build_root = opts.root
-            else:
-                args = self.parse_repoarchdescr(args, opts.noinit or opts.offline, opts.alternative_project, False, opts.vm_type, opts.multibuild_package)
-                repo, arch, build_descr = args
-                prj, pac = osc_build.calculate_prj_pac(store, opts, build_descr)
-                apihost = urlsplit(self.get_api_url())[1]
-                user = osc_build.calculate_build_root_user(opts.vm_type)
-                build_root = osc_build.calculate_build_root(apihost, prj, pac, repo, arch, user)
+            build_root = get_build_root()
             if opts.wipe and not opts.force:
                 # Confirm delete
                 reply = get_user_input(
