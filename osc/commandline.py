@@ -7558,7 +7558,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         repositories = []
         # store list of repos for potential offline use
         if noinit:
-            repositories = store_obj.build_repositories
+            repositories = store_obj.build_repositories or []
         else:
             project = alternative_project or store_read_project('.')
             apiurl = self.get_api_url()
