@@ -160,7 +160,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_nested_pkg_osc_project_from_git(self):
         # project .git and .osc are next to each other
@@ -179,7 +179,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_nested_pkg_osc_project_from_git_both_subdirs_and_manifest(self):
         # project .git and .osc are next to each other
@@ -204,7 +204,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_manifest_packages(self):
         # project .git and .osc are next to each other
@@ -221,7 +221,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_manifest_subdirectories(self):
         # project .git and .osc are next to each other
@@ -238,7 +238,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_manifest_apiurl_project(self):
         # project .git and .osc are next to each other
@@ -258,7 +258,7 @@ class TestGitStoreProject(unittest.TestCase):
         store = GitStore(pkg_path)
         self.assertEqual(store.apiurl, "https://api.example.com")
         self.assertEqual(store.project, "example-project")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_pkg_git_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
@@ -271,7 +271,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_pkg_git_project_with_config_without_pbuild(self):
         prj_path = os.path.join(self.tmpdir, "project")
@@ -284,7 +284,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_pkg_git_project_without_config_with_pbuild(self):
         prj_path = os.path.join(self.tmpdir, "project")
@@ -297,7 +297,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_pkg_separate_git_dir_git_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
@@ -311,7 +311,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path, check=False)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "my-package")
+        self.assertEqual(store.package, "package")
 
     def test_pkg_git_with_no_project(self):
         prj_path = os.path.join(self.tmpdir, "project")
@@ -348,7 +348,7 @@ class TestGitStoreProject(unittest.TestCase):
 
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
-        self.assertEqual(store.package, "pkg-upstream")
+        self.assertEqual(store.package, "pkg")
 
 
 if __name__ == "__main__":

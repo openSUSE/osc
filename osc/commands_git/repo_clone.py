@@ -19,6 +19,12 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
         self.add_argument_owner_repo(nargs="+")
 
         self.add_argument(
+            "-b",
+            "--branch",
+            help="Checkout the specified branch",
+        )
+
+        self.add_argument(
             "-a",
             "--anonymous",
             action="store_true",
@@ -46,7 +52,7 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
 
     def run(self, args):
         from osc import gitea_api
-
+        from osc.git_scm.store import GitStore
         from osc.output import tty
 
         self.print_gitea_settings()
@@ -59,16 +65,19 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
         for owner, repo in args.owner_repo:
             print(f"Cloning git repo {owner}/{repo} ...", file=sys.stderr)
             try:
-                gitea_api.Repo.clone(
+                repo_path = gitea_api.Repo.clone(
                     self.gitea_conn,
                     owner,
                     repo,
+                    branch=args.branch,
                     directory=args.directory,
                     use_http=args.anonymous or self.gitea_login.git_uses_http,
                     add_remotes=True,
                     ssh_private_key_path=args.ssh_key or self.gitea_login.ssh_key,
                     ssh_strict_host_key_checking=not(args.no_ssh_strict_host_key_checking),
                 )
+                store = GitStore(repo_path, check=False)
+                store.pull(self.gitea_conn)
                 num_entries += 1
             except gitea_api.GiteaException as e:
                 if e.status == 404:

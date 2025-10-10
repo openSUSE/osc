@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import typing
 import urllib.parse
+from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -16,7 +17,8 @@ from ..util.models import Field
 
 
 if typing.TYPE_CHECKING:
-    from .core import Repo
+    from ..core import Repo
+    from ..obs_api import GiteaConnection
 
 
 class Header(BaseModel):
@@ -539,6 +541,10 @@ class GitStore(LocalGitStore):
                 with open(path, "r", encoding="utf-8") as f:
                     result = f.read().strip() or None
 
+        # package = directory name; package must be part of a project checkout
+        if result is None and self.is_package and self.project_store is not None and field_name == "package":
+            result = os.path.basename(self.topdir)
+
         # package = repo name from the current remote url
         if result is None and self.is_package and field_name == "package":
             remote_url = self._git.get_remote_url()
@@ -570,3 +576,69 @@ class GitStore(LocalGitStore):
     @property
     def scmurl(self) -> Optional[str]:
         return self._git.get_remote_url()
+
+    def pull(self, gitea_conn) -> Dict[str, Optional[str]]:
+        from osc.git_scm.configuration import Configuration
+        from osc.git_scm.manifest import Manifest
+        from .. import gitea_api
+
+        apiurl = None
+        project = None
+
+        # read apiurl and project from _manifest that lives in <owner>/_ObsPrj, matching <branch>
+        # XXX: when the target branch doesn't exist, file from the default branch is returned
+        if self.is_package:
+            owner, _ = self._git.get_owner_repo()
+            repo = "_ObsPrj"
+            branch = self._git.current_branch
+
+            try:
+                url = gitea_conn.makeurl("repos", owner, repo, "raw", "_manifest", query={"ref": branch})
+                response = gitea_conn.request("GET", url)
+                if response.data:
+                    manifest = Manifest.from_string(response.data.decode("utf-8"))
+                    if manifest.obs_apiurl:
+                        apiurl = manifest.obs_apiurl
+                    if manifest.obs_project:
+                        project = manifest.obs_project
+            except gitea_api.GiteaException as e:
+                if e.status != 404:
+                    raise
+
+            if not project:
+                try:
+                    url = gitea_conn.makeurl("repos", owner, repo, "raw", "project.build", query={"ref": branch})
+                    response = gitea_conn.request("GET", url)
+                    if response.data:
+                        value = response.data.decode("utf-8").strip()
+                        if value:
+                            project = value
+                except gitea_api.GiteaException as e:
+                    if e.status != 404:
+                        raise
+
+        # read apiurl from the global configuration in obs/configuration, 'main' branch, 'configuration.yaml' file
+        if not apiurl:
+            try:
+                url = gitea_conn.makeurl("repos", "obs", "configuration", "raw", "configuration.yaml", query={"ref": "main"})
+                response = gitea_conn.request("GET", url)
+                if response.data:
+                    configuration = Configuration.from_string(response.data.decode("utf-8"))
+                    if configuration.obs_apiurl:
+                        apiurl = configuration.obs_apiurl
+            except gitea_api.GiteaException as e:
+                if e.status != 404:
+                    raise
+
+        if apiurl:
+            self.set_apiurl(apiurl)
+
+        if project:
+            self.set_project(project)
+
+        # return the values we've set
+        result = {
+            "apiurl": apiurl,
+            "project": project,
+        }
+        return result
