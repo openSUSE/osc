@@ -1,3 +1,54 @@
+- 1.21.0
+  - Command-line:
+    - Modify osc subcommands to error out if they don't work with git
+    - Add 'git-obs meta' commands for managing the local metadata
+    - Add 'git-obs meta info' command for printing resolved metadata about the current checkout
+    - Add -b/--branch option to 'git-obs repo clone' command
+    - Add 'git-obs pr dump' command to store pull request information on disk
+    - Add 'git-obs --quiet' option (that mutes printing gitea settings now)
+    - Automatially pull meta after 'git-obs repo clone'
+    - Change 'git-obs pr review interactive' to write 'merge ok' comment instead of scheduling a merge
+    - Mute stderr when creating a worktree in 'git-obs pr review interactive'
+    - Change 'git-obs -G' to accept url to select a gitea login entry
+    - Support substitutions in 'osc build --root'
+    - Fix crash in 'osc build' when 'build_repositories' in store was None
+    - Fix filtering by reviewers in 'git-obs pr list'
+    - Update 'osc rq show' command to include history comments in verbose mode
+  - Library:
+    - Refactor GitStore
+      - Migrate git_scm.Store over to gitea_api.Git
+      - Store buildinfo and buildconfig files in GitStore's cache instead directly in the repo
+      - Move code from 'git-obs meta pull' command to GitStore.pull()
+      - Improve GitStore.pull() to support reading project from project.build
+      - Rephrase the error message about detached HEAD in GitStore
+      - Improve GitStore's error messages by adding instructions on how to fix missing metadata
+      - Be more permissive when loading parent project_store in GitStore
+      - Fix loading _manifest in a project git
+      - Fix git store to check if all the required fields are present
+    - Derive package name from topdir if a package is part of a project checkout
+    - Change 'git-obs pr review interactive' to run pager process as a context manager
+    - Change obs_api.TarDiff to spawn a process extracting archives as a context manager
+    - Change 'commit' argument in gitea_api.Git.reset() to optional
+    - Add gitea_api.Git.get_owner_repo_from_url() staticmethod
+    - Add gitea_api.Git.urljoin() static method
+    - Fix gitea_api.Git.get_branch_head() to raise a proper exception if the HEAD cannot be retrieved
+    - Fix gitea_api.Git to work with the current remote instead of 'origin'
+    - Fix get_store() to throw the exception from git store if .osc directory is not present
+    - Introduce GitObsRuntimeError exception and use it where appropriate
+    - Fix tardiff by removing directories with shutil.rmtree() and files by os.unlink()
+    - Add 'quiet' option to gitea_api.Git.switch()
+    - Mute stderr in git_obs.Git.lfs_cat_file()
+    - Treat None flavor as "" in multibuild resolve
+    - Make Token.triggered_at optional as it's not available in the oficially released OBS code
+    - Add BaseModel.from_string() and BaseModel.to_string() methods
+    - Add BaseModel.from_file() and BaseModel.to_file() methods
+    - Fix BaseModel to initialize from a dictionary via __init__ instead of setattr
+  - Docs:
+    - Update docs for the new git metadata store
+    - Update list of recommended gitea permissions in git-obs-quickstart
+  - Spec:
+    - Install git-obs-metadata man page
+
 - 1.20.0
   - Command-line:
     - Fix 'osc fork' command to use the right tracking branch
