@@ -156,7 +156,10 @@ class Git:
         if not branch:
             branch = self.current_branch
 
-        return self._run_git(["rev-parse", f"refs/heads/{branch}"])
+        try:
+            return self._run_git(["rev-parse", f"refs/heads/{branch}"], mute_stderr=True)
+        except subprocess.CalledProcessError:
+            raise exceptions.GitObsRuntimeError(f"Unable to retrieve HEAD from branch '{branch}'. Does the branch exist?")
 
     def branch_exists(self, branch: str) -> bool:
         try:
