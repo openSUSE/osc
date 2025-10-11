@@ -71,10 +71,9 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             if args.labels:
                 # Keep PRs that contain all the labels specified by the user
                 required_labels = set(args.labels)
-                print(f"Filtering by labels: {', '.join(required_labels)}", file=sys.stderr)
                 pr_obj_list = [
                     pr for pr in pr_obj_list 
-                    if not required_labels.isdisjoint(set(pr.labels))
+                        if not required_labels.isdisjoint(set(pr.labels))
                 ]
             
             if args.target_branches:

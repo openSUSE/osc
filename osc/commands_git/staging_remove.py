@@ -2,18 +2,14 @@ import sys
 import osc.commandline_git
 
 import re
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import os
 from osc.gitea_api.utilities.git_utilities import GitUtilities as git_utilities
-
-## debugging
-from IPython import embed
-import pprint
 
 BACKLOG_LABEL = "staging_backlog"
 INPROGRESS_LABEL = "staging_inprogress"
 
-class StagingCommandRemove(osc.commandline_git.GitObsCommand):
+class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
     """
     Group together staging pull requests
     """
@@ -25,7 +21,7 @@ class StagingCommandRemove(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         from osc.commandline_git import complete_pr
 
-        self.add_argument_owner_repo_pull(dest="prs", nargs="+").completer = complete_pr
+        self.add_argument_owner_repo_pull(dest="pr_list", nargs="+").completer = complete_pr
         self.add_argument('--workdir', required=True, help="Working directory for git operations.")
         self.add_argument('--grouped-pr', dest="grouped_pr", required=True, help="An existing grouped PR to update (e.g., owner/repo#number).")
     
@@ -75,8 +71,10 @@ class StagingCommandRemove(osc.commandline_git.GitObsCommand):
             sys.exit(1)
             
         fwd_prs_to_remove = []
-        for pr in args.prs:
-            # the user can specify either the package PR or the forwarding PR
+        for pr in args.pr_list:
+            owner,repo,pull = pr
+
+            # the user can specify either the package PR or the forwarding PR            
             if fwd_to_package.get(pr):
                 fwd_prs_to_remove.append(pr)
             else:

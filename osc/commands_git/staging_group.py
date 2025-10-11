@@ -5,10 +5,6 @@ import re
 from typing import List, Tuple, Optional
 import os
 
-## debugging
-from IPython import embed
-import pprint
-
 from osc.gitea_api.utilities.git_utilities import GitUtilities as git_utilities
 
 #from gitea_api import Git
@@ -16,7 +12,7 @@ from osc.gitea_api.utilities.git_utilities import GitUtilities as git_utilities
 BACKLOG_LABEL = "staging_backlog"
 INPROGRESS_LABEL = "staging_inprogress"
 
-class StagingCommandGroup(osc.commandline_git.GitObsCommand):
+class StagingGroupCommand(osc.commandline_git.GitObsCommand):
     """
     Group together staging pull requests
     """
@@ -28,7 +24,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         from osc.commandline_git import complete_pr
 
-        self.add_argument_owner_repo_pull(dest="prs", nargs="+").completer = complete_pr
+        self.add_argument_owner_repo_pull(dest="pr_list", nargs="+").completer = complete_pr
         self.add_argument('--title', required=True, help="The new title for the staging PR.")
         self.add_argument('--branch', required=False, help="The branch to use for the staging PR.")
         self.add_argument('--workdir', required=True, help="Working directory for git operations.")
@@ -43,8 +39,6 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
-        #pr_obj._data['labels'] 
-        num_entries = 0
         failed_entries = []
         prj_pkg_prs = []
         all_pkg_prs : List[Tuple[str, str, int]] = []  
@@ -88,12 +82,10 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                 
                 
         # Get package pull requests
-        for owner, repo, pull in args.prs:
+        for owner, repo, pull in args.pr_list:
             try:
                 pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, int(pull))
-                
-                #embed()
-                
+                                
                 if base_branch is None and base_owner is None and base_repo is None:
                     base_branch = pr_obj.base_branch
                     base_owner = owner
@@ -119,11 +111,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                     
                 
                 pkg_prs_str = ', '.join(f"{org}/{repo}!{num}" for org, repo, num in pkg_prs)                
-                print(f"Pull request {owner}/{repo}#{pull} references packages: {pkg_prs_str}")  
-                
-                #pprint.pprint(vars(pr_obj))
-                #embed()
-                num_entries += 1
+                print(f"Pull request {owner}/{repo}#{pull} references packages: {pkg_prs_str}")                  
             except gitea_api.GiteaException as e:
                 if e.status == 404:
                     failed_entries.append(f"{owner}/{repo}#{pull}")
@@ -175,7 +163,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
         repos = [repo for _, repo, _ in all_pkg_prs]   
         git.add(repos)
         if git.has_changes():
-            message = '\n'.join([f"PR: {org}/{repo}!{num}" for org, repo, num in args.prs])
+            message = '\n'.join([f"PR: {org}/{repo}!{num}" for org, repo, num in args.pr_list])
             
             pr_references = '\n'.join([f"PR: {org}/{repo}!{num}" for org, repo, num in all_pkg_prs])
             closes_references = '\n'.join([f"Closes: {pkg}" for pkg in prj_pkg_prs])
@@ -238,7 +226,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
 
             
             # Remove backlog label from all backlog PRs and close them
-            for owner, repo, pull in args.prs:
+            for owner, repo, pull in args.pr_list:
                 try:
                     #gitea_api.PullRequest.remove_label(self.gitea_conn, owner, repo, int(pull), BACKLOG_LABEL)
                     gitea_api.PullRequest.close(self.gitea_conn, owner, repo, int(pull))
@@ -248,7 +236,6 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                         continue
                     raise                
 
-        #print(f"Total entries: {num_entries}", file=sys.stderr)
         if failed_entries:
             print(
                 f"{tty.colorize('ERROR', 'red,bold')}: Couldn't retrieve the following pull requests: {', '.join(failed_entries)}",

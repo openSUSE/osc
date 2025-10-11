@@ -720,7 +720,7 @@ class PullRequest(GiteaModel):
         repo: str,
         number: int,
         labels: List[str],
-    ) -> "GiteaHTTPResponse":
+    ) -> Optional["GiteaHTTPResponse"]:
         """
         Add one or more labels to a pull request.
 
@@ -738,7 +738,7 @@ class PullRequest(GiteaModel):
 
         if not label_ids:
             # Avoid making a request if no valid labels were found
-            return
+            return None
 
         url = conn.makeurl("repos", owner, repo, "issues", str(number), "labels")
         json_data = {
