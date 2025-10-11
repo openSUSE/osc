@@ -126,12 +126,12 @@ class Git:
         
     def checkout (self, ref: str, *, create_new: bool = False, track: bool = False, force: bool = False):
         cmd = ["checkout"]
+        if force:
+            cmd += ["-f"]
         if create_new:
             cmd += ["-b"]
         if track:
             cmd += ["--track"]
-        if force:
-            cmd += ["-f"]
         cmd += [ref]
         return self._run_git(cmd)
 
@@ -144,6 +144,26 @@ class Git:
         except subprocess.CalledProcessError:
             return None
 
+    def branch(self, branch: str, set_upstream_to: Optional[str] = None):
+        cmd = ["branch"]
+        if set_upstream_to:
+            cmd += ["--set-upstream-to", set_upstream_to]
+        cmd += [branch]
+        return self._run_git(cmd)
+    
+    def delete_branch(self, branch: str, remote: Optional[str] = None, force: bool = False):
+        cmd = ["branch"]
+        if force:
+            cmd += ["-D"]
+        else:
+            cmd += ["-d"]
+            
+        if remote:
+            cmd += ["-r", f"{remote}/{branch}"]   
+        else:
+            cmd += [branch]
+        return self._run_git(cmd)  
+    
     def branch_contains_commit(self, commit: str, branch: Optional[str] = None, remote: Optional[str] = None) -> bool:
         if not branch:
             branch = self.current_branch

@@ -411,7 +411,7 @@ class PullRequest(GiteaModel):
         """
         json_data = {
             "title": title,
-            "description": description,
+            "body": description,
             "allow_maintainer_edit": allow_maintainer_edit,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
