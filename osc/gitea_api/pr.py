@@ -261,6 +261,10 @@ class PullRequest(GiteaModel):
     def url(self) -> str:
         # HACK: search API returns issues, the URL needs to be transformed to a pull request URL
         return re.sub(r"^(.*)/api/v1/repos/(.+/.+)/issues/([0-9]+)$", r"\1/\2/pulls/\3", self._data["url"])
+    
+    @property
+    def labels(self) -> List[str]:
+        return [label["name"] for label in self._data.get("labels", [])]
 
     def to_human_readable_string(self):
         from osc.output import KeyValueTable
@@ -407,7 +411,7 @@ class PullRequest(GiteaModel):
         """
         json_data = {
             "title": title,
-            "description": description,
+            "body": description,
             "allow_maintainer_edit": allow_maintainer_edit,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
@@ -698,3 +702,73 @@ class PullRequest(GiteaModel):
         response = conn.request("PATCH", url, json_data=json_data, context={"owner": owner, "repo": repo})
         obj = cls(response.json(), response=response, conn=conn)
         return obj
+
+    @classmethod
+    def _get_label_id(cls, conn: Connection, owner: str, repo: str, label_name: str) -> Optional[int]:
+        """Helper to get the ID of a label by its name."""
+        url = conn.makeurl("repos", owner, repo, "labels")
+        response = conn.request("GET", url)
+        labels = response.json()
+        for label in labels:
+            if label["name"] == label_name:
+                return label["id"]
+        return None
+
+    @classmethod
+    def add_labels(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        labels: List[str],
+    ) -> Optional["GiteaHTTPResponse"]:
+        """
+        Add one or more labels to a pull request.
+
+        :param conn: Gitea Connection instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request.
+        :param labels: A list of label names to add.
+        """
+        label_ids = []
+        for label_name in labels:
+            label_id = cls._get_label_id(conn, owner, repo, label_name)
+            if label_id:
+                label_ids.append(label_id)
+
+        if not label_ids:
+            # Avoid making a request if no valid labels were found
+            return None
+
+        url = conn.makeurl("repos", owner, repo, "issues", str(number), "labels")
+        json_data = {
+            "labels": label_ids,
+        }
+        return conn.request("POST", url, json_data=json_data)
+
+    @classmethod
+    def remove_label(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        label_name: str,
+    ) -> "GiteaHTTPResponse":
+        """
+        Remove a label from a pull request.
+
+        :param conn: Gitea Connection instance.
+        :param owner: Owner of the repo.
+        :param repo: Name of the repo.
+        :param number: Number of the pull request.
+        :param label_name: The name of the label to remove.
+        """
+        label_id = cls._get_label_id(conn, owner, repo, label_name)
+        if not label_id:
+            raise ValueError(f"Label '{label_name}' not found in repo {owner}/{repo}")
+
+        url = conn.makeurl("repos", owner, repo, "issues", str(number), "labels", str(label_id))
+        return conn.request("DELETE", url)
