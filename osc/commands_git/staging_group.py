@@ -9,6 +9,8 @@ import os
 from IPython import embed
 import pprint
 
+from osc.gitea_api.utilities.git_utilities import GitUtilities as git_utilities
+
 #from gitea_api import Git
 
 BACKLOG_LABEL = "staging_backlog"
@@ -33,87 +35,6 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
         self.add_argument('--force', required=False, help="Force the operation.", action='store_true')
         self.add_argument('--grouped-pr', dest="grouped_pr", required=False, help="An existing grouped PR to update (e.g., owner/repo#number).")
         #self.add_argument_owner_repo_pull(dest="--grouped-pr", required=False, nargs="+").completer = complete_pr
-
-    def clone_or_update(
-        self,
-        owner: str,
-        repo: str,
-        *,
-        pr_number: Optional[int] = None,
-        branch: Optional[str] = None,
-        commit: Optional[str] = None,
-        directory: str,
-        reference: Optional[str] = None,
-    ):
-        from osc import gitea_api
-
-        if not pr_number and not branch:
-            raise ValueError("Either 'pr_number' or 'branch' must be specified")
-
-        if not os.path.exists(os.path.join(directory, ".git")):
-            gitea_api.Repo.clone(
-                self.gitea_conn,
-                owner,
-                repo,
-                directory=directory,
-                add_remotes=True,
-                reference=reference,
-            )
-
-        git = gitea_api.Git(directory)
-        git_owner, git_repo = git.get_owner_repo()
-        assert git_owner == owner, f"owner does not match: {git_owner} != {owner}"
-        assert git_repo == repo, f"repo does not match: {git_repo} != {repo}"
-
-        if pr_number:
-            # ``git reset`` is required for fetching the pull request into an existing branch correctly
-            # without it, ``git submodule status`` is broken and returns old data
-            git.reset()
-            # checkout the pull request and check if HEAD matches head/sha from Gitea
-            pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
-            git.switch(pr_branch)
-            head_commit = git.get_branch_head()
-            assert (
-                head_commit == commit
-            ), f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
-        elif branch:
-            git.switch(branch)
-
-            if commit:
-                # run 'git fetch' only when the branch head is different to the expected commit
-                head_commit = git.get_branch_head()
-                if head_commit != commit:
-                    git.fetch()
-
-                if not git.branch_contains_commit(commit=commit, remote="origin"):
-                    raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
-                git.reset(commit, hard=True)
-            else:   
-                git.fetch()
-        else:
-            raise ValueError("Either 'pr_number' or 'branch' must be specified")
-        
-        return git
-    
-    def is_submodule(self, git, repo_path: str, submodule_path: str) -> str:
-        """
-        Checks if a directory is a registered Git submodule.
-
-        Args:
-            git: An instance of the Git class representing the repository.
-            repo_path: The absolute path to the main repository.
-            submodule_path: The relative path to the submodule from the repo root.
-
-        Returns:
-            True if the path is a registered submodule, False otherwise.
-        """
-        # Ensure the provided path exists and is a directory
-        if not os.path.isdir(os.path.join(repo_path, submodule_path)):
-            print(f"  Path '{submodule_path}' does not exist or is not a directory.")
-            return None
-
-        
-        return git.submodule_status(submodule_path)
     
     def run(self, args):
         from osc import gitea_api
@@ -148,10 +69,6 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                 # Use a regex to find all "Closes: ..." lines
                 closes_refs = re.findall(r"^Closes: *(.*)$", existing_pr_obj.body, re.M)
                 prj_pkg_prs.extend(closes_refs)
-                
-                print(closes_refs)
-                print(all_pkg_prs)
-                print(prj_pkg_prs)
 
                 base_branch = existing_pr_obj.base_branch
                 base_owner = existing_pr_obj.base_owner
@@ -221,7 +138,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
             
         clone_dir = os.path.join(args.workdir, f"{base_owner}_{base_repo}_{base_branch}")
         print(f"Using working directory: {clone_dir}")
-        self.clone_or_update(base_owner, base_repo,  branch=base_branch, directory=clone_dir)
+        git_utilities.clone_or_update(base_owner, base_repo,  branch=base_branch, directory=clone_dir)
         git = gitea_api.Git(clone_dir)
 
         for owner, repo, pull in all_pkg_prs:
@@ -230,7 +147,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                 print(f"Processing pull request {owner}/{repo}#{pull}")
                 print(f"{pr_obj.head_branch}-{pr_obj.head_commit} -> {pr_obj.base_branch}")
                                 
-                submod_status = self.is_submodule(git, clone_dir, repo)
+                submod_status = git_utilities.is_submodule(git, clone_dir, repo)
                     
                 if submod_status:       
                     if submod_status.startswith('-'):
@@ -258,9 +175,11 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
         repos = [repo for _, repo, _ in all_pkg_prs]   
         git.add(repos)
         if git.has_changes():
+            message = '\n'.join([f"PR: {org}/{repo}!{num}" for org, repo, num in args.prs])
+            
             pr_references = '\n'.join([f"PR: {org}/{repo}!{num}" for org, repo, num in all_pkg_prs])
             closes_references = '\n'.join([f"Closes: {pkg}" for pkg in prj_pkg_prs])
-            message = f"{pr_references}\n\n{closes_references}"
+            description = f"{pr_references}\n\n{closes_references}"
                                
             if existing_pr_obj:
                 if git.branch_exists(args.branch):
@@ -278,7 +197,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                 gitea_api.PullRequest.set(
                     self.gitea_conn,
                     base_owner, base_repo, existing_pr_obj.number,
-                    description=message
+                    description=description
                 )
             else:
                 if git.branch_exists(args.branch):
@@ -311,7 +230,7 @@ class StagingCommandGroup(osc.commandline_git.GitObsCommand):
                     # source_repo is not required because the information lives in Gitea database
                     source_branch=args.branch,
                     title=args.title,
-                    description=message,
+                    description=description,
                 )
                 gitea_api.PullRequest.add_labels(self.gitea_conn, base_owner, base_repo, pr_obj.number, [INPROGRESS_LABEL])
                 

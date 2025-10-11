@@ -453,6 +453,26 @@ class Git:
             cmd += ["-q"]
         cmd += [url, path]
         self._run_git(cmd)  
+        
+    def submodule_remove(self, path: str, *, force: bool = False, cached: bool = False):
+        cmd = ["submodule", "deinit"]
+        if force:
+            cmd += ["--force"]
+        cmd += ["--", path]
+        self._run_git(cmd)  
+        
+        cmd = ["rm"]
+        if force:
+            cmd += ["-rf"]
+        if cached:
+            cmd += ["--cached"]
+        cmd += ["--", path]
+        
+        return self._run_git(cmd)
+    
+    def submodule_config_remove(self, path: str):
+        cmd = ["config",  "-f" , ".gitmodules", "--remove-section", f"submodule.{path}"]
+        return self._run_git(cmd)
 
     def get_submodules(self) -> dict:
         SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
