@@ -327,6 +327,7 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
     """
     imagefile = ''
     imagesource = ''
+    info_file = 'preinstallimage.info'
     img_bins = []
     for bin in img_info.findall('binary'):
         img_bins.append(bin.text)
@@ -341,14 +342,15 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
         img_hdrmd5 = img_file
     cache_path = '%s/%s/%s/%s' % (cache_dir, img_project, img_repository, img_arch)
     ifile_path = '%s/%s' % (cache_path, img_file)
-    ifile_path_part = '%s.part' % ifile_path
-
+    info_file_path = '%s/%s' % (cache_path, info_file)
+    
     imagefile = ifile_path
     imagesource = "%s/%s/%s [%s]" % (img_project, img_repository, img_pkg, img_hdrmd5)
+    imageinfo = info_file_path
 
     if not os.path.exists(ifile_path):
         if offline:
-            return '', '', []
+            return '', '', '', []
         url = "%s/build/%s/%s/%s/%s/%s" % (apiurl, img_project, img_repository, img_arch, img_pkg, img_file)
         print("downloading preinstall image %s" % imagesource)
         if not os.path.exists(cache_path):
@@ -362,14 +364,34 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
         if sys.stdout.isatty():
             progress_obj = create_text_meter(use_pb_fallback=False)
         gr = OscFileGrabber(progress_obj=progress_obj)
-        try:
-            gr.urlgrab(url, filename=ifile_path_part, text='fetching image')
-        except HTTPError as e:
-            print("Failed to download! ecode:%i reason:%s" % (e.code, e.reason))
-            return ('', '', [])
-        # download ok, rename partial file to final file name
-        os.rename(ifile_path_part, ifile_path)
-    return (imagefile, imagesource, img_bins)
+        with NamedTemporaryFile(dir=cache_path, delete=False) as temp_file:
+            try:
+                gr.urlgrab(url, filename=temp_file.name, text='fetching image')
+                # download ok, rename temp file to final file name
+                os.rename(temp_file.name, ifile_path)
+            except HTTPError as e:
+                print("Failed to download! ecode:%i reason:%s" % (e.code, e.reason))
+                # Clean up temp file if it still exists
+                if os.path.exists(temp_file.name):
+                    os.unlink(temp_file.name)
+                return ('', '', '', [])
+
+        # Also download the corresponding .info file
+        if not os.path.exists(info_file_path):
+            info_url = "%s/build/%s/%s/%s/%s/%s" % (apiurl, img_project, img_repository, img_arch, img_pkg, info_file)
+            print("downloading preinstall image info file")
+            with NamedTemporaryFile(dir=cache_path, delete=False) as temp_file:
+                try:
+                    gr.urlgrab(info_url, filename=temp_file.name, text='fetching image info')
+                    # download ok, rename temp file to final file name
+                    os.rename(temp_file.name, info_file_path)
+                except HTTPError as e:
+                    print("Failed to download info file! ecode:%i reason:%s" % (e.code, e.reason))
+                    # Clean up temp file if it still exists
+                    if os.path.exists(temp_file.name):
+                        os.unlink(temp_file.name)
+
+    return (imagefile, imagesource, imageinfo, img_bins)
 
 
 def get_built_files(pacdir, buildtype):
@@ -623,7 +645,7 @@ def calculate_prj_pac(store, opts, descr):
 
 
 def calculate_build_root_user(vm_type):
-    if vm_type in ("kvm", "podman", "qemu"):
+    if vm_type in ("kvm", "qemu"):
         return getpass.getuser()
     return None
 
@@ -1190,6 +1212,7 @@ def main(apiurl, store, opts, argv):
 
     imagefile = ''
     imagesource = ''
+    imageinfo = ''
     imagebins = []
     if build_as_user(vm_type):
         # preinstallimage extraction will fail because unprivileged user cannot chroot or extract devices from the tarball
@@ -1203,7 +1226,7 @@ def main(apiurl, store, opts, argv):
         not opts.noinit and
         (opts.clean or (not os.path.exists(build_root + "/installed-pkg") and
                         not os.path.exists(build_root + "/.build/init_buildsystem.data")))):
-        (imagefile, imagesource, imagebins) = get_preinstall_image(apiurl, arch, cache_dir, bi.preinstallimage,
+        (imagefile, imagesource, imageinfo, imagebins) = get_preinstall_image(apiurl, arch, cache_dir, bi.preinstallimage,
                                                                    opts.offline)
         if imagefile:
             # remove binaries from build deps which are included in preinstall image
@@ -1495,9 +1518,11 @@ def main(apiurl, store, opts, argv):
     rpmlist += ["%s %s\n" % (i[0], i[1]) for i in rpmlist_prefers]
 
     if imagefile:
-        rpmlist.append('preinstallimage: %s\n' % imagefile)
+        rpmlist.append(f'preinstallimage: {imagefile}\n')
     if imagesource:
-        rpmlist.append('preinstallimagesource: %s\n' % imagesource)
+        rpmlist.append(f'preinstallimagesource: {imagesource}\n')
+    if imageinfo:
+        rpmlist.append(f'preinstallimageinfo: {imageinfo}\n')
 
     rpmlist.append('preinstall: ' + ' '.join(bi.preinstall_list) + '\n')
     rpmlist.append('vminstall: ' + ' '.join(bi.vminstall_list) + '\n')
