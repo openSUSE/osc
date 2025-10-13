@@ -22,6 +22,9 @@ NEW_PULL_REQUEST_TEMPLATE = """
 # Creating {source_owner}/{source_repo}#{source_branch} -> {target_owner}/{target_repo}#{target_branch}
 #
 {git_status}
+#
+# Commits:
+{git_commits}
 """.lstrip()
 
 
@@ -136,6 +139,12 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
                 git_status = "\n".join([f"# {i}" for i in git_status.splitlines()])
             else:
                 git_status = "#"
+
+            if use_local_git:
+                git_commits = git._run_git(["log", "--format=- %s", f"{target_branch_obj.commit}..{source_branch_obj.commit}"])
+                git_commits = "\n".join([f"# {i}" for i in git_commits.splitlines()])
+            else:
+                git_commits = "#"
 
             message = gitea_api.edit_message(template=NEW_PULL_REQUEST_TEMPLATE.format(**locals()))
 
