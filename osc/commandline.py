@@ -6728,7 +6728,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             elif len(args) > 4:
                 raise oscerr.WrongArgs('Too many arguments.')
             else:
-                arch = args[1]
+                arch = args[3]
         else:
             store = osc_store.get_store(Path.cwd())
             store.assert_is_package()
