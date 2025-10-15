@@ -15,7 +15,7 @@ class ApiCommand(osc.commandline_git.GitObsCommand):
         self.add_argument(
             "-X",
             "--method",
-            choices=["GET", "HEAD", "POST", "PATCH", "PUT"],
+            choices=["GET", "HEAD", "POST", "PATCH", "PUT", "DELETE"],
             default="GET",
         )
         self.add_argument(

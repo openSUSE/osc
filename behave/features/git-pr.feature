@@ -114,6 +114,40 @@ Scenario: Get a pull request
 
 
 @destructive
+Scenario: Get a pull request with labels
+   Given I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/labels --data='{{"name": "bug", "color": "cc0000"}}'"
+     And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/labels --data='{{"name": "feature", "color": "00cc00"}}'"
+     And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/issues/1/labels --data='{{"labels": ["bug", "feature"]}}'"
+    When I execute git-obs with args "pr get pool/test-GitPkgA#1"
+    Then the exit code is 0
+     And stdout matches
+        """
+        ID          : pool/test-GitPkgA#1
+        URL         : http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1
+        Title       : Change version
+        State       : open
+        Labels      : bug feature
+        Draft       : no
+        Merged      : no
+        Allow edit  : no
+        Author      : Admin \(admin@example.com\)
+        Source      : Admin/test-GitPkgA, branch: factory, commit: .*
+        Target      : pool/test-GitPkgA, branch: factory, commit: .*
+        Description : some text
+        """
+     And stderr is
+        """
+        Using the following Gitea settings:
+         * Config path: {context.git_obs.config}
+         * Login (name of the entry in the config file): admin
+         * URL: http://localhost:{context.podman.container.ports[gitea_http]}
+         * User: Admin
+
+        Total entries: 1
+        """
+
+
+@destructive
 Scenario: Get a pull request that doesn't exist
     When I execute git-obs with args "pr get does-not/exist#1"
     Then the exit code is 1

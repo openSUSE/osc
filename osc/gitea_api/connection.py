@@ -127,7 +127,7 @@ class Connection:
         if self.login.token:
             headers["Authorization"] = f"token {self.login.token}"
 
-        if json_data:
+        if json_data and isinstance(json_data, dict):
             json_data = dict(((key, value) for key, value in json_data.items() if value is not None))
 
         body = json.dumps(json_data) if json_data else None
