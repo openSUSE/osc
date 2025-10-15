@@ -205,9 +205,10 @@ class Repo(GiteaModel):
         *,
         pr_number: Optional[int] = None,
         branch: Optional[str] = None,
-        commit: str,
+        commit: Optional[str] = None,
         directory: str,
         reference: Optional[str] = None,
+        remote: Optional[str] = None,
     ):
         from osc import gitea_api
 
@@ -225,7 +226,7 @@ class Repo(GiteaModel):
             )
 
         git = gitea_api.Git(directory)
-        git_owner, git_repo = git.get_owner_repo()
+        git_owner, git_repo = git.get_owner_repo(remote)
         assert git_owner.lower() == owner.lower(), f"owner does not match: {git_owner} != {owner}"
         assert git_repo.lower() == repo.lower(), f"repo does not match: {git_repo} != {repo}"
 
@@ -243,14 +244,17 @@ class Repo(GiteaModel):
         elif branch:
             git.switch(branch)
 
-            # run 'git fetch' only when the branch head is different to the expected commit
-            head_commit = git.get_branch_head()
-            if head_commit != commit:
-                git.fetch()
+            if commit:
+                # run 'git fetch' only when the branch head is different to the expected commit
+                head_commit = git.get_branch_head()
+                if head_commit != commit:
+                    git.fetch()
 
-            if not git.branch_contains_commit(commit=commit, remote="origin"):
-                raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
-            git.reset(commit, hard=True)
+                if not git.branch_contains_commit(commit=commit, remote="origin"):
+                    raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
+                git.reset(commit, hard=True)
+            else:
+                git.fetch()
         else:
             raise ValueError("Either 'pr_number' or 'branch' must be specified")
 
