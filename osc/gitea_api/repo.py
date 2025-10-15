@@ -197,6 +197,64 @@ class Repo(GiteaModel):
         return directory_abspath
 
     @classmethod
+    def clone_or_update(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        *,
+        pr_number: Optional[int] = None,
+        branch: Optional[str] = None,
+        commit: str,
+        directory: str,
+        reference: Optional[str] = None,
+    ):
+        from osc import gitea_api
+
+        if not pr_number and not branch:
+            raise ValueError("Either 'pr_number' or 'branch' must be specified")
+
+        if not os.path.exists(os.path.join(directory, ".git")):
+            gitea_api.Repo.clone(
+                conn,
+                owner,
+                repo,
+                directory=directory,
+                add_remotes=True,
+                reference=reference,
+            )
+
+        git = gitea_api.Git(directory)
+        git_owner, git_repo = git.get_owner_repo()
+        assert git_owner.lower() == owner.lower(), f"owner does not match: {git_owner} != {owner}"
+        assert git_repo.lower() == repo.lower(), f"repo does not match: {git_repo} != {repo}"
+
+        if pr_number:
+            # ``git reset`` is required for fetching the pull request into an existing branch correctly
+            # without it, ``git submodule status`` is broken and returns old data
+            git.reset()
+            # checkout the pull request and check if HEAD matches head/sha from Gitea
+            pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
+            git.switch(pr_branch)
+            head_commit = git.get_branch_head()
+            assert (
+                head_commit == commit
+            ), f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
+        elif branch:
+            git.switch(branch)
+
+            # run 'git fetch' only when the branch head is different to the expected commit
+            head_commit = git.get_branch_head()
+            if head_commit != commit:
+                git.fetch()
+
+            if not git.branch_contains_commit(commit=commit, remote="origin"):
+                raise RuntimeError(f"Branch '{branch}' doesn't contain commit '{commit}'")
+            git.reset(commit, hard=True)
+        else:
+            raise ValueError("Either 'pr_number' or 'branch' must be specified")
+
+    @classmethod
     def list_org_repos(cls, conn: Connection, owner: str) -> List["Repo"]:
         """
         List repos owned by an organization.
