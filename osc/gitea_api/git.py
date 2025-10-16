@@ -395,7 +395,7 @@ class Git:
 
     def get_submodules(self) -> dict:
         SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
-        STATUS_RE = re.compile(r"^.(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
+        STATUS_RE = re.compile(r"^(?P<status>.)(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
 
         result = {}
 
@@ -425,7 +425,9 @@ class Git:
                 continue
             submodule = match.groupdict()["submodule"]
             commit = match.groupdict()["commit"]
+            status = match.groupdict()["status"]
             result[submodule]["commit"] = commit
+            result[submodule]["status"] = status
 
         remote_url = self.get_remote_url()
         for submodule_entry in result.values():
