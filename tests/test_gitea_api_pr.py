@@ -164,5 +164,76 @@ class TestGiteaApiPullRequestUrlParsing(unittest.TestCase):
             PullRequest.get_host_owner_repo_number(url)
 
 
+class TestGiteaApiPullRequestReferences(unittest.TestCase):
+    PR_BODY = """
+PR: foo/bar!1
+PR:  foo/bar#2
+text
+PR: bar/baz#3
+text
+
+text
+text
+""".strip()
+
+    def test_parse_pr_references(self):
+        pr_obj = PullRequest({"body": self.PR_BODY})
+        actual = pr_obj.parse_pr_references()
+        expected = [
+            ('foo', 'bar', 1),
+            ('foo', 'bar', 2),
+            ('bar', 'baz', 3),
+        ]
+        self.assertEqual(actual, expected)
+
+    def test_add_pr_references(self):
+        actual = PullRequest.add_pr_references(self.PR_BODY, [('xxx', 'xxx', 4), ('yyy', 'yyy', 5)])
+        expected = """
+PR: foo/bar!1
+PR:  foo/bar#2
+text
+PR: bar/baz#3
+PR: xxx/xxx!4
+PR: yyy/yyy!5
+text
+
+text
+text
+""".strip()
+
+        self.assertEqual(actual, expected)
+
+    def test_add_pr_references_end(self):
+        actual = PullRequest.add_pr_references(self.PR_BODY + "\nPR: a/b#123", [('xxx', 'xxx', 4), ('yyy', 'yyy', 5)])
+        expected = """
+PR: foo/bar!1
+PR:  foo/bar#2
+text
+PR: bar/baz#3
+text
+
+text
+text
+PR: a/b#123
+PR: xxx/xxx!4
+PR: yyy/yyy!5
+""".lstrip()
+
+        self.assertEqual(actual, expected)
+
+    def test_remove_pr_references(self):
+        actual = PullRequest.remove_pr_references(self.PR_BODY, [("foo", "bar", 2)])
+        expected = """
+PR: foo/bar!1
+text
+PR: bar/baz#3
+text
+
+text
+text
+""".strip()
+        self.assertEqual(actual, expected)
+
+
 if __name__ == "__main__":
     unittest.main()
