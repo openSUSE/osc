@@ -112,5 +112,57 @@ class TestGiteaApiPullRequest(unittest.TestCase):
         self.assertEqual(obj.head_ssh_url, None)
 
 
+class TestGiteaApiPullRequestUrlParsing(unittest.TestCase):
+    def test_get_host_owner_repo_number_https_with_port(self):
+        url = "https://git.example.com:3000/owner/repo/pulls/123"
+        host, owner, repo, number = PullRequest.get_host_owner_repo_number(url)
+        self.assertEqual(host, "https://git.example.com:3000")
+        self.assertEqual(owner, "owner")
+        self.assertEqual(repo, "repo")
+        self.assertEqual(number, 123)
+
+        self.assertTupleEqual(
+            PullRequest.get_owner_repo_number(url),
+            (owner, repo, number),
+        )
+
+    def test_get_host_owner_repo_number_https_without_port(self):
+        url = "https://git.example.com/owner/repo/pulls/456"
+        host, owner, repo, number = PullRequest.get_host_owner_repo_number(url)
+        self.assertEqual(host, "https://git.example.com")
+        self.assertEqual(owner, "owner")
+        self.assertEqual(repo, "repo")
+        self.assertEqual(number, 456)
+
+        self.assertTupleEqual(
+            PullRequest.get_owner_repo_number(url),
+            (owner, repo, number),
+        )
+
+    def test_get_host_owner_repo_number_issues_endpoint(self):
+        url = "https://git.example.com/owner/repo/issues/100"
+        host, owner, repo, number = PullRequest.get_host_owner_repo_number(url)
+        self.assertEqual(host, "https://git.example.com")
+        self.assertEqual(owner, "owner")
+        self.assertEqual(repo, "repo")
+        self.assertEqual(number, 100)
+
+        self.assertTupleEqual(
+            PullRequest.get_owner_repo_number(url),
+            (owner, repo, number),
+        )
+
+    def test_get_host_owner_repo_number_invalid_endpoint(self):
+        url = "https://git.example.com/owner/repo/commits/abc123"
+        with self.assertRaises(ValueError) as context:
+            PullRequest.get_host_owner_repo_number(url)
+        self.assertIn("doesn't point to a pull request or an issue", str(context.exception))
+
+    def test_get_host_owner_repo_number_invalid_format(self):
+        url = "https://git.example.com/owner/repo"
+        with self.assertRaises(ValueError):
+            PullRequest.get_host_owner_repo_number(url)
+
+
 if __name__ == "__main__":
     unittest.main()
