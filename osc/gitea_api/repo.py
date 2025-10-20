@@ -209,6 +209,7 @@ class Repo(GiteaModel):
         directory: str,
         reference: Optional[str] = None,
         remote: Optional[str] = None,
+        ssh_private_key_path: Optional[str] = None,
     ):
         from osc import gitea_api
 
@@ -223,6 +224,7 @@ class Repo(GiteaModel):
                 directory=directory,
                 add_remotes=True,
                 reference=reference,
+                ssh_private_key_path=ssh_private_key_path,
             )
 
         git = gitea_api.Git(directory)
