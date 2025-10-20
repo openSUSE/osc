@@ -20,5 +20,6 @@ from .pr import PullRequest
 from .pr_review import PullRequestReview
 from .repo import Repo
 from .ssh_key import SSHKey
+from .staging import StagingPullRequestWrapper
 from .tardiff import TarDiff
 from .user import User
