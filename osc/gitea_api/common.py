@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import sys
+import tempfile
 from typing import List
 from typing import Optional
 
@@ -101,8 +102,6 @@ def run_editor(file_path: str):
 
 
 def edit_message(template: Optional[str] = None) -> str:
-    import tempfile
-
     with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8", prefix="git_obs_message_") as f:
         if template:
             f.write(template)
@@ -138,3 +137,24 @@ def dt_sanitize(date_time: str):
         dt = datetime.datetime.fromisoformat(date_time)
 
     return dt.astimezone(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M")
+
+
+if sys.version_info[:2] >= (3, 12):
+    TemporaryDirectory = tempfile.TemporaryDirectory
+else:
+    class TemporaryDirectory:
+        """
+        A minimalist implementation of TemporaryDirectory that supports 'delete' argument
+        """
+        def __init__(self, suffix=None, prefix=None, dir=None, delete=True):
+            self.name = tempfile.mkdtemp(suffix=suffix, prefix=prefix, dir=dir)
+            self._delete = delete
+
+        def __enter__(self):
+            return self.name
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            import shutil
+
+            if self._delete and os.path.isdir(self.name):
+                shutil.rmtree(self.name)
