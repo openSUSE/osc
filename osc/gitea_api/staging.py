@@ -106,10 +106,12 @@ class StagingPullRequestWrapper:
             submodule_git = Git(os.path.join(self.git.abspath, submodule_path))
             submodule_git.fetch()
             submodule_git._run_git(["fetch", "origin", f"pull/{pkg_number}/head:{submodule_branch}", "--force", "--update-head-ok"])
+            submodule_git.switch(submodule_branch)
             submodule_paths.append(submodule_path)
 
-        self.git.add(submodule_paths)
-        self.git.commit(f"Merge package submodules from {other.pr_obj.base_owner}/{other.pr_obj.base_repo}!{other.pr_obj.number}")
+        if submodule_paths:
+            self.git.add(submodule_paths)
+            self.git.commit(f"Merge package submodules from {other.pr_obj.base_owner}/{other.pr_obj.base_repo}!{other.pr_obj.number}")
 
     def remove(self, package_pr):
         """

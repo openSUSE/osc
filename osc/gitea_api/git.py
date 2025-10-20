@@ -135,6 +135,13 @@ class Git:
         except subprocess.CalledProcessError:
             return None
 
+    def branch(self, branch: str, set_upstream_to: Optional[str] = None):
+        cmd = ["branch"]
+        if set_upstream_to:
+            cmd += ["--set-upstream-to", set_upstream_to]
+        cmd += [branch]
+        return self._run_git(cmd)
+
     def branch_contains_commit(self, commit: str, branch: Optional[str] = None, remote: Optional[str] = None) -> bool:
         if not branch:
             branch = self.current_branch
@@ -333,6 +340,18 @@ class Git:
         cmd = ["commit", "-m", msg]
         if allow_empty:
             cmd += ["--allow-empty"]
+        self._run_git(cmd)
+
+    def push(self, remote: Optional[str] = None, branch: Optional[str] = None, *, set_upstream: Optional[str] = None, force: bool = False):
+        cmd = ["push"]
+        if force:
+            cmd += ["--force"]
+        if set_upstream:
+            cmd += ["--set-upstream"]
+        if remote:
+            cmd += [remote]
+            if branch:
+                cmd += [branch]
         self._run_git(cmd)
 
     def ls_files(self, ref: str = "HEAD", suffixes: Optional[List[str]] = None) -> Dict[str, str]:

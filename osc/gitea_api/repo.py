@@ -34,9 +34,10 @@ class Repo(GiteaModel):
 
     @property
     def parent_obj(self) -> Optional["Repo"]:
-        if not self._data["parent"]:
+        parent_data = self._data.get("parent")
+        if not parent_data:
             return None
-        return Repo(self._data["parent"])
+        return Repo(parent_data)
 
     @property
     def clone_url(self) -> str:
