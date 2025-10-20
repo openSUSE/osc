@@ -97,19 +97,21 @@ class GitObsCommand(osc.commandline_common.Command):
 
     def add_argument_owner_repo(self, **kwargs):
         dest = kwargs.pop("dest", "owner_repo")
+        help = kwargs.pop("help", "Owner and repo: (format: <owner>/<repo>)")
         return self.add_argument(
             dest,
             action=OwnerRepoAction,
-            help="Owner and repo: (format: <owner>/<repo>)",
+            help=help,
             **kwargs,
         )
 
     def add_argument_owner_repo_pull(self, **kwargs):
         dest = kwargs.pop("dest", "owner_repo_pull")
+        help = kwargs.pop("help", "Owner, repo and pull request number (format: <owner>/<repo>#<pull-request-number>)")
         return self.add_argument(
             dest,
             action=OwnerRepoPullAction,
-            help="Owner, repo and pull request number (format: <owner>/<repo>#<pull-request-number>)",
+            help=help,
             **kwargs,
         )
 
