@@ -345,6 +345,7 @@ class PullRequest(GiteaModel):
         source_branch: str,
         title: str,
         description: Optional[str] = None,
+        labels: Optional[List[str]] = None,
     ) -> "PullRequest":
         """
         Create a pull request to ``owner``/``repo`` to the ``base`` branch.
@@ -358,13 +359,18 @@ class PullRequest(GiteaModel):
         :param source_branch: Name of the source branch in the source (forked) repo.
         :param title: Pull request title.
         :param description: Pull request description.
+        :param labels: List of labels to be associated with the pull request.
         """
         url = conn.makeurl("repos", target_owner, target_repo, "pulls")
+        if labels:
+            ids = cls._get_label_ids(conn, target_owner, target_repo)
+            labels = [ids[i] for i in labels]
         data = {
             "base": target_branch,
             "head": f"{source_owner}:{source_branch}",
             "title": title,
             "body": description,
+            "labels": labels,
         }
         response = conn.request("POST", url, json_data=data)
         obj = cls(response.json(), response=response, conn=conn)
