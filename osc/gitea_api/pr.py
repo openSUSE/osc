@@ -721,7 +721,7 @@ class PullRequest(GiteaModel):
         response = conn.request("GET", url)
         labels = response.json()
         for label in labels:
-            result[label["id"]] = label["name"]
+            result[label["name"]] = label["id"]
         return result
 
     @classmethod
