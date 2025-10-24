@@ -179,6 +179,10 @@ class Repo(GiteaModel):
         if reference_if_able:
             cmd += ["--reference-if-able", reference_if_able]
 
+        if reference or reference_if_able:
+            # we want to make the newly cloned repo to be independent, this stops borrowing the objects
+            cmd += ["--dissociate"]
+
         if quiet:
             cmd += ["--quiet"]
 
