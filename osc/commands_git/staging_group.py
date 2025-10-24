@@ -33,6 +33,12 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
         )
 
         self.add_argument(
+            "--remove-pr-references",
+            action="store_true",
+            help="Remove 'PR:' references from the source project pull requests",
+        )
+
+        self.add_argument(
             "--force",
             action="store_true",
             help="Allow force-push to the branch associated with the pull request",
@@ -218,11 +224,12 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
 
             for owner, repo, number in args.pr_list:
                 pr = pr_map[(owner, repo, number)]
-                try:
-                    # apply the removed 'PR:' reference to the package pull request
-                    pr.pr_obj.set(self.gitea_conn, owner, repo, number, description=pr.pr_obj.body)
-                except Exception as e:
-                    print(f"Unable to remove 'PR:' references from pull request {owner}/{repo}#{number}: {e}")
+                if args.remove_pr_references:
+                    try:
+                        # apply the removed 'PR:' reference to the package pull request
+                        pr.pr_obj.set(self.gitea_conn, owner, repo, number, description=pr.pr_obj.body)
+                    except Exception as e:
+                        print(f"Unable to remove 'PR:' references from pull request {owner}/{repo}#{number}: {e}")
 
                 # close the pull request that was merged into the target
                 try:
