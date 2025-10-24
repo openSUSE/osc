@@ -43,7 +43,7 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
             pr_map = {}  # {(owner, repo, number):.
             for owner, repo, number in args.pr_list:
                 pr = gitea_api.StagingPullRequestWrapper(self.gitea_conn, owner, repo, number, topdir=temp_dir)
-                pr_map[(owner, repo, number)] = pr
+                pr_map[(owner.lower(), repo.lower(), number)] = pr
 
             # clone the git repos, cache submodule data
             target.clone()
@@ -51,7 +51,7 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
 
             # locally remove package pull requests from the target project pull request (don't change anything on server yet)
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 target.remove(pr)
 
             # push to git repo associated with the target pull request
@@ -60,7 +60,7 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
             target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, description=target.pr_obj.body)
 
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 # close the removed package pull request
                 try:
                     gitea_api.PullRequest.close(self.gitea_conn, owner, repo, number)

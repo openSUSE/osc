@@ -96,14 +96,14 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
             pr_map = {}
             for owner, repo, number in args.pr_list:
                 pr = gitea_api.StagingPullRequestWrapper(self.gitea_conn, owner, repo, number, topdir=temp_dir, cache_directory=cache_dir)
-                pr_map[(owner, repo, number)] = pr
+                pr_map[(owner.lower(), repo.lower(), number)] = pr
 
             # run checks
             target_owner = None
             target_repo = None
             target_branch = None
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
 
                 if pr.pr_obj.state != "open":
                     # we don't care about the state of the package pull requests - they can be merged already
@@ -133,12 +133,12 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
 
             # clone the git repos, cache submodule data
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 pr.clone()
 
             # run checks #2
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 if not pr.package_pr_map:
                     # TODO: we don't know if the submodules are packages or not, we should cross-reference those with _manifest
                     raise gitea_api.GitObsRuntimeError(f"Pull request {owner}/{repo}#{number} doesn't have any submodules changed.")
@@ -175,10 +175,10 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                 desc = ""
                 updated_packages = []
                 for owner, repo, number in args.pr_list:
-                    pr = pr_map[(owner, repo, number)]
+                    pr = pr_map[(owner.lower(), repo.lower(), number)]
                     for (pkg_owner, pkg_repo, pkg_number), pr_obj in pr.package_pr_map.items():
                         desc += f"PR: {pkg_owner}/{pkg_repo}!{pkg_number}\n"
-                        updated_packages.append(os.path.basename(pr.submodules_by_owner_repo[pkg_owner, pkg_repo]["path"]))
+                        updated_packages.append(os.path.basename(pr.submodules_by_owner_repo[pkg_owner.lower(), pkg_repo.lower()]["path"]))
 
                 # TODO: it would be nice to mention the target OBS project
                 # we keep only the first ``max_packages``, because the title might get too long quite easily
@@ -206,12 +206,12 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
             target = gitea_api.StagingPullRequestWrapper(self.gitea_conn, target_owner, target_repo, target_number, topdir=temp_dir, cache_directory=cache_dir)
             target.clone()
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 pr.clone()
 
             # locally merge package pull requests to the target project pull request (don't change anything on server yet)
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 target.merge(pr)
 
             # push to git repo associated with the target pull request
@@ -223,7 +223,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                 target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, description=target.pr_obj.body)
 
             for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner, repo, number)]
+                pr = pr_map[(owner.lower(), repo.lower(), number)]
                 if args.remove_pr_references:
                     try:
                         # apply the removed 'PR:' reference to the package pull request

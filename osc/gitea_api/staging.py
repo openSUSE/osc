@@ -18,8 +18,8 @@ class StagingPullRequestWrapper:
 
         self.pr_obj = PullRequest.get(conn, owner, repo, number)
         self.git = None
-        self.submodules_by_owner_repo = {}
-        self.package_pr_map = {}
+        self.submodules_by_owner_repo = {}  # (owner, repo) -> submodule metadata; owner, repo must be lower case (Gitea is case insensitive)
+        self.package_pr_map = {}  # (owner, repo, number) -> StagingPullRequestWrapper; owner, repo must be lower case (Gitea is case insensitive)
 
         self.base_git = None
         self.base_submodules_by_owner_repo = {}
@@ -44,13 +44,13 @@ class StagingPullRequestWrapper:
         self.git.fetch()
 
         submodules = self.git.get_submodules()
-        self.submodules_by_owner_repo = dict([((i["owner"], i["repo"]), i) for i in submodules.values()])
+        self.submodules_by_owner_repo = dict([((i["owner"].lower(), i["repo"].lower()), i) for i in submodules.values()])
 
         for pkg_owner, pkg_repo, pkg_number in self.pr_obj.parse_pr_references():
             pkg_pr_obj = self.__class__(self.conn, pkg_owner, pkg_repo, pkg_number, topdir=self._topdir)
-            self.package_pr_map[(pkg_owner, pkg_repo, pkg_number)] = pkg_pr_obj
+            self.package_pr_map[(pkg_owner.lower(), pkg_repo.lower(), pkg_number)] = pkg_pr_obj
             # FIXME: doesn't work when the commits are padded with zeros
-            # assert self.submodules_by_owner_repo[(pkg_owner, pkg_repo)]["commit"] == pkg_pr_obj.pr_obj.head_commit
+            # assert self.submodules_by_owner_repo[(pkg_owner.lower(), pkg_repo.lower())]["commit"] == pkg_pr_obj.pr_obj.head_commit
 
     def clone_base(self):
         from . import Git
@@ -72,7 +72,7 @@ class StagingPullRequestWrapper:
         self.base_git.fetch()
 
         submodules = self.base_git.get_submodules()
-        self.base_submodules_by_owner_repo = dict([((i["owner"], i["repo"]), i) for i in submodules.values()])
+        self.base_submodules_by_owner_repo = dict([((i["owner"].lower(), i["repo"].lower()), i) for i in submodules.values()])
 
     def merge(self, other):
         """
@@ -88,8 +88,8 @@ class StagingPullRequestWrapper:
         submodule_paths = []
 
         for pkg_owner, pkg_repo, pkg_number in other.package_pr_map:
-            other_submodule = other.submodules_by_owner_repo[(pkg_owner, pkg_repo)]
-            self_submodule = self.submodules_by_owner_repo.get((pkg_owner, pkg_repo), None)
+            other_submodule = other.submodules_by_owner_repo[(pkg_owner.lower(), pkg_repo.lower())]
+            self_submodule = self.submodules_by_owner_repo.get((pkg_owner.lower(), pkg_repo.lower()), None)
 
             if self_submodule:
                 # use an existing path if the submodule already exists
@@ -127,8 +127,8 @@ class StagingPullRequestWrapper:
 
         self.pr_obj._data["body"] = PullRequest.remove_pr_references(self.pr_obj.body, [(package_pr.owner, package_pr.repo, package_pr.number)])
 
-        submodule = self.submodules_by_owner_repo.get((package_pr.owner, package_pr.repo), None)
-        base_submodule = self.base_submodules_by_owner_repo.get((package_pr.owner, package_pr.repo), None)
+        submodule = self.submodules_by_owner_repo.get((package_pr.owner.lower(), package_pr.repo.lower()), None)
+        base_submodule = self.base_submodules_by_owner_repo.get((package_pr.owner.lower(), package_pr.repo.lower()), None)
 
         if not submodule:
             raise GitObsRuntimeError(f"Unable to find a submodule for pull request {package_pr.owner}/{package_pr.repo}!{package_pr.number}")
