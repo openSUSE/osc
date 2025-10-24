@@ -45,6 +45,11 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument(
+            "--cache-dir",
+            help="Path to a git cache.",
+        )
+
+        self.add_argument(
             "--keep-temp-dir",
             action="store_true",
             help="Don't delete the temporary directory with git checkouts",
@@ -67,6 +72,8 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
         if args.fork_branch and args.target:
             self.parser.error("--fork-branch conflicts with --target")
 
+        cache_dir = os.path.abspath(args.cache_dir) if args.cache_dir else None
+
         self.print_gitea_settings()
 
         with TemporaryDirectory(prefix="git-obs-staging_", dir=".", delete=not args.keep_temp_dir) as temp_dir:
@@ -82,9 +89,8 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
             # get pull request data from gitea
             pr_map = {}
             for owner, repo, number in args.pr_list:
-                pr = gitea_api.StagingPullRequestWrapper(self.gitea_conn, owner, repo, number, topdir=temp_dir)
+                pr = gitea_api.StagingPullRequestWrapper(self.gitea_conn, owner, repo, number, topdir=temp_dir, cache_directory=cache_dir)
                 pr_map[(owner, repo, number)] = pr
-
 
             # run checks
             target_owner = None
@@ -150,6 +156,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                     fork_repo,
                     directory=os.path.join(temp_dir, f"{fork_owner}_{fork_repo}"),
                     add_remotes=True,
+                    cache_directory=cache_dir,
                     ssh_private_key_path=self.gitea_conn.login.ssh_key,
                 )
                 clone_git = gitea_api.Git(clone_dir)
@@ -190,7 +197,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                 target_number = pr_obj.number
 
             # clone the git repos, cache submodule data
-            target = gitea_api.StagingPullRequestWrapper(self.gitea_conn, target_owner, target_repo, target_number, topdir=temp_dir)
+            target = gitea_api.StagingPullRequestWrapper(self.gitea_conn, target_owner, target_repo, target_number, topdir=temp_dir, cache_directory=cache_dir)
             target.clone()
             for owner, repo, number in args.pr_list:
                 pr = pr_map[(owner, repo, number)]

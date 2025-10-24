@@ -93,6 +93,7 @@ class Repo(GiteaModel):
         cwd: Optional[str] = None,
         use_http: bool = False,
         add_remotes: bool = False,
+        cache_directory: Optional[str] = None,
         reference: Optional[str] = None,
         reference_if_able: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
@@ -108,6 +109,7 @@ class Repo(GiteaModel):
         :param cwd: Working directory. Defaults to the current working directory.
         :param use_http: Whether to use``clone_url`` for cloning over http(s) instead of ``ssh_url`` for cloning over SSH.
         :param add_remotes: Determine and add 'parent' or 'fork' remotes to the cloned repo.
+        :param cache_directory: Manage repo cache under ``cache_directory`` / ``conn.login.name`` / ``owner`` / ``repo`` and pass it as ``reference_if_able``.
         :param reference: Reuse objects from the specified local repository, error out if the repository doesn't exist.
         :param reference_if_able: Reuse objects from the specified local repository, only print warning if the repository doesn't exist.
         """
@@ -117,6 +119,11 @@ class Repo(GiteaModel):
         directory = directory if directory else repo
         # it's perfectly fine to use os.path.join() here because git can take an absolute path
         directory_abspath = os.path.join(cwd, directory)
+
+        if cache_directory and not reference_if_able:
+            cache_directory = os.path.join(cache_directory, conn.login.name, owner, repo)
+            cls.clone_or_update(conn, owner, repo, directory=cache_directory)
+            reference_if_able = cache_directory
 
         repo_obj = cls.get(conn, owner, repo)
 
@@ -208,14 +215,13 @@ class Repo(GiteaModel):
         branch: Optional[str] = None,
         commit: Optional[str] = None,
         directory: str,
+        cache_directory: Optional[str] = None,
         reference: Optional[str] = None,
+        reference_if_able: Optional[str] = None,
         remote: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
     ):
         from osc import gitea_api
-
-        if not pr_number and not branch:
-            raise ValueError("Either 'pr_number' or 'branch' must be specified")
 
         if not os.path.exists(os.path.join(directory, ".git")):
             gitea_api.Repo.clone(
@@ -224,7 +230,9 @@ class Repo(GiteaModel):
                 repo,
                 directory=directory,
                 add_remotes=True,
+                cache_directory=cache_directory,
                 reference=reference,
+                reference_if_able=reference_if_able,
                 ssh_private_key_path=ssh_private_key_path,
             )
 
@@ -259,7 +267,7 @@ class Repo(GiteaModel):
             else:
                 git.fetch()
         else:
-            raise ValueError("Either 'pr_number' or 'branch' must be specified")
+            git.fetch()
 
     @classmethod
     def list_org_repos(cls, conn: Connection, owner: str) -> List["Repo"]:

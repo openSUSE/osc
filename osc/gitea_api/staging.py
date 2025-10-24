@@ -1,11 +1,12 @@
 import os
+from typing import Optional
 
 
 class StagingPullRequestWrapper:
     BACKLOG_LABEL = "staging/Backlog"
     INPROGRESS_LABEL = "staging/In Progress"
 
-    def __init__(self, conn, owner: str, repo: str, number: int, *, topdir: str):
+    def __init__(self, conn, owner: str, repo: str, number: int, *, topdir: str, cache_directory: Optional[str] = None):
         from . import PullRequest
 
         self.conn = conn
@@ -13,6 +14,7 @@ class StagingPullRequestWrapper:
         self.repo = repo
         self.number = number
         self._topdir = topdir
+        self._cache_directory = cache_directory
 
         self.pr_obj = PullRequest.get(conn, owner, repo, number)
         self.git = None
@@ -34,6 +36,7 @@ class StagingPullRequestWrapper:
             pr_number=self.number,
             commit=self.pr_obj.head_commit,
             directory=path,
+            cache_directory=self._cache_directory,
             ssh_private_key_path=self.conn.login.ssh_key,
         )
         self.git = Git(path)
@@ -61,6 +64,7 @@ class StagingPullRequestWrapper:
             branch=self.pr_obj.base_branch,
             commit=self.pr_obj.base_commit,
             directory=path,
+            cache_directory=self._cache_directory,
             ssh_private_key_path=self.conn.login.ssh_key,
         )
         self.base_git = Git(path)
