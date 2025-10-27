@@ -4822,7 +4822,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import parseargs
         from .core import run_pager
         from .core import server_diff
-        from .core import server_diff_noex
         from .store import git_is_unsupported
 
         msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git diff' instead."
@@ -4903,7 +4902,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     files = None
                 else:
                     files = args
-                diff += server_diff_noex(pac.apiurl, pac.prjname, pac.name, rev1,
+                diff += server_diff(pac.apiurl, pac.prjname, pac.name, rev1,
                                          pac.prjname, pac.name, rev2,
                                          not opts.plain, opts.missingok, opts.meta, not opts.unexpand, files=files)
         hldiff = highlight_diff(diff)
@@ -4950,7 +4949,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import highlight_diff
         from .core import parseRevisionOption
         from .core import run_pager
-        from .core import server_diff_noex
+        from .core import server_diff
 
         apiurl = self.get_api_url()
 
@@ -4996,7 +4995,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if opts.revision:
                 rev1, rev2 = parseRevisionOption(opts.revision)
 
-        rdiff = server_diff_noex(apiurl,
+        rdiff = server_diff(apiurl,
                                  old_project, old_package, rev1,
                                  new_project, new_package, rev2, not opts.plain, opts.missingok,
                                  meta=opts.meta,
@@ -5276,7 +5275,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import get_request_collection
         from .core import is_project_dir
         from .core import meta_get_packagelist
-        from .core import server_diff_noex
+        from .core import server_diff
 
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments.')
@@ -5322,7 +5321,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     print(f"old only:  {pkg}")
                 continue
 
-            rdiff = server_diff_noex(
+            rdiff = server_diff(
                 apiurl,
                 oldprj, pkg, None,
                 newprj, pkg, None,
