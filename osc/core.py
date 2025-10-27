@@ -4908,7 +4908,7 @@ def get_commitlog(
             yield revision.comment or "<no message>"
             yield ""
             if patch:
-                rdiff = server_diff_noex(
+                rdiff = server_diff(
                     apiurl,
                     prj,
                     package,
