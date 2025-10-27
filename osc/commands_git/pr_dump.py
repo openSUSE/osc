@@ -68,8 +68,8 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
         git = gitea_api.Git(directory)
         git_owner, git_repo = git.get_owner_repo()
-        assert git_owner == owner, f"owner does not match: {git_owner} != {owner}"
-        assert git_repo == repo, f"repo does not match: {git_repo} != {repo}"
+        assert git_owner.lower() == owner.lower(), f"owner does not match: {git_owner} != {owner}"
+        assert git_repo.lower() == repo.lower(), f"repo does not match: {git_repo} != {repo}"
 
         if pr_number:
             # ``git reset`` is required for fetching the pull request into an existing branch correctly
