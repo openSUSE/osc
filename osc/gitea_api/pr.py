@@ -448,11 +448,12 @@ class PullRequest(GiteaModel):
 
         q = {
             "state": state,
-            "limit": -1,
+            "limit": 50,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response, conn=conn) for i in response.json()]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json()])
         return obj_list
 
     @classmethod
