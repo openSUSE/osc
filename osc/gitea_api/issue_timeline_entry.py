@@ -9,6 +9,10 @@ from .user import User
 
 
 class IssueTimelineEntry(GiteaModel):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._pull_request_review_cache = None
+
     @property
     def type(self) -> str:
         return self._data["type"]
@@ -50,9 +54,12 @@ class IssueTimelineEntry(GiteaModel):
 
         if not self.review_id:
             return None
+        if self._pull_request_review_cache is None:
+            review_obj_list = PullRequestReview.list(self._conn, self.pr_owner, self.pr_repo, self.pr_number)
+            self._pull_request_review_cache = {i._data["id"]: i for i in review_obj_list}
         try:
-            return PullRequestReview.get(self._conn, self.pr_owner, self.pr_repo, self.pr_number, str(self.review_id))
-        except PullRequestReviewDoesNotExist:
+            return self._pull_request_review_cache[self.review_id]
+        except KeyError:
             # reviews can be removed from the database, but their IDs remain in other places
             return None
 
