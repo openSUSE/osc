@@ -155,6 +155,10 @@ class PullRequest(GiteaModel):
         return self._data["state"]
 
     @property
+    def updated_at(self) -> str:
+        return self._data["updated_at"]
+
+    @property
     def user(self) -> str:
         return self._data["user"]["login"]
 
