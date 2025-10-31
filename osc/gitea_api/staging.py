@@ -37,11 +37,10 @@ class StagingPullRequestWrapper:
             commit=self.pr_obj.head_commit,
             directory=path,
             cache_directory=self._cache_directory,
+            depth=1,
             ssh_private_key_path=self.conn.login.ssh_key,
         )
         self.git = Git(path)
-        # git fetch --all to have all commits from all remotes available
-        self.git.fetch()
 
         submodules = self.git.get_submodules()
         self.submodules_by_owner_repo = dict([((i["owner"].lower(), i["repo"].lower()), i) for i in submodules.values()])
@@ -65,11 +64,10 @@ class StagingPullRequestWrapper:
             commit=self.pr_obj.base_commit,
             directory=path,
             cache_directory=self._cache_directory,
+            depth=1,
             ssh_private_key_path=self.conn.login.ssh_key,
         )
         self.base_git = Git(path)
-        # git fetch --all to have all commits from all remotes available
-        self.base_git.fetch()
 
         submodules = self.base_git.get_submodules()
         self.base_submodules_by_owner_repo = dict([((i["owner"].lower(), i["repo"].lower()), i) for i in submodules.values()])
@@ -77,19 +75,26 @@ class StagingPullRequestWrapper:
     def merge(self, other):
         """
         Merge ``other`` pull request into ``self`` by MOVING all ``PR: <pr_id>`` references.
-        It is crucial to remove the references from the self.package_pr_maporiginal ``other`` request, otherwise the bots might get confused and close the pull request with reparented package pull request.
+        It is crucial to remove the references from the original ``other`` request, otherwise the bots might get confused and close the pull request with reparented package pull request.
         """
         from . import Git
+        from . import GitDiffGenerator
         from . import PullRequest
 
         self.pr_obj._data["body"] = PullRequest.add_pr_references(self.pr_obj.body, other.package_pr_map.keys())
         other.pr_obj._data["body"] = PullRequest.remove_pr_references(other.pr_obj.body, other.package_pr_map.keys())
 
+        self_diff = GitDiffGenerator()
+        self_diff._gitmodules.read(os.path.join(self.git.abspath, ".gitmodules"))
+        other_diff = GitDiffGenerator()
+        other_diff._gitmodules.read(os.path.join(other.git.abspath, ".gitmodules"))
+
         submodule_paths = []
 
         for pkg_owner, pkg_repo, pkg_number in other.package_pr_map:
-            other_submodule = other.submodules_by_owner_repo[(pkg_owner.lower(), pkg_repo.lower())]
             self_submodule = self.submodules_by_owner_repo.get((pkg_owner.lower(), pkg_repo.lower()), None)
+            other_submodule = other.submodules_by_owner_repo.get((pkg_owner.lower(), pkg_repo.lower()), None)
+            assert self_submodule or other_submodule
 
             if self_submodule:
                 # use an existing path if the submodule already exists
@@ -100,20 +105,19 @@ class StagingPullRequestWrapper:
                 submodule_path = other_submodule["path"]
                 submodule_branch = other_submodule["branch"]
 
-            # add a submodule if missing
-            if not self_submodule:
-                self.git._run_git(["submodule", "add", "-b", submodule_branch, f"../../{pkg_owner}/{pkg_repo}", submodule_path])
+            if self_submodule:
+                self_diff.set_submodule_commit(submodule_path, self_submodule["commit"])
+            if other_submodule:
+                other_diff.set_submodule_commit(submodule_path, other_submodule["commit"])
 
-            # init the submodule
-            self.git._run_git(["submodule", "update", "--init", submodule_path])
-
-            submodule_git = Git(os.path.join(self.git.abspath, submodule_path))
-            submodule_git.fetch()
-            submodule_git._run_git(["fetch", "origin", f"pull/{pkg_number}/head:{submodule_branch}", "--force", "--update-head-ok"])
-            submodule_git.switch(submodule_branch)
             submodule_paths.append(submodule_path)
 
         if submodule_paths:
+            import subprocess
+
+            with subprocess.Popen(["git", "apply", "--index", "-"], encoding="utf-8", stdin=subprocess.PIPE, cwd=self.git.abspath) as proc:
+                proc.communicate("\n".join(self_diff.diff(other_diff)))
+
             self.git.add(submodule_paths)
             self.git.commit(f"Merge package submodules from {other.pr_obj.base_owner}/{other.pr_obj.base_repo}!{other.pr_obj.number}")
 
@@ -139,7 +143,6 @@ class StagingPullRequestWrapper:
             # we're reverting the submodule to an older commit
             self.git._run_git(["submodule", "update", "--init", "--remote", submodule_path])
             submodule_git = Git(os.path.join(self.git.abspath, submodule_path))
-            submodule_git.fetch()
             submodule_git.reset(commit=base_submodule["commit"], hard=True)
             self.git.add([submodule_path])
         else:

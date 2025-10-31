@@ -166,8 +166,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                     ssh_private_key_path=self.gitea_conn.login.ssh_key,
                 )
                 clone_git = gitea_api.Git(clone_dir)
-                clone_git.fetch()
-                clone_git._run_git(["fetch", "origin", f"{target_branch}:{fork_branch}", "--force", "--update-head-ok"])
+                clone_git._run_git(["fetch", "origin", f"{target_branch}:{fork_branch}", "--force", "--update-head-ok", "--depth=1"])
                 clone_git.switch(fork_branch)
                 clone_git.push(remote="origin", branch=fork_branch, set_upstream=True, force=args.force)
 
@@ -202,12 +201,9 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                 )
                 target_number = pr_obj.number
 
-            # clone the git repos, cache submodule data
+            # clone the target git repo, cache submodule data
             target = gitea_api.StagingPullRequestWrapper(self.gitea_conn, target_owner, target_repo, target_number, topdir=temp_dir, cache_directory=cache_dir)
             target.clone()
-            for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner.lower(), repo.lower(), number)]
-                pr.clone()
 
             # locally merge package pull requests to the target project pull request (don't change anything on server yet)
             for owner, repo, number in args.pr_list:
