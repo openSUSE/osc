@@ -205,6 +205,7 @@ class Git:
         *,
         remote: Optional[str] = None,
         commit: Optional[str] = None,
+        depth: Optional[int] = None,
         force: bool = False,
     ):
         """
@@ -220,6 +221,8 @@ class Git:
             remote = self.get_current_remote()
 
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
+        if depth:
+            cmd += ["--depth", str(depth)]
         if force:
             cmd += [
                 "--force",

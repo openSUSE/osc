@@ -96,6 +96,7 @@ class Repo(GiteaModel):
         cache_directory: Optional[str] = None,
         reference: Optional[str] = None,
         reference_if_able: Optional[str] = None,
+        depth: Optional[int] = None,
         ssh_private_key_path: Optional[str] = None,
         ssh_strict_host_key_checking: bool = True,
     ) -> str:
@@ -183,6 +184,9 @@ class Repo(GiteaModel):
             # we want to make the newly cloned repo to be independent, this stops borrowing the objects
             cmd += ["--dissociate"]
 
+        if depth:
+            cmd += ["--depth", str(depth)]
+
         if quiet:
             cmd += ["--quiet"]
 
@@ -222,6 +226,7 @@ class Repo(GiteaModel):
         cache_directory: Optional[str] = None,
         reference: Optional[str] = None,
         reference_if_able: Optional[str] = None,
+        depth: Optional[int] = None,
         remote: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
     ):
@@ -237,6 +242,7 @@ class Repo(GiteaModel):
                 cache_directory=cache_directory,
                 reference=reference,
                 reference_if_able=reference_if_able,
+                depth=depth,
                 ssh_private_key_path=ssh_private_key_path,
             )
 
@@ -250,7 +256,7 @@ class Repo(GiteaModel):
             # without it, ``git submodule status`` is broken and returns old data
             git.reset()
             # checkout the pull request and check if HEAD matches head/sha from Gitea
-            pr_branch = git.fetch_pull_request(pr_number, commit=commit, force=True)
+            pr_branch = git.fetch_pull_request(pr_number, commit=commit, depth=depth, force=True)
             git.switch(pr_branch)
             head_commit = git.get_branch_head()
             assert (
