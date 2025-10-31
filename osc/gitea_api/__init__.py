@@ -14,6 +14,7 @@ from .conf import Config
 from .conf import Login
 from .fork import Fork
 from .git import Git
+from .git_diff_generator import GitDiffGenerator
 from .issue_timeline_entry import IssueTimelineEntry
 from .json import json_dumps
 from .pr import PullRequest
