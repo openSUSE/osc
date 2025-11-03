@@ -1,12 +1,13 @@
 from typing import List
 from typing import Optional
 
+from .common import GiteaModel
 from .connection import Connection
 from .exceptions import ForkExists
 from .repo import Repo
 
 
-class Fork:
+class Fork(GiteaModel):
     @classmethod
     def list(
         cls,
@@ -22,11 +23,12 @@ class Fork:
         :param repo: Name of the repo.
         """
         q = {
-            "limit": -1,
+            "limit": 50,
         }
         url = conn.makeurl("repos", owner, repo, "forks", query=q)
-        response = conn.request("GET", url)
-        obj_list = [Repo(i, response=response) for i in response.json()]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([Repo(i, response=response, conn=conn) for i in response.json()])
         return obj_list
 
     @classmethod
