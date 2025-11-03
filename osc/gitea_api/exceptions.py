@@ -154,7 +154,11 @@ class RepoExists(GiteaException):
         self.repo = repo
 
     def __str__(self):
-        result = f"Repo '{self.owner}/{self.repo}' already exists"
+        result = (
+            f"Repo '{self.owner}/{self.repo}' already exists.\n"
+            " - If you were forking a repo, you may consider forking with an alternative repo name.\n"
+            " - You may also want to delete the repo and fork it from elsewhere."
+        )
         return result
 
 

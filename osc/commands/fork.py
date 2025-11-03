@@ -51,6 +51,11 @@ class ForkCommand(osc.commandline.OscCommand):
             help="Name of the package (defaults to $package)",
         )
 
+        self.add_argument(
+            "--gitea-fork-org",
+            help="Name of the org owning the fork",
+        )
+
         self.add_argument_new_repo_name()
 
         self.add_argument(
@@ -155,7 +160,7 @@ class ForkCommand(osc.commandline.OscCommand):
         parent_branch_obj = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch)
 
         try:
-            repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name)
+            repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name, target_org=args.gitea_fork_org)
             fork_owner = repo_obj.owner
             fork_repo = repo_obj.repo
             print(f" * Fork created: {fork_owner}/{fork_repo}")
@@ -163,6 +168,11 @@ class ForkCommand(osc.commandline.OscCommand):
             fork_owner = e.fork_owner
             fork_repo = e.fork_repo
             print(f" * Fork already exists: {fork_owner}/{fork_repo}")
+        except gitea_api.RepoExists as e:
+            print(f"{tty.colorize('ERROR', 'red,bold')}: Repo already exists '{e.owner}/{e.repo}' and is not a fork of '{owner}/{repo}'")
+            print(" * Consider forking with an alternative repo name")
+            print(f" * You may also want to delete '{e.owner}/{e.repo}' and retry")
+            sys.exit(1)
 
         # XXX: implicit branch name should be forbidden; assumptions are bad
         fork_scmsync = urllib.parse.urlunparse(
