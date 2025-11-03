@@ -127,6 +127,17 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             # sanitize path for os.path.join()
             path = path.strip("/")
 
+            metadata_dir = os.path.join(path, "metadata")
+            try:
+                with open(os.path.join(metadata_dir, "pr.json")) as f:
+                    pr_data = json.load(f)
+                    if pr_data["updated_at"] == pr_obj.updated_at:
+                        # no update, skip the dump
+                        continue
+            except FileNotFoundError:
+                # no local metadata cached, we can't skip the dump
+                pass
+
             review_obj_list = pr_obj.get_reviews(self.gitea_conn)
 
             # see https://github.com/go-gitea/gitea/blob/main/modules/structs/pull_review.go - look for "type ReviewStateType string"
@@ -238,7 +249,6 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                         ET.Comment("The state='comment' attribute value is a custom extension to the OBS XML schema."),
                     )
 
-            metadata_dir = os.path.join(path, "metadata")
             try:
                 # remove old metadata first to ensure that we never keep any of the old files on an update
                 shutil.rmtree(metadata_dir)
