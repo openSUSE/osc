@@ -168,6 +168,11 @@ class ForkCommand(osc.commandline.OscCommand):
             fork_owner = e.fork_owner
             fork_repo = e.fork_repo
             print(f" * Fork already exists: {fork_owner}/{fork_repo}")
+        except gitea_api.RepoExists as e:
+            print(f"{tty.colorize('ERROR', 'red,bold')}: Repo already exists '{e.owner}/{e.repo}' and is not a fork of '{owner}/{repo}'")
+            print(" * Consider forking with an alternative repo name")
+            print(f" * You may also want to delete '{e.owner}/{e.repo}' and retry")
+            sys.exit(1)
 
         # XXX: implicit branch name should be forbidden; assumptions are bad
         fork_scmsync = urllib.parse.urlunparse(
