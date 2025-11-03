@@ -265,9 +265,10 @@ class IssueTimelineEntry(GiteaModel):
         :param number: Number of the pull request in owner/repo.
         """
         q = {
-            "limit": -1,
+            "limit": 50,
         }
         url = conn.makeurl("repos", owner, repo, "issues", str(number), "timeline", query=q)
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response, conn=conn, check_data=False) for i in response.json() or []]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json() or []])
         return obj_list
