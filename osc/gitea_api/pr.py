@@ -37,19 +37,31 @@ class PullRequest(GiteaModel):
         return match.group(1), match.group(2), int(match.group(3))
 
     @staticmethod
+    def get_host_owner_repo_number(url: str) -> Tuple[str, str, str, int]:
+        """
+        Parse pull request URL such as http(s)://example.com:<port>/<owner>/<repo>/pulls/<number>
+        and return (host, owner, repo, number) tuple.
+
+        The host is returned as the full base URL (scheme://netloc), e.g., "https://example.com:3000".
+        """
+        import urllib.parse
+
+        parsed_url = urllib.parse.urlparse(url)
+        host = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        path = parsed_url.path
+        owner, repo, pulls, number = path.strip("/").split("/")
+        if pulls not in ("pulls", "issues"):
+            raise ValueError(f"URL doesn't point to a pull request or an issue: {url}")
+        return host, owner, repo, int(number)
+
+    @staticmethod
     def get_owner_repo_number(url: str) -> Tuple[str, str, int]:
         """
         Parse pull request URL such as http(s)://example.com:<port>/<owner>/<repo>/pulls/<number>
         and return (owner, repo, number) tuple.
         """
-        import urllib.parse
-
-        parsed_url = urllib.parse.urlparse(url)
-        path = parsed_url.path
-        owner, repo, pulls, number = path.strip("/").split("/")
-        if pulls not in ("pulls", "issues"):
-            raise ValueError(f"URL doesn't point to a pull request or an issue: {url}")
-        return owner, repo, int(number)
+        _, owner, repo, number = PullRequest.get_host_owner_repo_number(url)
+        return owner, repo, number
 
     def parse_pr_references(self) -> List[Tuple[str, str, int]]:
         refs = re.findall(r"^PR: *(.*)$", self.body, re.M)
