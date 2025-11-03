@@ -1,16 +1,13 @@
 from typing import List
 from typing import Optional
 
+from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .exceptions import BranchExists
 
 
-class Branch:
-    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
-        self._data = data
-        self._response = response
-
+class Branch(GiteaModel):
     @property
     def commit(self) -> str:
         return self._data["commit"]["id"]
@@ -55,13 +52,13 @@ class Branch:
         :param repo: Name of the repo.
         """
         q = {
-            "limit": -1,
+            "limit": 50,
         }
         url = conn.makeurl("repos", owner, repo, "branches", query=q)
         # XXX: returns 'null' when there are no branches; an empty list would be a better API
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json() or []]
-        return obj_list
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json() or []])
 
     @classmethod
     def create(

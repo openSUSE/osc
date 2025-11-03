@@ -1,5 +1,6 @@
 import functools
 import re
+import typing
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -10,63 +11,8 @@ from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .user import User
 
-
-class PullRequestReview(GiteaModel):
-    @property
-    def state(self) -> str:
-        return self._data["state"]
-
-    @property
-    def user(self) -> Optional[str]:
-        if not self._data["user"]:
-            return None
-        return self._data["user"]["login"]
-
-    @property
-    def team(self) -> Optional[str]:
-        if not self._data["team"]:
-            return None
-        return self._data["team"]["name"]
-
-    @property
-    def who(self) -> str:
-        return self.user if self.user else f"@{self.team}"
-
-    @property
-    def submitted_at(self) -> str:
-        return self._data["submitted_at"]
-
-    @property
-    def updated_at(self) -> str:
-        return self._data["updated_at"]
-
-    @property
-    def body(self) -> str:
-        return self._data["body"]
-
-    @classmethod
-    def list(
-        cls,
-        conn: Connection,
-        owner: str,
-        repo: str,
-        number: int,
-    ) -> List["PullRequestReview"]:
-        """
-        List reviews associated with a pull request.
-
-        :param conn: Gitea ``Connection`` instance.
-        :param owner: Owner of the repo.
-        :param repo: Name of the repo.
-        :param number: Number of the pull request in owner/repo.
-        """
-        q = {
-            "limit": -1,
-        }
-        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews", query=q)
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json()]
-        return obj_list
+if typing.TYPE_CHECKING:
+    from .pr_review import PullRequestReview
 
 
 @functools.total_ordering
@@ -448,11 +394,12 @@ class PullRequest(GiteaModel):
 
         q = {
             "state": state,
-            "limit": -1,
+            "limit": 50,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
-        response = conn.request("GET", url)
-        obj_list = [cls(i, response=response, conn=conn) for i in response.json()]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json()])
         return obj_list
 
     @classmethod
@@ -544,7 +491,9 @@ class PullRequest(GiteaModel):
     def get_reviews(
         self,
         conn: Connection,
-    ) -> List[PullRequestReview]:
+    ) -> List["PullRequestReview"]:
+        from .pr_review import PullRequestReview
+
         return PullRequestReview.list(conn, self.base_owner, self.base_repo, self.number)
 
     @classmethod
