@@ -1,15 +1,12 @@
 from typing import List
 from typing import Optional
 
+from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 
 
-class SSHKey:
-    def __init__(self, data: dict, *, response: Optional[GiteaHTTPResponse] = None):
-        self._data = data
-        self._response = response
-
+class SSHKey(GiteaModel):
     @property
     def id(self) -> int:
         return self._data["id"]
@@ -43,11 +40,13 @@ class SSHKey:
         :param conn: Gitea ``Connection`` instance.
         """
         q = {
-            "limit": -1,
+            "limit": 50,
         }
         url = conn.makeurl("user", "keys", query=q)
         response = conn.request("GET", url)
-        obj_list = [cls(i, response=response) for i in response.json()]
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json() or []])
         return obj_list
 
     @classmethod
