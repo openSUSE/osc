@@ -51,6 +51,11 @@ class ForkCommand(osc.commandline.OscCommand):
             help="Name of the package (defaults to $package)",
         )
 
+        self.add_argument(
+            "--gitea-fork-org",
+            help="Name of the org owning the fork",
+        )
+
         self.add_argument_new_repo_name()
 
         self.add_argument(
@@ -155,7 +160,7 @@ class ForkCommand(osc.commandline.OscCommand):
         parent_branch_obj = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch)
 
         try:
-            repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name)
+            repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name, target_org=args.gitea_fork_org)
             fork_owner = repo_obj.owner
             fork_repo = repo_obj.repo
             print(f" * Fork created: {fork_owner}/{fork_repo}")
