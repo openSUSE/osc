@@ -21,6 +21,12 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument(
+            "--close-removed",
+            action="store_true",
+            help="Close pull requests after removing their references",
+        )
+
+        self.add_argument(
             "--keep-temp-dir",
             action="store_true",
             help="Don't delete the temporary directory with git checkouts",
@@ -72,13 +78,14 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
             # update target pull request
             target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, description=target.pr_obj.body)
 
-            for owner, repo, number in args.pr_list:
-                pr = pr_map[(owner.lower(), repo.lower(), number)]
-                # close the removed package pull request
-                try:
-                    gitea_api.PullRequest.close(self.gitea_conn, owner, repo, number)
-                except Exception as e:
-                    print(f"Unable to close pull request {owner}/{repo}#{number}: {e}")
+            if args.close_removed:
+                for owner, repo, number in args.pr_list:
+                    pr = pr_map[(owner.lower(), repo.lower(), number)]
+                    # close the removed package pull request
+                    try:
+                        gitea_api.PullRequest.close(self.gitea_conn, owner, repo, number)
+                    except Exception as e:
+                        print(f"Unable to close pull request {owner}/{repo}#{number}: {e}")
 
         print()
         print(target.pr_obj.to_human_readable_string())
