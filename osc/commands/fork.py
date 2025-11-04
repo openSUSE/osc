@@ -59,6 +59,11 @@ class ForkCommand(osc.commandline.OscCommand):
         self.add_argument_new_repo_name()
 
         self.add_argument(
+            "--git-branch",
+            help="Name of the new git branch",
+        )
+
+        self.add_argument(
             "--no-devel-project",
             action="store_true",
             help="Fork the specified package instead the package from the devel project (which is the place where the package is developed)",
@@ -173,6 +178,17 @@ class ForkCommand(osc.commandline.OscCommand):
             print(" * Consider forking with an alternative repo name")
             print(f" * You may also want to delete '{e.owner}/{e.repo}' and retry")
             sys.exit(1)
+
+        # Crete the new branch if specified
+        if args.git_branch:
+            old_ref_name = fork_branch
+            fork_branch = args.git_branch
+            try:
+                parent_branch_obj = gitea_api.Branch.create(
+                    gitea_conn, fork_owner, fork_repo, old_ref_name=old_ref_name, new_branch_name=fork_branch
+                )
+            except gitea_api.BranchExists:
+                print(f" * Branch already exists: {fork_branch}")
 
         # XXX: implicit branch name should be forbidden; assumptions are bad
         fork_scmsync = urllib.parse.urlunparse(
