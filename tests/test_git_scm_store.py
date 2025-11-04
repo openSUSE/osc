@@ -97,7 +97,7 @@ class TestGitStoreProject(unittest.TestCase):
         except OSError:
             pass
 
-    def _git_init(self, path, *, separate_git_dir=None):
+    def _git_init(self, path, *, branch="factory", separate_git_dir=None):
         os.makedirs(path, exist_ok=True)
         git_init_cmd = ["git", "init", "-q"]
         if separate_git_dir:
@@ -106,7 +106,7 @@ class TestGitStoreProject(unittest.TestCase):
         subprocess.check_output(["git", "config", "user.email", "user@example.com"], cwd=path)
         subprocess.check_output(["git", "config", "user.name", "User Name"], cwd=path)
         subprocess.check_output(["git", "commit", "-m", "empty", "--allow-empty"], cwd=path)
-        subprocess.check_output(["git", "checkout", "-b", "factory", "-q"], cwd=path)
+        subprocess.check_output(["git", "checkout", "-b", branch, "-q"], cwd=path)
         subprocess.check_output(["git", "remote", "add", "origin", "https://example.com/packages/my-package.git"], cwd=path)
 
     def _setup_project(self, path, *, apiurl="https://api.example.com", project=None):
@@ -349,6 +349,24 @@ class TestGitStoreProject(unittest.TestCase):
         store = GitStore(pkg_path)
         self.assertEqual(store.project, "PROJ")
         self.assertEqual(store.package, "pkg")
+
+    def test_project_with_different_branch(self):
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path, branch="project-foo")
+        manifest_data = {
+            "obs_apiurl": "https://api.example.com",
+            "obs_project": "PROJ",
+        }
+
+        self._write(os.path.join(prj_path, "_manifest"), osc_yaml.yaml_dumps(manifest_data))
+
+        pkg_path = os.path.join(prj_path, "package")
+        self._git_init(pkg_path, branch="project-bar")
+
+        stderr = io.StringIO()
+        with contextlib.redirect_stderr(stderr):
+            GitStore(pkg_path)
+        self.assertIn("WARNING", stderr.getvalue())
 
 
 if __name__ == "__main__":

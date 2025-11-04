@@ -2,9 +2,10 @@ import fcntl
 import fnmatch
 import json
 import os
-from pathlib import Path
+import sys
 import typing
 import urllib.parse
+from pathlib import Path
 from typing import Dict
 from typing import List
 from typing import Optional
@@ -87,6 +88,8 @@ class LocalGitStore:
     A class for managing OBS metadata in .git.
     It is not supposed to be used directly, it's a base class for GitStore that adds logic for resolving the values from multiple places.
     """
+
+    _BRANCH_MISMATCH_WARNING_PRINTED = set()
 
     @classmethod
     def is_project_dir(cls, path):
@@ -288,6 +291,23 @@ class LocalGitStore:
         if not self.is_package:
             msg = f"Directory '{self.abspath}' is not a Git SCM working copy of a package"
             raise oscerr.NoWorkingCopy(msg)
+
+        if self.project_store and hasattr(self.project_store, "_git") and self.project_store._git.current_branch != self._git.current_branch:
+            key = (self.project_store._git.current_branch, self._git.current_branch)
+            if key not in self.__class__._BRANCH_MISMATCH_WARNING_PRINTED:
+                from osc.output import tty
+
+                # print the warning only once and store the information in the class
+                self.__class__._BRANCH_MISMATCH_WARNING_PRINTED.add(key)
+                msg = (
+                    f"{tty.colorize('WARNING', 'yellow,bold')}: "
+                    "Git SCM package working copy is switched to a different branch than it's corresponding parent project\n"
+                    f" - Package branch: {self._git.current_branch}\n"
+                    f" - Project branch: {self.project_store._git.current_branch}\n"
+                    f" - Package path: {self.topdir}\n"
+                    f" - Project path: {self.project_store.topdir}"
+                )
+                print(msg, file=sys.stderr)
 
         missing = []
         for name in ["apiurl", "project", "package"]:
