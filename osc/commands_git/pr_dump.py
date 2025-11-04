@@ -155,7 +155,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     {
                         "state": state_map[review_obj.state],
                         "who": review_obj.who,
-                        "created": review_obj.submitted_at,
+                        "created": review_obj.created_at,
                         "when": review_obj.updated_at,
                         "comment": review_obj.body,
                     }
