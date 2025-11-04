@@ -7899,17 +7899,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongArgs('Too many arguments')
 
         if not opts.local_package:
-            store = osc_store.get_store(Path.cwd(), print_warnings=True)
+            try:
+                store = osc_store.get_store(Path.cwd(), print_warnings=True)
+                store.assert_is_package()
+            except oscerr.NoWorkingCopy:
+                if opts.apiurl and opts.alternative_project:
+                    # HACK: ignore invalid working copy and run the build anyway if --alternative-project is specified
+                    store = git_scm.GitStore(Path.cwd(), check=False)
+                else:
+                    raise
+
             if isinstance(store, git_scm.store.GitStore):
                 opts.local_package = True
-            else:
-                store.assert_is_package()
 
             try:
                 if opts.alternative_project and opts.alternative_project == store.project:
                     opts.alternative_project = None
-            except RuntimeError:
-            # ignore the following exception: Couldn't map git branch '<BRANCH>' to a project
+            except (RuntimeError, oscerr.NoWorkingCopy):
+                # ignore the following exception: Couldn't map git branch '<BRANCH>' to a project
                 pass
         else:
             try:
