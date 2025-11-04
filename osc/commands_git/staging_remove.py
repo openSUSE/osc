@@ -40,7 +40,20 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
         with TemporaryDirectory(prefix="git-obs-staging_", dir=".", delete=not args.keep_temp_dir) as temp_dir:
             # get pull request data from gitea
             target = gitea_api.StagingPullRequestWrapper(self.gitea_conn, target_owner, target_repo, target_number, topdir=temp_dir)
-            pr_map = {}  # {(owner, repo, number):.
+
+            # check if the specified references match actual references in the project pull request
+            refs = target.pr_obj.parse_pr_references()
+            refs = [(owner.lower(), repo.lower(), number) for owner, repo, number in refs]
+            missing_refs = []
+            for owner, repo, number in args.pr_list:
+                if (owner, repo, number) not in refs:
+                    missing_refs.append(f"{owner}/{repo}#{number}")
+            if missing_refs:
+                msg = f"The following pull requests are not referenced in the project pull request: {', '.join(missing_refs)}"
+                raise gitea_api.GitObsRuntimeError(msg)
+
+            # get pull request data from gitea
+            pr_map = {}
             for owner, repo, number in args.pr_list:
                 pr = gitea_api.StagingPullRequestWrapper(self.gitea_conn, owner, repo, number, topdir=temp_dir)
                 pr_map[(owner.lower(), repo.lower(), number)] = pr
