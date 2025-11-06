@@ -4607,9 +4607,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print('A working copy of the branched package can be checked out with:\n\n'
                   'osc %sco %s/%s'
                   % (apiopt, targetprj, package))
-        print_request_list(apiurl, args[0], args[1])
+        has_requests = False
+        has_requests = has_requests or print_request_list(apiurl, args[0], args[1])
         if devloc:
-            print_request_list(apiurl, devloc, srcpkg)
+            has_requests = has_requests or print_request_list(apiurl, devloc, srcpkg)
+        if has_requests:
+            prompt("Do you still need the branch with the open requests?")
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify log message TEXT')

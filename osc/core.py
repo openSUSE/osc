@@ -5790,17 +5790,19 @@ def print_request_list(apiurl, project, package=None, states=("new", "review"), 
     is enabled in the config or if "force" is set to True
     """
     if not conf.config['check_for_request_on_action'] and not force:
-        return
+        return False
     requests = get_request_collection(apiurl, project=project, package=package, states=states)
+    request_count = len(requests)
     msg = '\nPending requests for %s: %s (%s)'
     if sys.stdout.isatty():
         msg = f'\033[1m{msg}\033[0m'
     if package is None and requests:
-        print(msg % ('project', project, len(requests)))
+        print(msg % ('project', project, request_count))
     elif requests:
-        print(msg % ('package', f"{project}/{package}", len(requests)))
+        print(msg % ('package', f"{project}/{package}", request_count))
     for r in requests:
         print(r.list_view(), '\n')
+    return (request_count > 0)
 
 
 def request_interactive_review(apiurl, request, initial_cmd='', group=None,
