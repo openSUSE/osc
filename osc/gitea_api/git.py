@@ -135,6 +135,13 @@ class Git:
         except subprocess.CalledProcessError:
             return None
 
+    def branch(self, branch: str, set_upstream_to: Optional[str] = None):
+        cmd = ["branch"]
+        if set_upstream_to:
+            cmd += ["--set-upstream-to", set_upstream_to]
+        cmd += [branch]
+        return self._run_git(cmd)
+
     def branch_contains_commit(self, commit: str, branch: Optional[str] = None, remote: Optional[str] = None) -> bool:
         if not branch:
             branch = self.current_branch
@@ -198,6 +205,7 @@ class Git:
         *,
         remote: Optional[str] = None,
         commit: Optional[str] = None,
+        depth: Optional[int] = None,
         force: bool = False,
     ):
         """
@@ -213,6 +221,8 @@ class Git:
             remote = self.get_current_remote()
 
         cmd = ["fetch", remote, f"pull/{pull_number}/head:{target_branch}"]
+        if depth:
+            cmd += ["--depth", str(depth)]
         if force:
             cmd += [
                 "--force",
@@ -335,6 +345,18 @@ class Git:
             cmd += ["--allow-empty"]
         self._run_git(cmd)
 
+    def push(self, remote: Optional[str] = None, branch: Optional[str] = None, *, set_upstream: Optional[str] = None, force: bool = False):
+        cmd = ["push"]
+        if force:
+            cmd += ["--force"]
+        if set_upstream:
+            cmd += ["--set-upstream"]
+        if remote:
+            cmd += [remote]
+            if branch:
+                cmd += [branch]
+        self._run_git(cmd)
+
     def ls_files(self, ref: str = "HEAD", suffixes: Optional[List[str]] = None) -> Dict[str, str]:
         out = self._run_git(["ls-tree", "-r", "--format=%(objectname) %(path)", ref])
         regex = re.compile(r"^(?P<checksum>[0-9a-f]+) (?P<path>.*)$")
@@ -395,7 +417,7 @@ class Git:
 
     def get_submodules(self) -> dict:
         SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
-        STATUS_RE = re.compile(r"^.(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
+        STATUS_RE = re.compile(r"^(?P<status>.)(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
 
         result = {}
 
@@ -425,7 +447,9 @@ class Git:
                 continue
             submodule = match.groupdict()["submodule"]
             commit = match.groupdict()["commit"]
+            status = match.groupdict()["status"]
             result[submodule]["commit"] = commit
+            result[submodule]["status"] = status
 
         remote_url = self.get_remote_url()
         for submodule_entry in result.values():

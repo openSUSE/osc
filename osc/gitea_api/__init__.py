@@ -14,11 +14,13 @@ from .conf import Config
 from .conf import Login
 from .fork import Fork
 from .git import Git
+from .git_diff_generator import GitDiffGenerator
 from .issue_timeline_entry import IssueTimelineEntry
 from .json import json_dumps
 from .pr import PullRequest
 from .pr_review import PullRequestReview
 from .repo import Repo
 from .ssh_key import SSHKey
+from .staging import StagingPullRequestWrapper
 from .tardiff import TarDiff
 from .user import User

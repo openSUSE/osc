@@ -87,6 +87,46 @@ class PullRequest(GiteaModel):
 
         return result
 
+    @classmethod
+    def add_pr_references(cls, text: str, pr_id_list: List[Tuple[str, str, int]]) -> str:
+        pos = 0
+        add_newline = False
+
+        for match in re.finditer(r"^PR: *(.*)$", text, re.M):
+            pos = match.end()
+            if pos < len(text) and text[pos] == "\n":
+                pos += 1
+            else:
+                add_newline = True
+
+        references_str = ""
+        if add_newline:
+            references_str += "\n"
+        for owner, repo, number in pr_id_list:
+            references_str += f"PR: {owner}/{repo}!{number}\n"
+        text = text[:pos] + references_str + text[pos:]
+        return text
+
+    @classmethod
+    def remove_pr_references(cls, text: str, pr_id_list: List[Tuple[str, str, int]]) -> str:
+        # HACK: reverse matches so we can modify the text from end without breaking any indexes
+        for match in reversed(list(re.finditer(r"^PR: *(.*)$", text, re.M))):
+            try:
+                pr_id = PullRequest.split_id(match.group(1))
+                if pr_id not in pr_id_list:
+                    continue
+            except ValueError:
+                continue
+
+            start_pos = match.start()
+            end_pos = match.end()
+            if end_pos < len(text) and text[end_pos] == "\n":
+                end_pos += 1
+
+            text = text[:start_pos] + text[end_pos:]
+
+        return text
+
     @property
     def is_pull_request(self):
         # determine if we're working with a proper pull request or an issue without pull request details
@@ -305,6 +345,7 @@ class PullRequest(GiteaModel):
         source_branch: str,
         title: str,
         description: Optional[str] = None,
+        labels: Optional[List[str]] = None,
     ) -> "PullRequest":
         """
         Create a pull request to ``owner``/``repo`` to the ``base`` branch.
@@ -318,13 +359,18 @@ class PullRequest(GiteaModel):
         :param source_branch: Name of the source branch in the source (forked) repo.
         :param title: Pull request title.
         :param description: Pull request description.
+        :param labels: List of labels to be associated with the pull request.
         """
         url = conn.makeurl("repos", target_owner, target_repo, "pulls")
+        if labels:
+            ids = cls._get_label_ids(conn, target_owner, target_repo)
+            labels = [ids[i] for i in labels]
         data = {
             "base": target_branch,
             "head": f"{source_owner}:{source_branch}",
             "title": title,
             "body": description,
+            "labels": labels,
         }
         response = conn.request("POST", url, json_data=data)
         obj = cls(response.json(), response=response, conn=conn)
@@ -376,7 +422,7 @@ class PullRequest(GiteaModel):
         """
         json_data = {
             "title": title,
-            "description": description,
+            "body": description,
             "allow_maintainer_edit": allow_maintainer_edit,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
@@ -681,7 +727,7 @@ class PullRequest(GiteaModel):
         response = conn.request("GET", url)
         labels = response.json()
         for label in labels:
-            result[label["id"]] = label["name"]
+            result[label["name"]] = label["id"]
         return result
 
     @classmethod
@@ -692,7 +738,7 @@ class PullRequest(GiteaModel):
         repo: str,
         number: int,
         labels: List[str],
-    ) -> "GiteaHTTPResponse":
+    ) -> Optional["GiteaHTTPResponse"]:
         """
         Add one or more labels to a pull request.
 
