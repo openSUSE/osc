@@ -159,8 +159,10 @@ class Package:
         return packages, failed_to_load
 
     def wc_check(self):
+        from ..git_scm import GitStore
+
         dirty_files = []
-        if self.scm_url:
+        if self.scm_url or isinstance(self.store, GitStore):
             return dirty_files
         for fname in self.filenamelist:
             if not self.store.sources_is_file(fname) and fname not in self.skipped:
@@ -804,8 +806,9 @@ class Package:
         called).
         """
         from ..core import DirectoryServiceinfo
+        from ..git_scm import GitStore
 
-        if self.scm_url:
+        if self.scm_url or isinstance(self.store, GitStore):
             self.filenamelist = []
             self.filelist = []
             self.skipped = []
