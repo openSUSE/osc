@@ -1,3 +1,41 @@
+- 1.22.0
+  - Command-line:
+    - Add 'git-obs staging' commands
+    - Add '--gitea-fork-org' option to 'osc fork' command
+    - Add '--git-branch' option to 'osc fork' command
+    - Add 'DELETE' to 'git-obs api' allowed methods
+    - Add commit messages as commented lines to the template in 'git-obs pr create'
+    - Add filtering by label to 'git-obs pr list'
+    - Properly handle fork mismatch in 'osc fork'
+    - Change 'osc build' to build from any git repo if '--alternative-project' is specified
+    - Fix 'osc service' for git based packages
+    - Fix 'git-obs pr dump' to skip the dump if the target has the same updated_at timestamp as the pull request in Gitea
+    - Fix 'git-obs pr dump' to do case insensitive check on owner and repo
+    - Fix retrieving 'arch' argument in 'osc buildlog'
+  - Library:
+    - Add 'status' to the output of gitea_api.Git.get_submodules()
+    - Add 'remote' argument to gitea_api.Repo.clone_or_update()
+    - Add gitea_api.common.TemporaryDirectory class that supports 'delete' argument on python 3.6+
+    - Add gitea_api.GitDiffGenerator class for creating submodule diffs without a git checkout
+    - Add 'depth' argument to gitea_api.Repo.clone() and clone_or_update()
+    - Add gitea_api.StagingPullRequestWrapper class for handling staging
+    - Add gitea_api.PullRequest.get_host_owner_repo_number() method
+    - Make GitObsCommand.add_argument_owner_repo() and add_argument_owner_repo_pull() reusable by allowing setting 'dest' argument
+    - Warn if the git package doesn't have the same branch as the parent project
+    - Extend gitea_api.PullRequest with methods that work with 'PR:' references
+    - Support setting labels in gitea_api.PullRequest.create()
+    - Fix gitea_api to use pagination instead of limit -1 everywhere
+    - Remove duplicate, unused PullRequestReview class from gitea_api.pr
+    - Move clone_or_update() from 'git-obs pr dump' command to gitea_api.Repo
+    - Change gitea_api.Repo.clone_or_update() to take 'ssh_private_key_path' argument
+    - Improve performance of gitea_api.IssueTimelineEntry by listing and caching requests instead of fetching them one by one
+    - Make GitObsCommand.add_argument_owner_repo() and add_argument_owner_repo_pull() reusable by allowing setting 'help' argument
+    - Change gitea_api.Repo.clone() to stop borrowing objects when 'reference' or 'reference_if_able' is used
+    - Fix the resulting dictionary in gitea_api.PullRequest._get_label_ids()
+    - Make gitea_api.RepoExists exception more helpful by giving a hint to fork under a different name
+    - Use server_diff() instead of server_diff_noex() to exit with a non-zero return code
+    - Return preinstallimage.info and allow podman to use preinstallimage
+
 - 1.21.0
   - Command-line:
     - Modify osc subcommands to error out if they don't work with git
