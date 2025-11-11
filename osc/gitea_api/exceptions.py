@@ -20,7 +20,10 @@ def response_to_exception(response: GiteaHTTPResponse, *, context: Optional[dict
     """
     try:
         data = response.json()
-        messages = [data["message"]] + (data.get("errors", None) or [])
+        if data:
+            messages = [data["message"]] + (data.get("errors", None) or [])
+        else:
+            messages = []
     except json.JSONDecodeError:
         messages = [response.data.decode("utf-8")]
 
