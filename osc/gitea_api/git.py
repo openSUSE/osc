@@ -99,6 +99,13 @@ class Git:
 
         return path
 
+    @property
+    def git_dir(self) -> Optional[str]:
+        try:
+            return self._run_git(["rev-parse", "--git-dir"])
+        except subprocess.CalledProcessError:
+            return None
+
     def init(self, *, initial_branch: Optional[str] = None, quiet: bool = True, mute_stderr: bool = False):
         cmd = ["init"]
         if initial_branch:
@@ -131,9 +138,29 @@ class Git:
     @property
     def current_branch(self) -> Optional[str]:
         try:
-            return self._run_git(["branch", "--show-current"], mute_stderr=True)
+            result = self._run_git(["branch", "--show-current"], mute_stderr=True)
         except subprocess.CalledProcessError:
-            return None
+            result = None
+
+        if not result:
+            # try to determine the branch during rebase
+            git_dir = self.git_dir
+            if git_dir:
+                paths = [
+                    os.path.join(git_dir, "rebase-apply", "head-name"),
+                    os.path.join(git_dir, "rebase-merge", "head-name"),
+                ]
+                for path in paths:
+                    try:
+                        with open(path, "r", encoding="utf-8") as f:
+                            line = f.readline()
+                            # parse "refs/heads/<branch>"
+                            result = line.strip().split("/", 2)[-1]
+                            break
+                    except FileNotFoundError:
+                        pass
+
+        return result
 
     def branch(self, branch: str, set_upstream_to: Optional[str] = None):
         cmd = ["branch"]
