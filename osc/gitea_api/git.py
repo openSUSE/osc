@@ -278,9 +278,29 @@ class Git:
     def get_current_remote(self, fallback_to_origin: bool = True) -> Optional[str]:
         result = None
         try:
-            result = self._run_git(["rev-parse", "--abbrev-ref", "@{u}"], mute_stderr=True)
-            if result:
-                result = result.split("/")[0]
+            # get the upstream branch that the current branch is tracking:
+            #   case 1: upstream is a remote-tracking branch    origin/main
+            #   case 2: upstream is a local branch              slfo-main
+            upstream = self._run_git(
+                ["rev-parse", "--abbrev-ref", "@{u}"], mute_stderr=True
+            )
+            if "/" in upstream:
+                result = upstream.split("/")[0]
+                try:
+                    self._run_git(["remote", "get-url", result], mute_stderr=True)
+                except subprocess.CalledProcessError:
+                    result = None
+            else:
+                # case 2: upstream is a local branch
+                # look up the remote that the local branch tracks
+                try:
+                    remote_ref = self._run_git(
+                        ["config", f"branch.{upstream}.remote"], mute_stderr=True
+                    )
+                    if remote_ref:
+                        result = remote_ref
+                except subprocess.CalledProcessError:
+                    pass
         except subprocess.CalledProcessError:
             pass
 
