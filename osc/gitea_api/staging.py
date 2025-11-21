@@ -5,7 +5,8 @@ from typing import Optional
 class StagingPullRequestWrapper:
     BACKLOG_LABEL = "staging/Backlog"
     INPROGRESS_LABEL = "staging/In Progress"
-
+    ONHOLD_LABEL = "staging/On Hold"
+    
     def __init__(self, conn, owner: str, repo: str, number: int, *, topdir: str, cache_directory: Optional[str] = None):
         from . import PullRequest
 
