@@ -10,6 +10,7 @@ from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
 from .user import User
+from .repo import Repo
 
 if typing.TYPE_CHECKING:
     from .pr_review import PullRequestReview
@@ -363,7 +364,7 @@ class PullRequest(GiteaModel):
         """
         url = conn.makeurl("repos", target_owner, target_repo, "pulls")
         if labels:
-            ids = cls._get_label_ids(conn, target_owner, target_repo)
+            ids = Repo.get_label_ids(conn, target_owner, target_repo)
             labels = [ids[i] for i in labels]
         data = {
             "base": target_branch,
@@ -438,6 +439,7 @@ class PullRequest(GiteaModel):
         repo: str,
         *,
         state: Optional[str] = "open",
+        labels: Optional[List[int]] = None,
     ) -> List["PullRequest"]:
         """
         List pull requests in a repo.
@@ -454,6 +456,10 @@ class PullRequest(GiteaModel):
             "state": state,
             "limit": 50,
         }
+        
+        if labels:
+            q["labels"] = labels
+                        
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
         obj_list = []
         for response in conn.request_all_pages("GET", url):
@@ -718,19 +724,6 @@ class PullRequest(GiteaModel):
         return obj
 
     @classmethod
-    def _get_label_ids(cls, conn: Connection, owner: str, repo: str) -> Dict[str, int]:
-        """
-        Helper to map labels to their IDs
-        """
-        result = {}
-        url = conn.makeurl("repos", owner, repo, "labels")
-        response = conn.request("GET", url)
-        labels = response.json()
-        for label in labels:
-            result[label["name"]] = label["id"]
-        return result
-
-    @classmethod
     def add_labels(
         cls,
         conn: Connection,
@@ -752,7 +745,7 @@ class PullRequest(GiteaModel):
 
         label_id_list = []
         invalid_labels = []
-        label_name_id_map = cls._get_label_ids(conn, owner, repo)
+        label_name_id_map = Repo.get_label_ids(conn, owner, repo)
         for label in labels:
             label_id = label_name_id_map.get(label, None)
             if not label_id:
@@ -791,7 +784,7 @@ class PullRequest(GiteaModel):
 
         label_id_list = []
         invalid_labels = []
-        label_name_id_map = cls._get_label_ids(conn, owner, repo)
+        label_name_id_map = Repo.get_label_ids(conn, owner, repo)
         for label in labels:
             label_id = label_name_id_map.get(label, None)
             if not label_id:

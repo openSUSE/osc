@@ -2,7 +2,7 @@ import functools
 import os
 import re
 import subprocess
-from typing import List
+from typing import Dict, List
 from typing import Optional
 from typing import Tuple
 
@@ -312,3 +312,16 @@ class Repo(GiteaModel):
         for response in conn.request_all_pages("GET", url):
             obj_list.extend([cls(i, response=response) for i in response.json()])
         return obj_list
+    
+    @classmethod
+    def get_label_ids(cls, conn: Connection, owner: str, repo: str) -> Dict[str, int]:
+        """
+        Helper to map labels to their IDs
+        """
+        result = {}
+        url = conn.makeurl("repos", owner, repo, "labels")
+        response = conn.request("GET", url)
+        labels = response.json()
+        for label in labels:
+            result[label["name"]] = label["id"]
+        return result
