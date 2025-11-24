@@ -24,11 +24,12 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         self.add_argument(
             "--subdir-fmt",
             metavar="FMT",
-            default="{pr.base_owner}/{pr.base_repo}/{pr.number}",
+            default="{owner}/{repo}/{number}",
             help=(
                 "Formatting string for a subdir associated with each pull request\n"
-                "(default: '{pr.base_owner}/{pr.base_repo}/{pr.number}')\n"
+                "(default: '{owner}/{repo}/{number}')\n"
                 "Available values:\n"
+                "  - 'owner', 'repo' and 'number' parsed from the specified pull request ID\n"
                 "  - 'pr' object which is an instance of 'osc.gitea_api.PullRequest'\n"
                 "  - 'login_name', 'login_user' from the currently used Gitea login entry"
             ),
@@ -64,6 +65,9 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                 continue
 
             path = args.subdir_fmt.format(
+                owner=owner,
+                repo=repo,
+                number=number,
                 pr=pr_obj,
                 login_name=self.gitea_login.name,
                 login_user=self.gitea_login.user,
