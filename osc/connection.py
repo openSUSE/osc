@@ -342,6 +342,14 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         http.client.print(40 * '-')
         http.client.print(method, url)
 
+    if method != "GET" and os.environ['OSC_HTTP_MANUAL_APPROVE']:
+        print("osc is going to send "+ method +" request to " + urlopen_url)
+        if data:
+            print(data.decode("utf-8"))
+        y = input("press 'y' to continue or any other key to cancel")
+        if y != 'y' and y != 'Y':
+            raise Exception("Manual abort")
+
     try:
         response = pool.urlopen(
             method, urlopen_url, body=data, headers=headers,
