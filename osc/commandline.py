@@ -6439,6 +6439,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc results PROJECT [PACKAGE[:FLAVOR]]
         """
 
+        from . import store as osc_store
         from .core import MultibuildFlavorResolver
         from .core import csv
         from .core import decode_it
@@ -6449,24 +6450,25 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_project_dir
         from .core import result_xml_to_dicts
         from .core import slash_split
-        from .core import store_read_package
-        from .core import store_read_project
 
         args = slash_split(args)
 
         apiurl = self.get_api_url()
         if len(args) > 2:
             raise oscerr.WrongArgs('Too many arguments (required none, one, or two)')
-        project = package = None
-        wd = Path.cwd()
-        if is_project_dir(wd):
-            project = store_read_project(wd)
-        elif is_package_dir(wd):
-            project = store_read_project(wd)
-            package = store_read_package(wd)
-        if len(args) > 0:
+
+        project = None
+        package = None
+
+        if len(args) == 0:
+            store = osc_store.get_store(Path.cwd())
+            project = store.project
+            if store.is_package:
+                package = store.package
+        elif len(args) == 1:
             project = self._process_project_name(args[0])
-        if len(args) > 1:
+        elif len(args) == 2:
+            project = self._process_project_name(args[0])
             package = args[1]
 
         if project is None:
