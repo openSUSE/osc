@@ -16,6 +16,10 @@ class Manifest:
 
         with open(path, "r", encoding="utf-8") as f:
             data = osc_yaml.yaml_load(f)
+
+        # empty file gets loaded as None and we need a dictionary
+        data = data or {}
+
         obj = cls(data)
         return obj
 
@@ -24,6 +28,10 @@ class Manifest:
         from ..util import yaml as osc_yaml
 
         data = osc_yaml.yaml_loads(text)
+
+        # empty string gets loaded as None and we need a dictionary
+        data = data or {}
+
         obj = cls(data)
         return obj
 
