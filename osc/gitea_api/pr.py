@@ -19,10 +19,10 @@ if typing.TYPE_CHECKING:
 @functools.total_ordering
 class PullRequest(GiteaModel):
     def __eq__(self, other):
-        (self.base_owner, self.base_repo, self.number) == (other.base_owner, other.base_repo, other.number)
+        return (self.base_owner, self.base_repo, self.number) == (other.base_owner, other.base_repo, other.number)
 
     def __lt__(self, other):
-        (self.base_owner, self.base_repo, self.number) < (other.base_owner, other.base_repo, other.number)
+        return (self.base_owner, self.base_repo, self.number) < (other.base_owner, other.base_repo, other.number)
 
     @classmethod
     def split_id(cls, pr_id: str) -> Tuple[str, str, int]:
