@@ -29,6 +29,12 @@ class StagingSearchCommand(osc.commandline_git.GitObsCommand):
             help="Filter by review state on *all* referenced *package* PRs.",
         )
         self.add_argument(
+            "--target-branch",
+            dest="target_branches",
+            action="append",
+            help="Filter by target branch.",
+        )
+        self.add_argument(
             "--export",
             action="store_true",
             help="Show json objects instead of human readable text",
@@ -53,6 +59,9 @@ class StagingSearchCommand(osc.commandline_git.GitObsCommand):
 
         pr_obj_list = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=pr_state, labels=[label_id])
         pr_obj_list.sort()
+
+        if args.target_branches:
+            pr_obj_list = [i for i in pr_obj_list if i.base_branch in args.target_branches]
 
         table = KeyValueTable()
         result = []
