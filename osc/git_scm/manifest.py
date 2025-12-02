@@ -81,6 +81,28 @@ class Manifest:
 
         return None
 
+    def get_package_paths(self, project_path: str):
+        """
+        Return all paths to the existing package directories in a project.
+        """
+        result = []
+
+        for path in self.packages:
+            package_path = os.path.normpath(os.path.join(project_path, path))
+            if os.path.isdir(package_path):
+                result.append(package_path)
+
+        for path in self.package_directories:
+            topdir_path = os.path.normpath(os.path.join(project_path, path))
+            for fn in os.listdir(topdir_path):
+                if fn.startswith("."):
+                    continue
+                package_path = os.path.join(topdir_path, fn)
+                if os.path.isdir(package_path):
+                    result.append(package_path)
+
+        return result
+
 
 class Subdirs(Manifest):
     """
