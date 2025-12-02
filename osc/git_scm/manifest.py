@@ -16,6 +16,10 @@ class Manifest:
 
         with open(path, "r", encoding="utf-8") as f:
             data = osc_yaml.yaml_load(f)
+
+        # empty file gets loaded as None and we need a dictionary
+        data = data or {}
+
         obj = cls(data)
         return obj
 
@@ -24,6 +28,10 @@ class Manifest:
         from ..util import yaml as osc_yaml
 
         data = osc_yaml.yaml_loads(text)
+
+        # empty string gets loaded as None and we need a dictionary
+        data = data or {}
+
         obj = cls(data)
         return obj
 
@@ -80,6 +88,28 @@ class Manifest:
                     return i_obj.as_posix()
 
         return None
+
+    def get_package_paths(self, project_path: str):
+        """
+        Return all paths to the existing package directories in a project.
+        """
+        result = []
+
+        for path in self.packages:
+            package_path = os.path.normpath(os.path.join(project_path, path))
+            if os.path.isdir(package_path):
+                result.append(package_path)
+
+        for path in self.package_directories:
+            topdir_path = os.path.normpath(os.path.join(project_path, path))
+            for fn in os.listdir(topdir_path):
+                if fn.startswith("."):
+                    continue
+                package_path = os.path.join(topdir_path, fn)
+                if os.path.isdir(package_path):
+                    result.append(package_path)
+
+        return result
 
 
 class Subdirs(Manifest):

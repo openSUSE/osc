@@ -368,6 +368,21 @@ class TestGitStoreProject(unittest.TestCase):
             GitStore(pkg_path)
         self.assertIn("WARNING", stderr.getvalue())
 
+    def test_project_with_empty_manifest(self):
+        prj_path = os.path.join(self.tmpdir, "project")
+        self._git_init(prj_path)
+        self._setup_project(prj_path, project="PROJ")
+        self._write(os.path.join(prj_path, "_manifest"), "")
+
+        pkg_path = os.path.join(prj_path, "package")
+        os.makedirs(pkg_path)
+
+        store = GitStore(prj_path)
+        self.assertEqual(store.project, "PROJ")
+
+        paths = store.manifest.get_package_paths(store.topdir)
+        self.assertEqual(paths, [pkg_path])
+
 
 if __name__ == "__main__":
     unittest.main()
