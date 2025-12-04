@@ -1320,6 +1320,18 @@ class Options(OscOptions):
         ini_key="queryrecipe-cmd",
     )  # type: ignore[assignment]
 
+    queryconfig_cmd: str = Field(
+        default=
+            shutil.which("queryconfig", path="/usr/bin:/usr/lib/build:/usr/lib/obs-build")
+            or "/usr/lib/build/queryconfig",
+        description=textwrap.dedent(
+            """
+            Path to the 'queryconfig' tool.
+            """
+        ),
+        ini_key="queryconfig-cmd",
+    )  # type: ignore[assignment]
+
     obs_scm_bridge_cmd: str = Field(
         default=
             shutil.which("obs_scm_bridge", path="/usr/lib/obs/service")
