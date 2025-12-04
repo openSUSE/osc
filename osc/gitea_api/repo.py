@@ -101,7 +101,7 @@ class Repo(GiteaModel):
         reference: Optional[str] = None,
         reference_if_able: Optional[str] = None,
         depth: Optional[int] = None,
-        sparse: Optional[str] = None,
+        sparse: Optional[List[str]] = None,
         ssh_private_key_path: Optional[str] = None,
         ssh_strict_host_key_checking: bool = True,
     ) -> str:
@@ -118,7 +118,7 @@ class Repo(GiteaModel):
         :param cache_directory: Manage repo cache under ``cache_directory`` / ``conn.login.name`` / ``owner`` / ``repo`` and pass it as ``reference_if_able``.
         :param reference: Reuse objects from the specified local repository, error out if the repository doesn't exist.
         :param reference_if_able: Reuse objects from the specified local repository, only print warning if the repository doesn't exist.
-        :param sparse: checkout only files that match patterns.
+        :param sparse: checkout only files matching the specified patterns.
         """
         import shlex
 
@@ -234,7 +234,8 @@ class Repo(GiteaModel):
                 "sparse-checkout",
                 "set",
                 "--no-cone",
-            ] + shlex.split(sparse)
+            ]
+            cmd.extend(sparse)
             subprocess.run(cmd, cwd=cwd, check=True)
             cmd = [
                 "git",

@@ -8,7 +8,6 @@ class RepoInitCommand(osc.commandline_git.GitObsCommand):
     Init a git repo
 
     Initialize or update a package git repo, setting .gitignore, .gitattributes and other files from a template.
-
     """
 
     name = "init"
@@ -100,7 +99,7 @@ class RepoInitCommand(osc.commandline_git.GitObsCommand):
                     add_remotes=True,
                     ssh_private_key_path=args.ssh_key or self.gitea_login.ssh_key,
                     ssh_strict_host_key_checking=(not args.no_ssh_strict_host_key_checking),
-                    sparse="/.gitattributes /.gitignore /.gitconfig",
+                    sparse=["/.gitattributes", "/.gitignore", "/.gitconfig"],
                 )
             except gitea_api.GiteaException as e:
                 if e.status == 404:
