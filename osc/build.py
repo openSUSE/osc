@@ -1137,8 +1137,8 @@ def main(apiurl, store, opts, argv):
                 bc_file = open(bc_filename, 'w')
             bc_file.write(decode_it(bc))
             bc_file.flush()
-            if os.path.exists('/usr/lib/build/queryconfig') and not opts.nodebugpackages:
-                debug_pkgs = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
+            if os.path.exists(config.queryconfig_cmd) and not opts.nodebugpackages:
+                debug_pkgs = decode_it(return_external(config.queryconfig_cmd, '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
                 if len(debug_pkgs) > 0:
                     extra_pkgs.extend(debug_pkgs.strip().split(" "))
 
@@ -1191,8 +1191,8 @@ def main(apiurl, store, opts, argv):
 
     # Set default binary type if cannot be detected
     binary_type = 'rpm'
-    if os.path.exists('/usr/lib/build/queryconfig'):
-        binary_type = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype')).strip()
+    if os.path.exists(config.queryconfig_cmd):
+        binary_type = decode_it(return_external(config.queryconfig_cmd, '--dist', bc_filename, 'binarytype')).strip()
     # If binary type is set to a useless value, reset to 'rpm'
     if binary_type == 'UNDEFINED':
         binary_type = 'rpm'

@@ -5357,6 +5357,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from . import _private
+        from .conf import config
         from .core import decode_it
         from .core import get_buildconfig
         from .core import get_repositories_of_project
@@ -5364,13 +5365,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_project
 
         def _repo_type(apiurl, project, repo):
-            if not os.path.exists('/usr/lib/build/queryconfig'):
+            if not os.path.exists(config.queryconfig_cmd):
                 return None
             build_config = get_buildconfig(apiurl, project, repo)
             with tempfile.NamedTemporaryFile() as f:
                 f.write(build_config)
                 f.flush()
-                repo_type = return_external('/usr/lib/build/queryconfig', '--dist',
+                repo_type = return_external(config.queryconfig_cmd, '--dist',
                                             f.name, 'repotype').rstrip(b'\n')
             if not repo_type:
                 return None
@@ -7202,6 +7203,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from . import build as osc_build
+        from .conf import config
         from .core import decode_it
         from .core import get_buildconfig
         from .core import get_buildinfo
@@ -7259,14 +7261,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         extra_pkgs = opts.extra_pkgs.copy() if opts.extra_pkgs else []
 
-        if os.path.exists("/usr/lib/build/queryconfig") and not opts.nodebugpackages:
+        if os.path.exists(config.queryconfig_cmd) and not opts.nodebugpackages:
             with NamedTemporaryFile(mode="w+b", prefix="obs_buildconfig_") as bc_file:
                 # print('Getting buildconfig from server and store to %s' % bc_filename)
                 bc = get_buildconfig(apiurl, project, repository)
                 bc_file.write(bc)
                 bc_file.flush()
 
-                debug_pkgs = decode_it(return_external("/usr/lib/build/queryconfig", "--dist", bc_file.name, "substitute", "obs:cli_debug_packages"))
+                debug_pkgs = decode_it(return_external(config.queryconfig_cmd, "--dist", bc_file.name, "substitute", "obs:cli_debug_packages"))
                 if debug_pkgs:
                     extra_pkgs.extend(debug_pkgs.strip().split(" "))
 
@@ -7503,6 +7505,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from . import build as osc_build
         from . import conf
         from . import store as osc_store
+        from .conf import config
         from .core import Package
         from .core import Repo
         from .core import decode_it
@@ -7613,12 +7616,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     raise oscerr.WrongArgs("Repository is missing. Cannot guess build description without repository")
                 apiurl = self.get_api_url()
                 project = alternative_project or store_read_project('.')
-                # some distros like Debian rename and move build to obs-build
-                # TODO: move path to queryconfig to the config
-                if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
-                    queryconfig = '/usr/lib/obs-build/queryconfig'
-                else:
-                    queryconfig = '/usr/lib/build/queryconfig'
                 if noinit:
                     bc_filename = f'_buildconfig-{arg_repository}-{arg_arch}'
                     if store_obj.is_package:
@@ -7630,13 +7627,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         bc_filename = os.path.abspath(bc_filename)
                     if not os.path.isfile(bc_filename):
                         raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
-                    recipe = return_external(queryconfig, '--dist', bc_filename, 'type', encoding="utf-8")
+                    recipe = return_external(config.queryconfig_cmd, '--dist', bc_filename, 'type', encoding="utf-8")
                 else:
                     bc = get_buildconfig(apiurl, project, arg_repository)
                     with tempfile.NamedTemporaryFile() as f:
                         f.write(bc)
                         f.flush()
-                        recipe = return_external(queryconfig, '--dist', f.name, 'type', encoding="utf-8")
+                        recipe = return_external(config.queryconfig_cmd, '--dist', f.name, 'type', encoding="utf-8")
 
                 # recipe is obtained via queryconfig from _buildconfig
                 recipe = recipe.strip()
