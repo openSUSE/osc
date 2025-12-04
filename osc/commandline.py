@@ -9,6 +9,7 @@ import glob
 import importlib
 import importlib.util
 import inspect
+import itertools
 import os
 import pkgutil
 import re
@@ -7516,35 +7517,41 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """helper to parse the repo, arch and build description from args"""
         arg_arch = arg_repository = arg_descr = None
         if len(args) < 3:
-            # some magic, works only sometimes, but people seem to like it :/
-            all_archs = []
-            for mainarch in osc_build.can_also_build:
-                all_archs.append(mainarch)
-                for subarch in osc_build.can_also_build.get(mainarch):
-                    all_archs.append(subarch)
+            # HACK: some magic, works only sometimes, but people seem to like it :/
+
+            # gather all keys and values into a single set
+            all_architectures = set(itertools.chain(osc_build.can_also_build.keys(), *osc_build.can_also_build.values()))
+
             for arg in args:
-                if (arg.endswith('.spec') or arg.endswith('.dsc') or
-                    arg.endswith('.kiwi') or arg.endswith('.livebuild') or
-                    arg.endswith('flatpak.yaml') or arg.endswith('flatpak.yml') or
-                    arg.endswith('flatpak.json') or arg.startswith('Dockerfile.') or
-                    arg.startswith('Containerfile.') or
-                    arg in ('PKGBUILD', 'build.collax', 'Chart.yaml', 'Containerfile', 'Dockerfile',
-                            'fissile.yml', 'appimage.yml', '_preinstallimage')):
-                    arg_descr = arg
-                else:
-                    if (arg == osc_build.hostarch or arg in all_archs) and arg_arch is None:
+                # 1. try if the arg matches a build recipe
+                if not arg_descr:
+                    try:
+                        osc_build.get_build_type_from_recipe_path(arg)
+                        arg_descr = arg
+                        continue
+                    except oscerr.OscValueError:
+                        pass
+
+                # 2. try if the arg is an architecture
+                if not arg_arch:
+                    if arg == osc_build.hostarch or arg in all_architectures:
                         # it seems to be an architecture in general
                         arg_arch = arg
                         if not (arg == osc_build.hostarch or arg in osc_build.can_also_build.get(osc_build.hostarch, [])):
-                            if vm_type not in ('qemu', 'emulator'):
-                                print("WARNING: native compile is not possible, a emulator via binfmt misc handler must be configured!")
-                    elif not arg_repository:
-                        arg_repository = arg
-                    else:
-                        #  raise oscerr.WrongArgs('\'%s\' is neither a build description nor a supported arch' % arg)
-                        # take it as arch (even though this is no supported arch) - hopefully, this invalid
-                        # arch will be detected below
-                        arg_arch = arg
+                            if vm_type not in ("qemu", "emulator"):
+                                print("WARNING: native compile is not possible, an emulator via binfmt misc handler must be configured!")
+                        continue
+
+                # 3. set repo
+                if not arg_repository:
+                    arg_repository = arg
+                    continue
+
+                # 4. if arg_repository was set already, use the arg as arg_arch
+                if not arg_arch:
+                    arg_arch = arg
+                    continue
+
         else:
             arg_repository, arg_arch, arg_descr = args
 
@@ -7593,15 +7600,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             if arches and arg_arch not in arches:
                 raise oscerr.WrongArgs(f"{arg_arch} is not a valid arch for the repository {arg_repository}, use one of: {', '.join(arches)}")
 
-        # can be implemented using
-        # reduce(lambda x, y: x + y, (glob.glob(x) for x in ('*.spec', '*.dsc', '*.kiwi')))
-        # but be a bit more readable :)
-        descr = glob.glob('*.spec') + glob.glob('*.dsc') + glob.glob('*.kiwi') + glob.glob('*.livebuild') + \
-            glob.glob('PKGBUILD') + glob.glob('build.collax') + glob.glob('Dockerfile') + \
-            glob.glob('Dockerfile.*') + glob.glob('Containerfile') + glob.glob('Containerfile.*') + \
-            glob.glob('fissile.yml') + glob.glob('appimage.yml') + glob.glob('Chart.yaml') + \
-            glob.glob('*flatpak.yaml') + glob.glob('*flatpak.yml') + glob.glob('*flatpak.json') + \
-            glob.glob('*.productcompose') + glob.glob('mkosi.*')
+        descr = osc_build.find_build_recipes(".")
 
         # FIXME:
         # * request repos from server and select by build type.
@@ -7615,6 +7614,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 apiurl = self.get_api_url()
                 project = alternative_project or store_read_project('.')
                 # some distros like Debian rename and move build to obs-build
+                # TODO: move path to queryconfig to the config
                 if not os.path.isfile('/usr/lib/build/queryconfig') and os.path.isfile('/usr/lib/obs-build/queryconfig'):
                     queryconfig = '/usr/lib/obs-build/queryconfig'
                 else:
@@ -7622,33 +7622,31 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if noinit:
                     bc_filename = f'_buildconfig-{arg_repository}-{arg_arch}'
                     if is_package_dir('.'):
+                        # TODO: read properly from the store, doesn't work with git
                         bc_filename = os.path.join(Path.cwd(), store, bc_filename)
                     else:
                         bc_filename = os.path.abspath(bc_filename)
                     if not os.path.isfile(bc_filename):
                         raise oscerr.WrongOptions('--offline is not possible, no local buildconfig file')
-                    recipe = return_external(queryconfig, '--dist', bc_filename, 'type')
+                    recipe = return_external(queryconfig, '--dist', bc_filename, 'type', encoding="utf-8")
                 else:
                     bc = get_buildconfig(apiurl, project, arg_repository)
                     with tempfile.NamedTemporaryFile() as f:
                         f.write(bc)
                         f.flush()
-                        recipe = return_external(queryconfig, '--dist', f.name, 'type')
+                        recipe = return_external(queryconfig, '--dist', f.name, 'type', encoding="utf-8")
+
+                # recipe is obtained via queryconfig from _buildconfig
                 recipe = recipe.strip()
-                if recipe == 'arch':
-                    recipe = 'PKGBUILD'
-                recipe = decode_it(recipe)
+                build_type_obj = osc_build.get_build_type(recipe)
+                cands = build_type_obj.get_recipes(Path.cwd())
+
                 pac = os.path.basename(Path.cwd())
                 if is_package_dir(Path.cwd()):
                     pac = store_read_package(Path.cwd())
                 if multibuild_package:
                     pac = multibuild_package
-                if recipe == 'PKGBUILD':
-                    cands = [d for d in descr if d.startswith(recipe)]
-                elif recipe == 'mkosi':
-                    cands = [d for d in descr if d.startswith('mkosi.')]
-                else:
-                    cands = [d for d in descr if d.endswith('.' + recipe)]
+
                 if len(cands) > 1:
                     repo_cands = [d for d in cands if d == f'{pac}-{arg_repository}.{recipe}']
                     if repo_cands:
