@@ -7621,9 +7621,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     queryconfig = '/usr/lib/build/queryconfig'
                 if noinit:
                     bc_filename = f'_buildconfig-{arg_repository}-{arg_arch}'
-                    if is_package_dir('.'):
-                        # TODO: read properly from the store, doesn't work with git
-                        bc_filename = os.path.join(Path.cwd(), store, bc_filename)
+                    if store_obj.is_package:
+                        if hasattr(store_obj, "cache_get_path"):
+                            bc_filename = store_obj.cache_get_path(bc_filename)
+                        else:
+                            bc_filename = os.path.join(Path.cwd(), store, bc_filename)
                     else:
                         bc_filename = os.path.abspath(bc_filename)
                     if not os.path.isfile(bc_filename):
