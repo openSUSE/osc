@@ -99,6 +99,9 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         source_repo_obj = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo)
         source_branch_obj = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch)
 
+        if source_repo_obj.parent_obj is None:
+            raise gitea_api.GitObsRuntimeError(f"Unable to create a pull request because repo '{source_owner}/{source_repo}' is not a fork")
+
         # remote git repo - target
         target_owner = source_repo_obj.parent_obj.owner
         target_repo = source_repo_obj.parent_obj.repo
