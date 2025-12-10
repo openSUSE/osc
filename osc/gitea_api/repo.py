@@ -312,7 +312,7 @@ class Repo(GiteaModel):
         for response in conn.request_all_pages("GET", url):
             obj_list.extend([cls(i, response=response) for i in response.json()])
         return obj_list
-    
+
     @classmethod
     def get_label_ids(cls, conn: Connection, owner: str, repo: str) -> Dict[str, int]:
         """
@@ -324,4 +324,16 @@ class Repo(GiteaModel):
         labels = response.json()
         for label in labels:
             result[label["name"]] = label["id"]
+        return result
+
+    @classmethod
+    def get_parent_repos(cls, conn: Connection, owner: str, repo: str) -> List["Repo"]:
+        """
+        Get a list of all parent repositories
+        """
+        result = []
+        obj = cls.get(conn, owner, repo)
+        while obj.parent_obj is not None:
+            obj = cls.get(conn, obj.parent_obj.owner, obj.parent_obj.repo)
+            result.append(obj)
         return result
