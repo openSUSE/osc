@@ -2954,13 +2954,13 @@ def server_diff(
     new_project: str,
     new_package: str,
     new_revision: str,
-    unified=False,
-    missingok=False,
-    meta=False,
-    expand=True,
-    onlyissues=False,
-    full=True,
-    xml=False,
+    unified: bool = False,
+    missingok: bool = False,
+    meta: bool = False,
+    expand: bool = True,
+    onlyissues: bool = False,
+    full: bool = True,
+    xml: bool = False,
     files: Optional[list] = None,
 ):
     query: Dict[str, Union[str, int]] = {"cmd": "diff"}
@@ -2991,7 +2991,13 @@ def server_diff(
         query["file"] = UrlQueryArray(files)
 
     u = makeurl(apiurl, ['source', new_project, new_package], query=query)
-    f = http_POST(u)
+    try:
+        f = http_POST(u)
+    except HTTPError as e:
+        if e.status == 404 and missingok:
+            return b"# diff failed: " + e.read()
+        raise
+
     if onlyissues and not xml:
         del_issue_list = []
         add_issue_list = []
