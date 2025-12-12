@@ -167,7 +167,7 @@ class TestGiteaApiPullRequestUrlParsing(unittest.TestCase):
 class TestGiteaApiPullRequestReferences(unittest.TestCase):
     PR_BODY = """
 PR: foo/bar!1
-PR:  foo/bar#2
+PR:  foo/bar#2\r
 text
 PR: bar/baz#3
 text
@@ -190,7 +190,7 @@ text
         actual = PullRequest.add_pr_references(self.PR_BODY, [('xxx', 'xxx', 4), ('yyy', 'yyy', 5)])
         expected = """
 PR: foo/bar!1
-PR:  foo/bar#2
+PR:  foo/bar#2\r
 text
 PR: bar/baz#3
 PR: xxx/xxx!4
@@ -207,7 +207,7 @@ text
         actual = PullRequest.add_pr_references(self.PR_BODY + "\nPR: a/b#123", [('xxx', 'xxx', 4), ('yyy', 'yyy', 5)])
         expected = """
 PR: foo/bar!1
-PR:  foo/bar#2
+PR:  foo/bar#2\r
 text
 PR: bar/baz#3
 text
