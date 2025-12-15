@@ -393,8 +393,18 @@ class PullRequest(GiteaModel):
         :param repo: Name of the repo.
         :param number: Number of the pull request in the repo.
         """
+        from .exceptions import PullRequestDoesNotExist
+
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
-        response = conn.request("GET", url)
+        response = conn.request(
+            "GET",
+            url,
+            context={"owner": owner, "repo": repo, "number": number},
+            exception_map={
+                # the 404 exception class cannot be identified from the "not found" message
+                404: PullRequestDoesNotExist,
+            },
+        )
         obj = cls(response.json(), response=response, conn=conn)
         return obj
 
@@ -421,13 +431,24 @@ class PullRequest(GiteaModel):
         :param description: Change pull request description.
         :param allow_maintainer_edit: Change whether users with write access to the base branch can also push to the pull request's head branch.
         """
+        from .exceptions import PullRequestDoesNotExist
+
         json_data = {
             "title": title,
             "body": description,
             "allow_maintainer_edit": allow_maintainer_edit,
         }
         url = conn.makeurl("repos", owner, repo, "pulls", str(number))
-        response = conn.request("PATCH", url, json_data=json_data)
+        response = conn.request(
+            "PATCH",
+            url,
+            json_data=json_data,
+            context={"owner": owner, "repo": repo, "number": number},
+            exception_map={
+                # the 404 exception class cannot be identified from the "not found" message
+                404: PullRequestDoesNotExist,
+            },
+        )
         obj = cls(response.json(), response=response, conn=conn)
         return obj
 

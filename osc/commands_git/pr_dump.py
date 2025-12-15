@@ -234,9 +234,6 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             xml_indent(req_xml)
             ET.ElementTree(req_xml).write(f, encoding="utf-8")
 
-        with open(os.path.join(metadata_dir, "pr.json"), "w", encoding="utf-8") as f:
-            json.dump(pr_obj._data, f, indent=4, sort_keys=True)
-
         with open(os.path.join(metadata_dir, "base.json"), "w", encoding="utf-8") as f:
             json.dump(pr_obj._data["base"], f, indent=4, sort_keys=True)
 
@@ -334,3 +331,8 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             encoding="utf-8",
         ) as f:
             json.dump(referenced_pull_requests, f, indent=4, sort_keys=True)
+
+        # pr.json must come last, because we use it to detect if the pull request has changed since the last dump
+        # and storing it earlier would lead to potentially partial data on disk that never gets updated
+        with open(os.path.join(metadata_dir, "pr.json"), "w", encoding="utf-8") as f:
+            json.dump(pr_obj._data, f, indent=4, sort_keys=True)
