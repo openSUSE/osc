@@ -114,7 +114,13 @@ class Connection:
         return urllib.parse.urlunsplit(("", "", url_path_str, url_query_str, ""))
 
     def request(
-        self, method, url, json_data: Optional[dict] = None, *, context: Optional[dict] = None
+        self,
+        method,
+        url,
+        json_data: Optional[dict] = None,
+        *,
+        context: Optional[dict] = None,
+        exception_map: Optional[dict] = None,
     ) -> GiteaHTTPResponse:
         """
         Make a request and return ``GiteaHTTPResponse``.
@@ -167,7 +173,7 @@ class Connection:
         if response.status // 100 != 2:
             from .exceptions import response_to_exception
 
-            raise response_to_exception(response, context=context)
+            raise response_to_exception(response, context=context, exception_map=exception_map)
 
         return response
 

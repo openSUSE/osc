@@ -7,7 +7,12 @@ from .. import oscerr
 from .connection import GiteaHTTPResponse
 
 
-def response_to_exception(response: GiteaHTTPResponse, *, context: Optional[dict] = None):
+def response_to_exception(
+    response: GiteaHTTPResponse,
+    *,
+    context: Optional[dict] = None,
+    exception_map: Optional[dict] = None,
+):
     """
     Throw an appropriate exception based on the contents of ``response``.
     Raise generic ``GiteaException`` if no exception matches the ``response``.
@@ -27,6 +32,14 @@ def response_to_exception(response: GiteaHTTPResponse, *, context: Optional[dict
     except json.JSONDecodeError:
         messages = [response.data.decode("utf-8")]
 
+    # use the specified status -> exception_class mapping
+    if exception_map and response.status in exception_map:
+        cls = exception_map.get(response.status, None)
+        if cls:
+            kwargs = context.copy() if context else {}
+            return cls(response, **kwargs)
+
+    # match exception based on status and response message
     for cls in EXCEPTION_CLASSES:
         if cls.RESPONSE_STATUS is not None and cls.RESPONSE_STATUS != response.status:
             continue
@@ -220,6 +233,18 @@ class PullRequestReviewDoesNotExist(GiteaException):
 
     def __str__(self):
         result = f"Pull request '{self.owner}/{self.repo}#{self.number}' does not contain review with ID '{self.review_id}'"
+        return result
+
+
+class PullRequestDoesNotExist(GiteaException):
+    def __init__(self, response: GiteaHTTPResponse, owner: str, repo: str, number: str):
+        super().__init__(response)
+        self.owner = owner
+        self.repo = repo
+        self.number = number
+
+    def __str__(self):
+        result = f"Pull request '{self.owner}/{self.repo}#{self.number}' does not exist"
         return result
 
 
