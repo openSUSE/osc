@@ -823,3 +823,107 @@ class PullRequest(GiteaModel):
         for label_id in label_id_list:
             url = conn.makeurl("repos", owner, repo, "issues", str(number), "labels", str(label_id))
             conn.request("DELETE", url)
+
+    @classmethod
+    def _cancel_review_requests(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        users: Optional[list],
+        exclude: Optional[list],
+        dry_run: Optional[bool],
+    ) -> GiteaHTTPResponse:
+        """
+        Internal method to cancel all pending review requests. Empty user list means for all users.
+        """
+        from .exceptions import GitObsRuntimeError
+
+        pr_obj = cls.get(conn, owner, repo, number)
+
+        review_states = ["REQUEST_REVIEW"]
+        all_reviews = pr_obj.get_reviews(conn)
+        user_reviews = {i.user.lower() for i in all_reviews if i.user and i.state in review_states}
+        team_reviews = {i.team.lower() for i in all_reviews if i.team and i.state in review_states}
+
+        users_to_remove = []
+        teams_to_remove = []
+
+        if exclude:
+            exclude[:] = [i.lower() for i in exclude]
+
+        # empty list means we remove all users
+        if not users:
+            for user in user_reviews:
+                if exclude and user in exclude:
+                    continue
+                users_to_remove.append(user)
+        else:
+            # remove eventual empty strings
+            users[:] = [i for i in users if i]
+
+            for user in users:
+                if exclude and user in exclude:
+                    continue
+                if user[0] == "@":
+                    team = user[1:]
+                    if team.lower() not in team_reviews:
+                        msg = f"Team {team} has no pending review requests in {owner}/{repo}#{number}"
+                        raise GitObsRuntimeError(msg)
+                    teams_to_remove.append(team)
+                else:
+                    if user.lower() not in user_reviews:
+                        msg = f"User {user} has no pending review requests in {owner}/{repo}#{number}"
+                        raise GitObsRuntimeError(msg)
+                    users_to_remove.append(user)
+
+        data = {
+            "reviewers": users_to_remove,
+            "teams": teams_to_remove,
+        }
+
+        if not users_to_remove and not teams_to_remove:
+            return None
+
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "/requested_reviewers")
+        if dry_run:
+            import sys
+
+            print(f"DELETE {url} {data}", file=sys.stderr)
+        else:
+            conn.request("DELETE", url, data)
+
+    @classmethod
+    def cancel_review_requests_all(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        exclude: Optional[list],
+        dry_run: Optional[bool] = False,
+    ) -> GiteaHTTPResponse:
+        """
+        Cancel all pending review requests.
+        """
+        return cls._cancel_review_requests(conn, owner, repo, number, [], exclude, dry_run)
+
+    @classmethod
+    def cancel_review_requests(
+        cls,
+        conn: Connection,
+        owner: str,
+        repo: str,
+        number: int,
+        users: List[str],
+        exclude: Optional[list],
+        dry_run: Optional[bool] = False,
+    ) -> GiteaHTTPResponse:
+        """
+        Cancel pending review requests for particular users.
+        """
+        if not users:
+            return None
+
+        return cls._cancel_review_requests(conn, owner, repo, number, users, exclude, dry_run)
