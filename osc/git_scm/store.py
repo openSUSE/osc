@@ -260,7 +260,7 @@ class LocalGitStore:
             raise oscerr.NoWorkingCopy(msg)
 
         missing = []
-        for name in ["apiurl", "project"]:
+        for name in ["project"]:
             if not getattr(self, name):
                 missing.append(name)
 
@@ -310,7 +310,7 @@ class LocalGitStore:
                 print(msg, file=sys.stderr)
 
         missing = []
-        for name in ["apiurl", "project", "package"]:
+        for name in ["project", "package"]:
             if not getattr(self, name):
                 missing.append(name)
 
