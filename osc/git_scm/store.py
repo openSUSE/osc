@@ -77,6 +77,9 @@ class BuildRoot(BaseModel):
         for field in self.__fields__:
             yield getattr(self, field)
 
+    def __getitem__(self, indx):
+        return list(self)[indx]
+
     def __eq__(self, other):
         if isinstance(other, tuple) and len(other) == 3:
             return (self.repo, self.arch, self.vm_type) == other
