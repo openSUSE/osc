@@ -205,6 +205,12 @@ def step_impl(context):
     raise AssertionError(f"Stderr doesn't match:\n{expected}\n\nActual stderr:\n{found}")
 
 
+@behave.step('I create directory "{path}"')
+def step_impl(context, path):
+    path = path.format(context=context)
+    os.makedirs(path, exist_ok=True)
+
+
 @behave.step('I set working directory to "{path}"')
 def step_impl(context, path):
     path = path.format(context=context)

@@ -7554,7 +7554,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         self._debug("arg_repository: ", arg_repository)
         self._debug("arg_descr: ", arg_descr)
 
-        store_obj = osc_store.get_store(".")
+        # we shouldn't make any assumptions if the working copy is valid or not, we simply *try* to read the store and get the metadata from it
+        # the code that calls parse_repoarchdescr() is responsible for checking the store if necessary
+        store_obj = osc_store.get_store(".", check=False)
 
         repositories = []
         # store list of repos for potential offline use
@@ -7907,7 +7909,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             except oscerr.NoWorkingCopy:
                 if opts.apiurl and opts.alternative_project:
                     # HACK: ignore invalid working copy and run the build anyway if --alternative-project is specified
-                    store = git_scm.GitStore(Path.cwd(), check=False)
+                    try:
+                        store = git_scm.GitStore(Path.cwd(), check=False)
+                    except oscerr.NoWorkingCopy:
+                        # HACK: if running from an empty directory that has no .git in the parent tree, initialize an empty Store() object
+                        #       this allows running the build with --alternative-project even if .osc doesn't exist at all
+                        store = osc_store.Store(Path.cwd(), check=False)
                 else:
                     raise
 

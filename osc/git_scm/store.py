@@ -77,6 +77,9 @@ class BuildRoot(BaseModel):
         for field in self.__fields__:
             yield getattr(self, field)
 
+    def __getitem__(self, indx):
+        return list(self)[indx]
+
     def __eq__(self, other):
         if isinstance(other, tuple) and len(other) == 3:
             return (self.repo, self.arch, self.vm_type) == other
@@ -260,7 +263,7 @@ class LocalGitStore:
             raise oscerr.NoWorkingCopy(msg)
 
         missing = []
-        for name in ["apiurl", "project"]:
+        for name in ["project"]:
             if not getattr(self, name):
                 missing.append(name)
 
@@ -310,7 +313,7 @@ class LocalGitStore:
                 print(msg, file=sys.stderr)
 
         missing = []
-        for name in ["apiurl", "project", "package"]:
+        for name in ["project", "package"]:
             if not getattr(self, name):
                 missing.append(name)
 

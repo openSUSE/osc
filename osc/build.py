@@ -1622,7 +1622,7 @@ def main(apiurl, store, opts, argv):
         cmd = [change_personality[bi.buildarch]] + cmd
 
     # record our settings for later builds
-    if store.is_package:
+    if store and store.is_package:
         store.last_buildroot = repo, arch, vm_type
 
     try:
