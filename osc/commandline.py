@@ -1482,7 +1482,9 @@ class Osc(cmdln.Cmdln):
         apiurl = self.get_api_url()
         user = conf.get_apiurl_usr(apiurl)
 
-        if len(args) > 1:
+        if len(args) == 1:
+            self.argparser.error("project wide trigger is not supported")
+        elif len(args) > 1:
             project = args[0]
             package = args[1]
         else:
