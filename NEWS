@@ -1,3 +1,30 @@
+- 1.23.0
+  - Command-line:
+    - Add '--target-owner' option to 'git-obs pr create' to specify the target owner explicitly
+    - Add '--target-branch' option to 'git-obs staging search' command
+    - Added 'git-obs staging search' command to find project PRs with referenced package PRs that have all been approved
+    - Change 'git-obs pr dump' to produce directories that match the specified pull request IDs
+    - Change 'git-obs pr dump' to write STATUS file
+    - Properly error out on invalid 'PR:' references in 'git-obs pr dump'
+    - Fix 'git-obs pr create' when the source repo is not a fork
+    - Fix 'git-obs api' command when server returns 'null'
+    - Fix 'osc build --alternative-project=...' when there's no .osc in the current directory
+    - Fix argument and store handling in 'osc results' command
+  - Library:
+    - Add Manifest.get_package_paths() method that lists all paths to existings packages in a project
+    - Fix Manifest class to handle loading empty YAML files or strings
+    - Fix working with meta during git rebase by determining the current branch from rebase head
+    - Fix handling local branch when fetching remote
+    - Move get_label_ids() from PullRequest to Repo class
+    - Change GitStore not to require apiurl anymore
+    - Fix storing last_buildroot for git packages
+    - Store the last buildroot only if there's a store detected
+    - Fix BuildRoot so it acts as a tuple and the individual values are accessible via indexes
+    - Make PullReqest.parse_id() more permissive by accepting trailing whitespaces
+    - Fix 'missingok' argument in server_diff()
+    - Fix gitea_api.PullRequest ordering methods
+    - Add return to gitea_api.Branch.list()
+
 - 1.22.0
   - Command-line:
     - Add 'git-obs staging' commands
