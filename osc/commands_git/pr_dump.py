@@ -163,7 +163,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             )
 
         req = obs_api.Request(
-            id="{owner}/{repo}#{number}",
+            id=f"{owner}/{repo}#{number}",
             title=pr_obj.title,
             description=pr_obj.body,
             creator=pr_obj.user,
