@@ -30,6 +30,7 @@ from .util import cpio
 from .util import archquery, debquery, packagequery, rpmquery
 from .util import repodata
 from .util.helper import decode_it
+from .util.models import *
 from .util.xml import xml_parse
 
 
@@ -74,6 +75,207 @@ if hostarch == 'parisc':
     hostarch = 'hppa'
 
 
+class BuildType(BaseModel):
+    name: str = Field()
+    binary_type: Optional[str] = Field()
+    recipes: List[str] = Field()
+    package_suffix: Optional[str] = Field()
+    binary_packages_paths: List[str] = Field()
+    source_packages_paths: List[str] = Field()
+    prefer_packages_paths: List[str] = Field(default=[])
+    prefer_packages_exclude_paths: List[str] = Field(default=[])
+
+    def _get_files(self, topdir: str, patterns: List[str]) -> List[str]:
+        result = []
+        for pattern in patterns:
+            path = os.path.join(topdir, pattern.lstrip("/"))
+            for i in glob.glob(path, recursive=True):
+                if not os.path.isfile(i):
+                    continue
+                result.append(i)
+        return result
+
+    def get_binaries(self, topdir: str) -> List[str]:
+        return self._get_files(topdir, self.binary_packages_paths)
+
+    def get_sources(self, topdir: str) -> List[str]:
+        return self._get_files(topdir, self.source_packages_paths)
+
+    def get_recipes(self, topdir: str) -> List[str]:
+        result = []
+        for fn in os.listdir(topdir):
+            for pattern in self.recipes:
+                if fnmatch.fnmatch(fn, pattern):
+                    result.append(fn)
+        result.sort()
+        return result
+
+
+BUILD_TYPES: List[BuildType] = [
+    BuildType(
+        name="appimage",
+        recipes=["appimage.yml"],
+        binary_packages_paths=["OTHER/**/*.AppImage"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="arch",
+        recipes=["PKGBUILD"],
+        package_suffix="arch",
+        binary_packages_paths=["ARCHPKGS/**/*.pkg.tar*"],
+        source_packages_paths=[],
+        prefer_packages_paths=["**/*.pkg.tar*"],
+    ),
+    BuildType(
+        name="collax",
+        recipes=["build.collax"],
+        package_suffix="deb",
+        binary_packages_paths=["DEBS/**/*.deb"],
+        source_packages_paths=["SOURCES.DEB/**"],
+        prefer_packages_paths=["**/*.deb"],
+    ),
+    BuildType(
+        # IMPORTANT: keep in sync with "podman"
+        name="docker",
+        recipes=["Containerfile", "Dockerfile", "Containerfile.*", "Dockerfile.*"],
+        binary_packages_paths=["DOCKER/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="dsc",
+        recipes=["*.dsc"],
+        package_suffix="deb",
+        binary_packages_paths=["DEBS/**/*.deb"],
+        source_packages_paths=["SOURCES.DEB/**"],
+        prefer_packages_paths=["**/*.deb"],
+    ),
+    BuildType(
+        name="fissile",
+        recipes=["fissile.yml"],
+        binary_packages_paths=["FISSILE/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="flatpak",
+        recipes=["*flatpak.yaml", "*flatpak.yml", "*flatpak.json"],
+        binary_packages_paths=["OTHER/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="helm",
+        recipes=["Chart.yaml"],
+        binary_packages_paths=["HELM/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="kiwi",
+        recipes=["*.kiwi"],
+        binary_packages_paths=["KIWI/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="livebuild",
+        recipes=["*.livebuild"],
+        package_suffix="deb",
+        binary_packages_paths=["OTHER/**/*.iso"],
+        source_packages_paths=[],
+        prefer_packages_paths=["**/*.deb"],
+    ),
+    BuildType(
+        name="mkosi",
+        recipes=["mkosi.*"],
+        binary_packages_paths=["OTHER/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        # IMPORTANT: keep in sync with "docker"
+        name="podman",
+        recipes=["Containerfile", "Dockerfile", "Containerfile.*", "Dockerfile.*"],
+        binary_packages_paths=["DOCKER/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="preinstallimage",
+        recipes=["_preinstallimage"],
+        binary_packages_paths=["OTHER/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="productcompose",
+        recipes=["*.productcompose"],
+        binary_packages_paths=["PRODUCT/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="simpleimage",
+        recipes=["simpleimage"],
+        binary_packages_paths=["OTHER/**"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="snapcraft",
+        recipes=["snapcraft.yaml"],
+        package_suffix="deb",
+        binary_packages_paths=["OTHER/**/*.snap"],
+        source_packages_paths=[],
+    ),
+    BuildType(
+        name="spec",
+        binary_type="rpm",
+        recipes=["*.spec"],
+        package_suffix="rpm",
+        binary_packages_paths=["RPMS/**/*.rpm"],
+        source_packages_paths=["SRPMS/**/*.src.rpm"],
+        prefer_packages_paths=["**/*.rpm"],
+        prefer_packages_exclude_paths=["*.src.rpm", "*.nosrc.rpm", "*.patch.rpm", "*.delta.rpm"],
+    ),
+    BuildType(
+        name="spec",
+        binary_type="deb",
+        recipes=["*.spec"],
+        package_suffix="deb",
+        binary_packages_paths=["DEBS/**/*.deb"],
+        source_packages_paths=["SDEBS/**/*.sdeb"],
+        prefer_packages_paths=["**/*.deb"],
+    ),
+]
+
+
+def get_build_type(name: str, *, binary_type: Optional[str] = None) -> BuildType:
+    for build_type in BUILD_TYPES:
+        if binary_type:
+            if build_type.name == name and build_type.binary_type == binary_type:
+                return build_type
+        elif build_type.name == name:
+            return build_type
+    raise oscerr.OscValueError(f"Unknown build type: {name}")
+
+
+def get_build_type_from_recipe_path(recipe_path: str) -> BuildType:
+    recipe_filename = os.path.basename(recipe_path)
+    for build_type in BUILD_TYPES:
+        for pattern in build_type.recipes:
+            if fnmatch.fnmatch(recipe_filename, pattern):
+                return build_type
+    raise oscerr.OscValueError(f"The specified recipe doesn't match any known build type: {recipe_filename}")
+
+
+def find_build_recipes(topdir: str, build_type: Optional[str] = None) -> List[str]:
+    """
+    Return all file names in ``topdir`` that match known build recipes.
+    """
+    topdir = os.path.abspath(topdir)
+    result = []
+    for fn in os.listdir(topdir):
+        recipe_path = os.path.join(topdir, fn)
+        try:
+            get_build_type_from_recipe_path(recipe_path)
+        except oscerr.OscValueError:
+            continue
+        result.append(fn)
+    return result
+
+
 class Buildinfo:
     """represent the contents of a buildinfo file"""
 
@@ -110,20 +312,11 @@ class Buildinfo:
 
         # are we building .rpm or .deb?
         # XXX: shouldn't we deliver the type via the buildinfo?
-        self.pacsuffix = 'rpm'
-        if self.buildtype in ('dsc', 'collax') or self.binarytype == 'deb':
-            self.pacsuffix = 'deb'
-        if self.buildtype == 'arch':
-            self.pacsuffix = 'arch'
-        if self.buildtype == 'livebuild':
-            self.pacsuffix = 'deb'
-        if self.buildtype == 'docker':
-            # supports rpm and deb
-            self.pacsuffix = binarytype
-        if self.buildtype == 'snapcraft':
-            # atm ubuntu is used as base, but we need to be more clever when
-            # snapcraft also supports rpm
-            self.pacsuffix = 'deb'
+        build_type = get_build_type(self.buildtype, binary_type=self.binarytype)
+        self.pacsuffix = build_type.package_suffix
+        if not self.pacsuffix:
+            # the previous osc code did this for 'docker' build type, maybe it's ok to use it as a generic fallback
+            self.pacsuffix = self.binarytype
 
         # The architectures become a bit mad ...
         # buildarch: The architecture of the build result      (host arch in GNU definition)
@@ -394,106 +587,11 @@ def get_preinstall_image(apiurl, arch, cache_dir, img_info, offline=False):
     return (imagefile, imagesource, imageinfo, img_bins)
 
 
-def get_built_files(pacdir, buildtype):
-    if buildtype == 'spec':
-        debs_dir = os.path.join(pacdir, 'DEBS')
-        sdebs_dir = os.path.join(pacdir, 'SDEBS')
-        if os.path.isdir(debs_dir) or os.path.isdir(sdebs_dir):
-            # (S)DEBS directories detected, list their *.(s)deb files
-            b_built = subprocess.Popen(['find', debs_dir, '-name', '*.deb'],
-                                       stdout=subprocess.PIPE).stdout.read().strip()
-            s_built = subprocess.Popen(['find', sdebs_dir, '-name', '*.sdeb'],
-                                       stdout=subprocess.PIPE).stdout.read().strip()
-        else:
-            # default: (S)RPMS directories and their *.rpm files
-            b_built = subprocess.Popen(['find', os.path.join(pacdir, 'RPMS'),
-                                        '-name', '*.rpm'],
-                                       stdout=subprocess.PIPE).stdout.read().strip()
-            s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SRPMS'),
-                                        '-name', '*.rpm'],
-                                       stdout=subprocess.PIPE).stdout.read().strip()
-    elif buildtype == 'kiwi':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'KIWI'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'docker':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DOCKER'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'podman':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DOCKER'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'fissile':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'FISSILE'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype in ('dsc', 'collax'):
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'DEBS'),
-                                    '-name', '*.deb'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = subprocess.Popen(['find', os.path.join(pacdir, 'SOURCES.DEB'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-    elif buildtype == 'arch':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'ARCHPKGS'),
-                                    '-name', '*.pkg.tar*'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'livebuild':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-name', '*.iso*'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'helm':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'HELM'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'snapcraft':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-name', '*.snap'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'appimage':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-name', '*.AppImage'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'simpleimage':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'flatpak':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'preinstallimage':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'productcompose':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'PRODUCT'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    elif buildtype == 'mkosi':
-        b_built = subprocess.Popen(['find', os.path.join(pacdir, 'OTHER'),
-                                    '-type', 'f'],
-                                   stdout=subprocess.PIPE).stdout.read().strip()
-        s_built = ''
-    else:
-        print('WARNING: Unknown package type \'%s\'.' % buildtype, file=sys.stderr)
-        b_built = ''
-        s_built = ''
-    return s_built, b_built
+def get_built_files(pacdir, buildtype, *, binary_type: Optional[str] = None) -> Tuple[str, str]:
+    build_type = get_build_type(buildtype, binary_type=binary_type)
+    sources = build_type.get_sources(pacdir)
+    binaries = build_type.get_binaries(pacdir)
+    return "\n".join(sources), "\n".join(binaries)
 
 
 def get_repo(path):
@@ -517,33 +615,35 @@ def get_prefer_pkgs(dirs, wanted_arch, type, cpio):
     paths = []
     repositories = []
 
-    suffix = '*.rpm'
-    if type in ('dsc', 'collax', 'livebuild'):
-        suffix = '*.deb'
-    elif type == 'arch':
-        suffix = '*.pkg.tar.*'
-
-    for dir in dirs:
+    for pkgs_dir in dirs:
         # check for repodata
-        repository = get_repo(dir)
-        if repository is None:
-            paths += glob.glob(os.path.join(os.path.abspath(dir), suffix))
-        else:
+        repository = get_repo(pkgs_dir)
+        if repository:
             repositories.append(repository)
+        else:
+            # we don't know binary type as we haven't received buildconfig yet
+            # that's why we add all files for any matching build types
+            for build_type in BUILD_TYPES:
+                if build_type.name != type:
+                    continue
+                for pattern in build_type.prefer_packages_paths:
+                    for pkg_path in glob.glob(os.path.join(os.path.abspath(pkgs_dir), pattern), recursive=True):
+                        use_package = True
+                        for exclude_pattern in build_type.prefer_packages_exclude_paths:
+                            if fnmatch.fnmatch(pkg_path, exclude_pattern):
+                                use_package = False
+                                break
+                        if use_package:
+                            paths.append(pkg_path)
 
     packageQueries = packagequery.PackageQueries(wanted_arch)
 
     for repository in repositories:
         repodataPackageQueries = repodata.queries(repository)
-
         for packageQuery in repodataPackageQueries:
             packageQueries.add(packageQuery)
 
     for path in paths:
-        if path.endswith('.src.rpm') or path.endswith('.nosrc.rpm'):
-            continue
-        if path.endswith('.patch.rpm') or path.endswith('.delta.rpm'):
-            continue
         packageQuery = packagequery.PackageQuery.query(path)
         packageQueries.add(packageQuery)
 
@@ -795,44 +895,12 @@ def main(apiurl, store, opts, argv):
     vm_telnet = None
 
     build_descr = os.path.abspath(build_descr)
-    build_type = os.path.splitext(build_descr)[1][1:]
-    if build_type in ['spec', 'dsc', 'kiwi', 'productcompose', 'livebuild']:
-        # File extension works
-        pass
-    elif os.path.basename(build_descr) == 'PKGBUILD':
-        build_type = 'arch'
-    elif os.path.basename(build_descr) == 'build.collax':
-        build_type = 'collax'
-    elif os.path.basename(build_descr) == 'appimage.yml':
-        build_type = 'appimage'
-    elif os.path.basename(build_descr) == 'Chart.yaml':
-        build_type = 'helm'
-    elif os.path.basename(build_descr) == 'snapcraft.yaml':
-        build_type = 'snapcraft'
-    elif os.path.basename(build_descr) == 'simpleimage':
-        build_type = 'simpleimage'
-    elif os.path.basename(build_descr) == 'Containerfile' or os.path.basename(build_descr).startswith('Containerfile.'):
-        build_type = 'docker'
-    elif os.path.basename(build_descr) == 'Dockerfile' or os.path.basename(build_descr).startswith('Dockerfile.'):
-        build_type = 'docker'
-    elif os.path.basename(build_descr) == 'fissile.yml':
-        build_type = 'fissile'
-    elif os.path.basename(build_descr) == '_preinstallimage':
-        build_type = 'preinstallimage'
-    elif build_descr.endswith('flatpak.yaml') or build_descr.endswith('flatpak.yml') or build_descr.endswith('flatpak.json'):
-        build_type = 'flatpak'
-    elif os.path.basename(build_descr).startswith('mkosi.'):
-        build_type = 'mkosi'
-    else:
-        raise oscerr.WrongArgs(
-            'Unknown build type: \'%s\'. '
-            'Build description should end in .spec, .dsc, .kiwi, .productcompose or .livebuild. '
-            'Or being named PKGBUILD, build.collax, simpleimage, appimage.yml, '
-            'Chart.yaml, snapcraft.yaml, flatpak.json, flatpak.yml, flatpak.yaml, '
-            'preinstallimage, Dockerfile.*, Containerfile.* or mkosi.*' % build_type)
 
     if not os.path.isfile(build_descr):
         raise oscerr.WrongArgs('Error: build description file named \'%s\' does not exist.' % build_descr)
+
+    build_type_obj = get_build_type_from_recipe_path(build_descr)
+    build_type = build_type_obj.name
 
     buildargs = []
     buildargs.append('--statistics')
@@ -1069,8 +1137,8 @@ def main(apiurl, store, opts, argv):
                 bc_file = open(bc_filename, 'w')
             bc_file.write(decode_it(bc))
             bc_file.flush()
-            if os.path.exists('/usr/lib/build/queryconfig') and not opts.nodebugpackages:
-                debug_pkgs = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
+            if os.path.exists(config.queryconfig_cmd) and not opts.nodebugpackages:
+                debug_pkgs = decode_it(return_external(config.queryconfig_cmd, '--dist', bc_filename, 'substitute', 'obs:cli_debug_packages'))
                 if len(debug_pkgs) > 0:
                     extra_pkgs.extend(debug_pkgs.strip().split(" "))
 
@@ -1123,8 +1191,8 @@ def main(apiurl, store, opts, argv):
 
     # Set default binary type if cannot be detected
     binary_type = 'rpm'
-    if os.path.exists('/usr/lib/build/queryconfig'):
-        binary_type = decode_it(return_external('/usr/lib/build/queryconfig', '--dist', bc_filename, 'binarytype')).strip()
+    if os.path.exists(config.queryconfig_cmd):
+        binary_type = decode_it(return_external(config.queryconfig_cmd, '--dist', bc_filename, 'binarytype')).strip()
     # If binary type is set to a useless value, reset to 'rpm'
     if binary_type == 'UNDEFINED':
         binary_type = 'rpm'
@@ -1325,6 +1393,7 @@ def main(apiurl, store, opts, argv):
             buildargs.append('--oldpackages=%s' % old_pkg_dir)
 
     # Make packages from buildinfo available as repos for kiwi/docker/fissile
+    # FIXME: add a new attribute to BuildType and decide based on it
     if build_type in ('kiwi', 'docker', 'podman', 'fissile', 'productcompose'):
         if os.path.lexists('repos'):
             shutil.rmtree('repos')
@@ -1648,7 +1717,7 @@ def main(apiurl, store, opts, argv):
         pacdir = os.path.join(build_root, pacdir)
 
     if os.path.exists(pacdir):
-        (s_built, b_built) = get_built_files(pacdir, bi.buildtype)
+        (s_built, b_built) = get_built_files(pacdir, bi.buildtype, binary_type=binary_type)
 
         print()
         if s_built:
