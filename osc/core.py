@@ -130,27 +130,14 @@ new_project_templ = """\
   <repository name="openSUSE_Factory">
     <path project="openSUSE:Factory" repository="snapshot" />
     <arch>x86_64</arch>
-    <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_13.2">
-    <path project="openSUSE:13.2" repository="standard"/>
+  <repository name="openSUSE_Leap_16.0">
+    <path project="openSUSE:Leap:16.0" repository="standard"/>
     <arch>x86_64</arch>
-    <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_13.1">
-    <path project="openSUSE:13.1" repository="standard"/>
+  <repository name="Fedora_Rawhide">
+    <path project="Fedora:Rawhide" repository="standard" />
     <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="Fedora_21">
-    <path project="Fedora:21" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="SLE_12">
-    <path project="SUSE:SLE-12:GA" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
   </repository>
 -->
 
@@ -182,8 +169,8 @@ new_package_templ = """\
   or a combination thereof:
 
   <disable arch="x86_64"/>
-  <disable repository="SUSE_SLE-10"/>
-  <disable repository="SUSE_SLE-10" arch="x86_64"/>
+  <disable repository="Fedora_Rawhide"/>
+  <disable repository="Fedora_Rawhide" arch="x86_64"/>
 
   Possible sections where you can use the tags above:
   <build>
