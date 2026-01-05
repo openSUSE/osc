@@ -101,56 +101,52 @@ BUILDLOGURL_RE = re.compile(r"^(?P<apiurl>https?://.*?)/build/(?P<project>.*?)/(
 BUFSIZE = 1024 * 1024
 
 
+# openSUSE Leap repository naming was discussed and decided here:
+# https://lists.opensuse.org/archives/list/project@lists.opensuse.org/thread/RIUQNUEQ2SQ2UT4Q3RIJVHISUY3IAJGV/
 new_project_templ = """\
 <project name="%(name)s">
 
-  <title></title> <!-- Short title of NewProject -->
-  <description></description>
-    <!-- This is for a longer description of the purpose of the project -->
+  <!-- Short title of the project. -->
+  <title></title>
 
-  <!-- Uncomment and specify an URL and branch if your project is managed in git.
+  <!-- Longer description of the purpose of the project. -->
+  <description></description>
+
+  <!-- Uncomment and specify a URL and branch if your project is managed in Git.
   <scmsync>url#branch</scmsync>
   -->
 
   <person role="maintainer" userid="%(user)s" />
   <person role="bugowner" userid="%(user)s" />
-<!-- remove this block to publish your packages on the mirrors -->
+
   <publish>
+    <!-- Change to 'enable' to publish your packages on the mirrors. -->
     <disable />
   </publish>
+
   <build>
     <enable />
   </build>
+
   <debuginfo>
     <enable />
   </debuginfo>
 
-<!-- remove this comment to enable one or more build targets
+<!--
+  Uncomment to enable one or more build targets.
+  Add corresponding i586 entries if your packages use baselibs.conf and produce -32bit packages, or if you want i586 builds.
 
   <repository name="openSUSE_Factory">
     <path project="openSUSE:Factory" repository="snapshot" />
     <arch>x86_64</arch>
-    <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_13.2">
-    <path project="openSUSE:13.2" repository="standard"/>
+  <repository name="16.0">
+    <path project="openSUSE:Leap:16.0" repository="standard"/>
     <arch>x86_64</arch>
-    <arch>i586</arch>
   </repository>
-  <repository name="openSUSE_13.1">
-    <path project="openSUSE:13.1" repository="standard"/>
+  <repository name="Fedora_Rawhide">
+    <path project="Fedora:Rawhide" repository="standard" />
     <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="Fedora_21">
-    <path project="Fedora:21" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
-  </repository>
-  <repository name="SLE_12">
-    <path project="SUSE:SLE-12:GA" repository="standard" />
-    <arch>x86_64</arch>
-    <arch>i586</arch>
   </repository>
 -->
 
@@ -182,8 +178,8 @@ new_package_templ = """\
   or a combination thereof:
 
   <disable arch="x86_64"/>
-  <disable repository="SUSE_SLE-10"/>
-  <disable repository="SUSE_SLE-10" arch="x86_64"/>
+  <disable repository="Fedora_Rawhide"/>
+  <disable repository="Fedora_Rawhide" arch="x86_64"/>
 
   Possible sections where you can use the tags above:
   <build>
