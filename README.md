@@ -25,8 +25,9 @@ RPM packages are available in the [openSUSE:Tools](http://download.opensuse.org/
 
 To install from git, do
 
-    ./setup.py build
-    ./setup.py install
+    pip3 install build
+    python3 -m build
+    pip3 install dist/osc-*.whl
 
 Alternatively, you can directly use `./osc-wrapper.py` from the source directory,
 which is easier if you develop on osc.
