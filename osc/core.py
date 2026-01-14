@@ -3850,7 +3850,7 @@ def copy_pac(
         if not any([expand, revision]):
             raise oscerr.OscValueError("Cannot copy package. Source and target are the same.")
 
-    meta = None
+    meta = new_meta = src_meta = None
     if not (src_apiurl == dst_apiurl and src_project == dst_project
             and src_package == dst_package):
         src_meta = show_package_meta(src_apiurl, src_project, src_package)
@@ -3865,17 +3865,28 @@ def copy_pac(
         except HTTPError as e:
             pass
         if force_meta_update or not found:
-            print('Sending meta data...')
-            u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
-            http_PUT(u, data=meta)
+            new_meta = meta
 
-    if meta is None:
-        meta = show_files_meta(dst_apiurl, dst_project, dst_package)
+    if new_meta:
+        # we are about to create a new package instance. be sure we don't blindly copy scm sources
+        # instead hinting the user to think about is setup.
+        root = xml_fromstring(b''.join(src_meta))
+        if root.find("scmsync") is not None:
+            print("Note: the source is managed via SCM. You may want to reference directly to the same scm instead?")
+            return
+    else:
+        # destination exists, we copy from any source, but avoid the backend error
+        # when trying to copy on an scmsync package.
+        dst_meta = show_package_meta(dst_apiurl, dst_project, dst_package)
+        root = xml_fromstring(b''.join(dst_meta))
+        if root.find("scmsync") is not None:
+            print("Note: package source in target is managed via SCM")
+            return
 
-    root = xml_fromstring(meta)
-    if root.find("scmsync") is not None:
-        print("Note: package source is managed via SCM")
-        return
+    if new_meta:
+        print('Sending meta data...')
+        u = makeurl(dst_apiurl, ['source', dst_project, dst_package, '_meta'])
+        http_PUT(u, data=new_meta)
 
     print('Copying files...')
     if not client_side_copy:
