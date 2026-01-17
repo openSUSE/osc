@@ -3881,6 +3881,42 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         aggregate_pac(src_project, src_package, tgt_project, tgt_package, repo_map, opts.disable_publish, opts.nosources)
 
+    @cmdln.option('-r', '--revision', metavar='rev',
+                        help='reset to specified revision.')
+    def do_reset(self, subcmd, opts, *args):
+        """${cmd_name}: Reset a package
+
+        This resets a package on the server to a given revision.
+
+        Needs either project/package or issued in a valid working
+        directory.
+
+        Usage:
+        osc reset -r <rev> [project] [package]
+        """
+
+        args = slash_split(args)
+
+        if not opts.revision:
+            raise oscerr.WrongArgs('You need to specify a revision with -r <rev>')
+
+        reset_args = []
+        if len(args) == 2:
+            project = args[0]
+            package = args[1]
+        elif len(args) < 2:
+            project = store_read_project(os.curdir)
+            package = store_read_package(os.curdir)
+        else:
+            raise oscerr.WrongArgs('Wrong number of arguments.')
+
+        reset_args.append(project)
+        reset_args.append(package)
+        reset_args.append(project)
+
+        self.do_copypac(None, opts, *reset_args)
+
+
     @cmdln.option('-c', '--client-side-copy', action='store_true',
                         help='do a (slower) client-side copy')
     @cmdln.option('-k', '--keep-maintainers', action='store_true',
