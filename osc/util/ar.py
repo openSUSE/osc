@@ -37,7 +37,7 @@ class ArError(Exception):
 class ArHdr:
     """Represents an ar header entry"""
 
-    def __init__(self, fn: bytes, date: bytes, uid: bytes, gid: bytes, mode: bytes, size: bytes, fmag: bytes, off: bytes):
+    def __init__(self, fn: bytes, date: bytes, uid: bytes, gid: bytes, mode: bytes, size: bytes, fmag: bytes, off: int):
         self.file = fn.strip()
         self.date = date.strip()
         self.uid = uid.strip()

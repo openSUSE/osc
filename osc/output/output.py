@@ -5,7 +5,9 @@ import shlex
 import subprocess
 import sys
 import tempfile
+from typing import BinaryIO
 from typing import Dict
+from typing import Generator
 from typing import List
 from typing import Optional
 from typing import TextIO
@@ -137,7 +139,7 @@ def safe_print(*args, **kwargs):
     print(*args, **kwargs)
 
 
-def safe_write(file: TextIO, text: Union[str, bytes], *, add_newline: bool = False):
+def safe_write(file: Union[BinaryIO, TextIO], text: Union[str, bytes], *, add_newline: bool = False):
     """
     Run sanitize_text() on ``text`` and write it to ``file``.
 
@@ -211,7 +213,7 @@ def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
         run_external(*cmd, env=env)
 
 
-def pipe_to_pager(lines: Union[List[bytes], List[str]], *, add_newlines=False):
+def pipe_to_pager(lines: Union[List[bytes], List[str], Generator[bytes, None, None], Generator[str, None, None]], *, add_newlines=False):
     """
     Pipe ``lines`` to the pager.
     If running in a non-interactive terminal, print the data instead.
