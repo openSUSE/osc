@@ -243,7 +243,8 @@ BUILD_TYPES: List[BuildType] = [
 
 def get_build_type(name: str, *, binary_type: Optional[str] = None) -> BuildType:
     for build_type in BUILD_TYPES:
-        if binary_type:
+        # compare the binary type only if it's specified in the build_type
+        if binary_type and build_type.binary_type:
             if build_type.name == name and build_type.binary_type == binary_type:
                 return build_type
         elif build_type.name == name:
