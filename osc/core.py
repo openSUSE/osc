@@ -3564,7 +3564,10 @@ def aggregate_pac(
 
     if meta_change:
         src_meta = show_package_meta(apiurl, src_project, src_package_meta)
-        dst_meta = replace_pkg_meta(src_meta, dst_package_meta, dst_project)
+        # if we're creating a new package by copying meta, we strip scmsync because:
+        # - we only care about aggregating binaries
+        # - preserving scmsync would prevent us from creating the _aggregate file
+        dst_meta = replace_pkg_meta(src_meta, dst_package_meta, dst_project, keep_scmsync=False)
         meta_change = True
 
     if disable_publish:
