@@ -1,4 +1,5 @@
 import sys
+from typing import List, Optional
 
 import osc.commandline_git
 
@@ -63,7 +64,19 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
         total_entries = 0
         result = []
         for owner, repo in args.owner_repo:
-            pr_obj_list = gitea_api.PullRequest.list(self.gitea_conn, owner, repo, state=args.state)
+            target_branches: List[Optional[str]] = args.target_branches if args.target_branches else [None]
+
+            pr_obj_list: List[gitea_api.PullRequest] = []
+            for target_branch in target_branches:
+                pr_obj_list.extend(
+                    gitea_api.PullRequest.list(
+                        self.gitea_conn,
+                        owner,
+                        repo,
+                        state=args.state,
+                        target_branch=target_branch,
+                    )
+                )
 
             if args.no_draft:
                 pr_obj_list = [i for i in pr_obj_list if not i.draft]
@@ -72,9 +85,6 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
                 # keep pull requests that contain at least one specified label
                 specified_labels = set(args.labels)
                 pr_obj_list = [pr for pr in pr_obj_list if not specified_labels.isdisjoint(pr.labels)]
-
-            if args.target_branches:
-                pr_obj_list = [i for i in pr_obj_list if i.base_branch in args.target_branches]
 
             if args.reviewers:
                 review_states = args.review_states or ["REQUEST_REVIEW"]
