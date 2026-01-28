@@ -72,8 +72,18 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             metavar="BRANCH",
             help="Target branch (default: derived from the current branch in local git repo)",
         )
+        self.add_argument(
+            "--project",
+            metavar="PROJECT_FOLDER",
+            help="Specify a folder with multiple packages (optional)",
+        )
+        self.add_argument(
+            "--force",
+            action="store_true",
+            help="Force the operation despite branch differences across packages when --project is used",
+        )
 
-    def run(self, args):
+    def _create_pull_request(self, args):
         from osc import gitea_api
 
         # the source args are optional, but if one of them is used, the others must be used too
@@ -101,9 +111,12 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             source_owner = args.source_owner
             source_repo = args.source_repo
             source_branch = args.source_branch
-        source_repo_obj = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo)
-        source_branch_obj = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch)
-
+        try:
+            source_repo_obj = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo)
+            source_branch_obj = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch)
+        except gitea_api.GiteaException:
+            raise gitea_api.GitObsRuntimeError(f"Source branch '{source_branch}' does not exist in '{source_owner}/{source_repo}'")
+        
         if args.target_owner:
             target_owner = args.target_owner
 
@@ -130,7 +143,10 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         else:
             target_branch = source_branch
 
-        target_branch_obj = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch)
+        try:
+            target_branch_obj = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch)
+        except gitea_api.GiteaException:
+            raise gitea_api.GitObsRuntimeError(f"Target branch '{target_branch}' does not exist in '{target_owner}/{target_repo}'")
 
         print("Creating a pull request ...", file=sys.stderr)
         if use_local_git:
@@ -203,3 +219,64 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         print("", file=sys.stderr)
         print("Pull request created:", file=sys.stderr)
         print(pr_obj.to_human_readable_string())
+
+    def run(self, args):
+        import os
+        import subprocess
+
+        if not args.project:
+            self._create_pull_request(args)
+            return
+
+        print(f"Project folder: {args.project}", file=sys.stderr)
+
+        branches = {}
+        for package in os.listdir(args.project):
+            package_path = os.path.join(args.project, package)
+            if not os.path.isdir(package_path):
+                continue
+
+            try:
+                branch = subprocess.check_output(
+                    ["git", "rev-parse", "--abbrev-ref", "HEAD"],
+                    cwd=package_path,
+                    stderr=subprocess.PIPE,
+                    text=True
+                ).strip()
+                branches[package] = branch
+            except subprocess.CalledProcessError as e:
+                print(
+                    f"Error checking branch for {package}: {e.stderr}",
+                    file=sys.stderr
+                )
+                return 1
+
+        unique_branches = set(branches.values())
+        if len(unique_branches) > 1 and not args.force:
+            print(
+                "Warning: Packages are on different branches. Use --force to proceed.",
+                file=sys.stderr
+            )
+            for package, branch in branches.items():
+                print(f"  - {package}: {branch}", file=sys.stderr)
+            return 1
+
+        print(
+            "Proceeding with creating pull requests for each package.",
+            file=sys.stderr
+        )
+        
+        original_cwd = os.getcwd()
+        for package in os.listdir(args.project):
+            package_path = os.path.join(args.project, package)
+            if not os.path.isdir(package_path):
+                continue
+
+            print(f"Processing package: {package}", file=sys.stderr)
+            os.chdir(package_path)
+            
+            self._create_pull_request(args)
+            
+            os.chdir(original_cwd)
+
+        print("Successfully created all pull requests.", file=sys.stderr)
