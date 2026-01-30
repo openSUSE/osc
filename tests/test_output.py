@@ -100,8 +100,7 @@ class TestPrintMsg(unittest.TestCase):
         stderr = io.StringIO()
         with contextlib.redirect_stdout(stdout), contextlib.redirect_stderr(stderr):
             print_msg("foo", "bar", print_to="debug")
-        self.assertEqual("", stdout.getvalue())
-        self.assertEqual("DEBUG: foo bar\n", stderr.getvalue())
+        self.assertRegex(stderr.getvalue(), r"^\[....-..-.. ..:..:..\] DEBUG: foo bar\n", stderr.getvalue())
 
     def test_verbose(self):
         osc.conf.config["verbose"] = False
