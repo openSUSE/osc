@@ -9229,6 +9229,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import get_source_rev
         from .core import search
         from .core import xpath_join
+        from .gitea_api.cache import gitea_cache_search_projects
+        from .gitea_api.cache import gitea_cache_search_packages
+        from .gitea_api.cache import gitea_cache_search_project_maintainers
+        from .gitea_api.cache import gitea_cache_search_package_maintainers
 
         def build_xpath(attr, what, substr=False):
             if substr:
@@ -9397,6 +9401,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                     result.append(node.get('filepath'))
                 results.append(result)
 
+
             if not results:
                 print(f'No matches found for \'{role_filter or search_term}\' in {kind}s')
                 continue
@@ -9435,6 +9440,117 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 print(f'matches for \'{role_filter or search_term}\' in {kind}s:\n')
             for row in build_table(len(headline), results, headline, 2, csv=opts.csv):
                 print(row)
+
+        if not any((opts.project, opts.package)):
+            opts.project = True
+            opts.package = True
+
+        def print_projects(entries):
+            headline = ["# Project"]
+            if opts.verbose:
+                headline += ["# Git URL", "# Branch"]
+            if opts.version:
+                headline += ["# Commit"]
+            results = []
+            for i in entries:
+                # unwrap project when searching via maintainer
+                if "project" in i:
+                    i = i["project"]
+                result = []
+                result.append(i["name"])  # project
+                if opts.verbose:
+                    result.append(i["git_url"])
+                    result.append(i["git_branch"])
+                if opts.version:
+                    result.append(i["git_commit"])
+                results.append(result)
+
+            results.sort(key=itemgetter(0))
+            results = list(itertools.chain.from_iterable(results))
+            for row in build_table(len(headline), results, headline, 2, csv=opts.csv):
+                print(row)
+
+        def print_packages(entries):
+            headline = ["# Project", "# Package"]
+            if opts.verbose:
+                headline += ["# Git URL", "# Branch"]
+            if opts.version:
+                headline += ["# Commit"]
+            results = []
+            for i in entries:
+                # unwrap package when searching via maintainer
+                if "package" in i:
+                    i = i["package"]
+                result = []
+                result.append(i["project"]["name"])  # project
+                result.append(i["name"])  # package
+                if opts.verbose:
+                    result.append(i["git_url"])
+                    result.append(i["git_branch"])
+                if opts.version:
+                    result.append(i["git_commit"])
+                results.append(result)
+
+            results.sort(key=itemgetter(0, 1))
+            results = list(itertools.chain.from_iterable(results))
+            for row in build_table(len(headline), results, headline, 2, csv=opts.csv):
+                print(row)
+
+        # query a new service that caches various gitea information
+        if opts.maintainer or opts.bugowner or opts.involved:
+            if opts.project:
+                q = {}
+                if opts.substring:
+                    q["users__like"] = [search_term]
+                else:
+                    q["users"] = [search_term]
+
+                results = gitea_cache_search_project_maintainers(**q)
+                if results:
+                    if not opts.csv:
+                        print(f"\n[git] matches for '{search_term}' in project maintainers:\n")
+                    print_projects(results)
+
+            if opts.package:
+                q = {}
+                if opts.substring:
+                    q["users__like"] = [search_term]
+                else:
+                    q["users"] = [search_term]
+
+                results = gitea_cache_search_package_maintainers(**q)
+                if results:
+                    if not opts.csv:
+                        print(f"\n[git] matches for '{search_term}' in package maintainers:\n")
+                    print_packages(results)
+
+        else:
+            if opts.project:
+                q = {}
+                if opts.substring:
+                    q["names__like"] = [search_term]
+                else:
+                    q["names"] = [search_term]
+
+                results = gitea_cache_search_projects(**q)
+                if results:
+                    if not opts.csv:
+                        print(f"\n[git] matches for '{search_term}' in projects:\n")
+                    print_projects(results)
+
+            if opts.package:
+                q = {}
+                if opts.substring:
+                    q["names__like"] = [search_term]
+                else:
+                    q["names"] = [search_term]
+
+                results = gitea_cache_search_packages(**q)
+                if results:
+                    if not opts.csv:
+                        print(f"\n[git] matches for '{search_term}' in packages:\n")
+                    print_packages(results)
+
 
     @cmdln.option('-p', '--project', metavar='project',
                         help='specify the path to a project')
