@@ -1,3 +1,4 @@
+import datetime
 import os
 import platform
 import re
@@ -32,7 +33,8 @@ def print_msg(*args, print_to: Optional[str] = "debug"):
     elif print_to == "debug":
         # print a debug message to stderr if config["debug"] is set
         if conf.config["debug"]:
-            print("DEBUG:", *args, file=sys.stderr)
+            timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            print(f"[{timestamp}] DEBUG:", *args, file=sys.stderr)
     elif print_to == "verbose":
         # print a verbose message to stdout if config["verbose"] or config["debug"] is set
         if conf.config["verbose"] or conf.config["debug"]:
