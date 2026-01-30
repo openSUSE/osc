@@ -72,6 +72,11 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             metavar="BRANCH",
             help="Target branch (default: derived from the current branch in local git repo)",
         )
+        self.add_argument(
+            "--self",
+            action="store_true",
+            help="Use the local git repository as the target for the pull request",
+        )
 
     def run(self, args):
         from osc import gitea_api
@@ -91,6 +96,9 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             local_owner, local_repo = git.get_owner_repo()
             local_branch = git.current_branch
             local_commit = git.get_branch_head(local_branch)
+        
+        if args.self and not use_local_git:
+            self.parser.error("--self can only be used together with local git repository (i.e. without --source-owner, --source-repo, --source-branch)")
 
         # remote git repo - source
         if use_local_git:
@@ -104,7 +112,10 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         source_repo_obj = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo)
         source_branch_obj = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch)
 
-        if args.target_owner:
+        if args.self:
+            target_owner = source_owner
+            target_repo = source_repo
+        elif args.target_owner:
             target_owner = args.target_owner
 
             target_repo = None
