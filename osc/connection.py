@@ -1,4 +1,6 @@
 import base64
+import contextlib
+import datetime
 import fcntl
 import inspect
 import os
@@ -30,6 +32,23 @@ from .util.helper import decode_it
 
 # print only the first occurrence of matching warnings, regardless of location
 warnings.filterwarnings("once", category=urllib3.exceptions.InsecureRequestWarning)
+
+
+@contextlib.contextmanager
+def debug_timer(msg="The request took"):
+    if not int(conf.config["http_debug"]) and not int(conf.config["http_full_debug"]):
+        yield
+        return
+
+    start_perf = time.perf_counter()
+    try:
+        yield
+    finally:
+        end_perf = time.perf_counter()
+        duration = end_perf - start_perf
+
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] DEBUG:", msg, f"{duration:.4f}s", file=sys.stderr)
 
 
 class MockRequest:
@@ -86,7 +105,8 @@ def enable_http_debug(config):
                 # (?<=...) - '...' must be present before the pattern (positive lookbehind assertion)
                 args[1] = re.sub(r"(?<=\\r\\n)authorization:.*?\\r\\n", "", args[1], re.I)
                 args[1] = re.sub(r"(?<=\\r\\n)Cookie:.*?\\r\\n", "", args[1], re.I)
-        print("DEBUG:", *args, file=sys.stderr)
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        print(f"[{timestamp}] DEBUG:", *args, file=sys.stderr)
     http.client.print = new_print
 
 
@@ -211,7 +231,8 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
             # direct connection
             manager = POOL_MANAGER
 
-        response = manager.urlopen(method, url, body=data, headers=headers, preload_content=False)
+        with debug_timer():
+            response = manager.urlopen(method, url, body=data, headers=headers, preload_content=False)
 
         if response.status / 100 != 2:
             raise urllib.error.HTTPError(url, response.status, response.reason, response.headers, response)
@@ -343,10 +364,11 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         http.client.print(method, url)
 
     try:
-        response = pool.urlopen(
-            method, urlopen_url, body=data, headers=headers,
-            preload_content=False, assert_same_host=assert_same_host
-        )
+        with debug_timer():
+            response = pool.urlopen(
+                method, urlopen_url, body=data, headers=headers,
+                preload_content=False, assert_same_host=assert_same_host
+            )
     except urllib3.exceptions.MaxRetryError as e:
         if not isinstance(e.reason, urllib3.exceptions.SSLError):
             # re-raise exceptions that are not related to SSL
@@ -374,10 +396,11 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         if hasattr(data, 'seek'):
             data.seek(0)
 
-        response = pool.urlopen(
-            method, urlopen_url, body=data, headers=headers,
-            preload_content=False, assert_same_host=assert_same_host
-        )
+        with debug_timer():
+            response = pool.urlopen(
+                method, urlopen_url, body=data, headers=headers,
+                preload_content=False, assert_same_host=assert_same_host
+            )
 
     if response.status == 401:
         # session cookie has expired, re-authenticate
@@ -387,7 +410,8 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
                 break
         if hasattr(data, 'seek'):
             data.seek(0)
-        response = pool.urlopen(method, urlopen_url, body=data, headers=headers, preload_content=False)
+        with debug_timer():
+            response = pool.urlopen(method, urlopen_url, body=data, headers=headers, preload_content=False)
 
     # we want to save a session cookie before an exception is raised on failed requests
     for handler in auth_handlers:
