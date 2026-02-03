@@ -14,6 +14,11 @@ class RepoForkCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         self.add_argument_owner_repo(nargs="+")
         self.add_argument_new_repo_name()
+        self.add_argument(
+            "--target-owner",
+            metavar="OWNER",
+            help="Target owner (default: user's organization)"
+        )
 
     def run(self, args):
         from osc import gitea_api
@@ -24,12 +29,18 @@ class RepoForkCommand(osc.commandline_git.GitObsCommand):
         if len(args.owner_repo) > 1 and args.new_repo_name:
             self.parser.error("The --new-repo-name option cannot be used with multiple repos")
 
+        target_owner = None
+        if args.target_owner:
+            target_owner = args.target_owner
+
         num_entries = 0
         failed_entries = []
         for owner, repo in args.owner_repo:
             print(f"Forking git repo {owner}/{repo} ...", file=sys.stderr)
             try:
-                repo_obj = gitea_api.Fork.create(self.gitea_conn, owner, repo, new_repo_name=args.new_repo_name)
+                repo_obj = gitea_api.Fork.create(
+                    self.gitea_conn, owner, repo,
+                    new_repo_name=args.new_repo_name, target_org=target_owner)
                 fork_owner = repo_obj.owner
                 fork_repo = repo_obj.repo
                 print(f" * Fork created: {fork_owner}/{fork_repo}", file=sys.stderr)
