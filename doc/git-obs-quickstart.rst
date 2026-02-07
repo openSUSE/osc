@@ -36,6 +36,15 @@ Create a Gitea token
 - Once you hit the "Generate Token" button, the page reloads and the token appears in the blue rectangle on top.
   This is the only chance to copy it because it will never show up again.
 
+Add your SSH key
+------------------
+
+- Visit your Gitea user's "SSH / GPG Keys" settings page (Profile picture -> Settings -> "SSH / GPG Keys"):
+  `https://src.opensuse.org/user/settings/keys <https://src.opensuse.org/user/settings/keys>`_
+- Add Key name and as Content the public SSH key content (e.g., from `~/.ssh/id_rsa.pub`)
+
+  .. note::
+      For HTTP Signature authentication, ``git-obs`` only supports ``RSA`` and ``ed25519`` keys.
 
 Add a login entry to the git-obs configuration file
 ---------------------------------------------------
@@ -47,6 +56,20 @@ Add a login entry to the git-obs configuration file
 - If the ``--token`` option in the command above is omitted,
   the command will prompt you to enter the token securely.
 
+- Alternatively, you can configure a login to authenticate Gitea API requests
+  by signing them with an SSH key. This method, known as HTTP Signature, is an
+  alternative to using a Gitea token. Before using this method, ensure you have
+  added your public SSH key to your Gitea account settings.
+
+  - Using an SSH key file::
+
+        git-obs login add opensuse --url https://src.opensuse.org --user USER --ssh-key /path/to/your/private_key --ssh-key-agent-pub 'SHA256:XXXXXXX'
+
+  - Using an SSH agent (for example with a hardware token)::
+
+        git-obs login add opensuse --url https://src.opensuse.org --user USER --ssh-agent --ssh-key-agent-pub 'SHA256:XXXXXXX'
+
+  The ``--ssh-key-agent-pub`` argument specifies the public key's signature.
 
 Using the login entries
 -----------------------

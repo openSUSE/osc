@@ -13,7 +13,7 @@ import urllib3.exceptions
 import urllib3.response
 
 from .conf import Login
-
+from .http_signer import HttpSigner
 
 RE_HTTP_HEADER_LINK = re.compile('<(?P<url>.*?)>; rel="(?P<rel>.*?)",?')
 
@@ -93,7 +93,7 @@ class Connection:
         """
         Return relative url prefixed with "/api/v1/" followed with concatenated ``*path``.
         """
-        url_path = ["", "api", "v1"] + [urllib.parse.quote(i, safe="/:") for i in path]
+        url_path = ["", "api", "v1"] + [urllib.parse.quote(i.lstrip("/"), safe="/:") for i in path]
         url_path_str = "/".join(url_path)
 
         if query is None:
@@ -130,7 +130,12 @@ class Connection:
         headers = {
             "Content-Type": "application/json",
         }
-        if self.login.token:
+        if self.login.ssh_key or self.login.ssh_agent:
+            try:
+                headers.update(HttpSigner(self.login).get_signed_header(method, url))
+            except Exception as e:
+                raise RuntimeError(f"Failed to sign the request using SSH credentials: {e}")
+        elif self.login.token:
             headers["Authorization"] = f"token {self.login.token}"
 
         if json_data and isinstance(json_data, dict):
