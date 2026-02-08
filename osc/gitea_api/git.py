@@ -160,7 +160,7 @@ class Git:
                     except FileNotFoundError:
                         pass
 
-        return result
+        return result or None
 
     def branch(self, branch: str, set_upstream_to: Optional[str] = None):
         cmd = ["branch"]
