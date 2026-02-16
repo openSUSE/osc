@@ -1514,23 +1514,157 @@ class Defaults:
 
 DEFAULTS = Defaults()
 
+def _ini_default_from_field(field):
+    """
+    Compute a reasonable default-as-string for inclusion in comments.
+    """
+    from .util.models import FromParent
 
-new_conf_template = """
-# see oscrc(5) man page for the full list of available options
+    if field.default is None:
+        return None
 
-[general]
+    if getattr(field, "default_is_lazy", False):
+        return None
 
-# Default URL to the API server.
-# Credentials and other `apiurl` specific settings must be configured in a `[$apiurl]` config section.
-apiurl=%(apiurl)s
+    ini_type = field.extra.get("ini_type", None)
+    if ini_type:
+        return None
 
-[%(apiurl)s]
-# aliases=
-# user=
-# pass=
-# credentials_mgr_class=osc.credentials...
-"""
+    if isinstance(field.default, FromParent):
+        return None
 
+    origin_type = field.origin_type
+
+    if origin_type == bool:
+        return "1" if field.default else "0"
+
+    if origin_type == int:
+        return str(field.default)
+
+    if origin_type == list:
+        if not field.default:
+            return None
+        return " ".join(str(v) for v in field.default)
+
+    if origin_type == str:
+        return field.default
+
+    return None
+
+
+def _emit_option_block(
+    lines,
+    ini_key: str,
+    desc: str,
+    default_str: str | None,
+    apiurl_placeholder: str | None = None,
+):
+    """
+    Append a fully formatted option block to `lines`.
+
+    If `apiurl_placeholder` is not None and ini_key == "apiurl",
+    emit an active `apiurl=...` line instead of a commented placeholder.
+    """
+    lines.append("#")
+
+    if desc:
+        for line in desc.splitlines():
+            if line.strip():
+                lines.append("#--# " + line)
+            else:
+                lines.append("#--#")
+    lines.append("#--#")
+
+    if apiurl_placeholder is not None and ini_key == "apiurl":
+        lines.append(f"apiurl={apiurl_placeholder}")
+        return
+
+    if default_str is not None:
+        lines.append(f"#--# Default: {ini_key} = {default_str}")
+        lines.append("#")
+        lines.append(f"{ini_key} = {default_str}")
+    else:
+        lines.append("#")
+        lines.append(f"# {ini_key} =")
+
+
+def generate_conf_template(apiurl_placeholder: str = "%(apiurl)s") -> str:
+    """
+    Generate a full oscrc template.
+    """
+    line_length = 30
+    lines: list[str] = []
+    lines.append("# see oscrc(5) man page for the full list of available options")
+    lines.append("#")
+    lines.append("[general]")
+
+    for name, field in Options.__fields__.items():
+        extra = field.extra
+
+        if extra.get("section", False):
+            lines.append("#")
+            lines.append("#" + "-" * line_length)
+            lines.append(f"#-- {field.default} --")
+            lines.append("#" + "-" * line_length)
+            continue
+
+        if extra.get("ini_exclude", False) or field.exclude:
+            continue
+
+        if field.description is None and not extra.get("ini_description", None):
+            continue
+
+        ini_key = extra.get("ini_key", name)
+        desc = extra.get("ini_description", None) or field.description or ""
+        default_str = _ini_default_from_field(field)
+
+        _emit_option_block(
+            lines,
+            ini_key=ini_key,
+            desc=desc,
+            default_str=default_str,
+            apiurl_placeholder=apiurl_placeholder,
+        )
+
+    lines.append("#")
+    lines.append(f"[{apiurl_placeholder}]")
+    lines.append("# Per-API server configuration")
+    lines.append("# (credentials and API specific options)")
+    lines.append("#")
+
+    for name, field in HostOptions.__fields__.items():
+        extra = field.extra
+
+        if extra.get("section", False):
+            continue
+
+        if extra.get("ini_exclude", False) or field.exclude:
+            continue
+
+        if field.description is None and not extra.get("ini_description", None):
+            continue
+
+        ini_key = extra.get("ini_key", name)
+
+        # apiurl itself is expressed by the section header; do not emit as key
+        if ini_key == "apiurl":
+            continue
+
+        desc = extra.get("ini_description", None) or field.description or ""
+        default_str = _ini_default_from_field(field)
+
+        _emit_option_block(
+            lines,
+            ini_key=ini_key,
+            desc=desc,
+            default_str=default_str,
+            apiurl_placeholder=None,
+        )
+
+    return "\n".join(lines) + "\n"
+
+
+new_conf_template = generate_conf_template(apiurl_placeholder="%(apiurl)s")
 
 account_not_configured_text = """
 Your user account / password are not configured yet.
@@ -1778,25 +1912,66 @@ def _extract_user_compat(cp, section, creds_mgr):
         user = creds_mgr.get_user(section)
     return user
 
-
-def write_initial_config(conffile, entries, custom_template='', creds_mgr_descriptor=None):
+def _replace_placeholder_in_section(text: str, section: str, key: str, value: str) -> str:
     """
-    write osc's intial configuration file. entries is a dict which contains values
+    Replace the first commented placeholder '# key = ...' in the given
+    [section] with an active 'key=value' line.
+    """
+    lines = text.splitlines()
+    section_header = f"[{section}]"
+    inside = False
+
+    pattern = re.compile(rf"^#\s*{re.escape(key)}\s*=\s*.*$")
+
+    for i, line in enumerate(lines):
+        stripped = line.strip()
+
+        if stripped.startswith("[") and stripped.endswith("]"):
+            inside = stripped == section_header
+            continue
+
+        if not inside:
+            continue
+
+        if pattern.match(stripped):
+            lines[i] = f"{key}={value}"
+            break
+
+    return "\n".join(lines) + "\n"
+
+
+def write_initial_config(conffile, entries, custom_template="", creds_mgr_descriptor=None):
+    """
+    write osc's initial configuration file. entries is a dict which contains values
     for the config file (e.g. { 'user' : 'username', 'pass' : 'password' } ).
     custom_template is an optional configuration template.
     """
     conf_template = custom_template or new_conf_template
-    config = globals()["config"].dict()
-    config.update(entries)
-    sio = StringIO(conf_template.strip() % config)
+
+    base_cfg = globals()["config"]
+    apiurl = entries.get("apiurl") or base_cfg.apiurl
+    user = entries["user"]
+    passwd = entries["pass"]
+
+    text = conf_template.strip().replace("%(apiurl)s", apiurl)
+
+    text = _replace_placeholder_in_section(text, apiurl, "user", user)
+    if passwd:
+        text = _replace_placeholder_in_section(text, apiurl, "pass", passwd)
+
+    # Will be set to actual value by credential manager; remove the comment here
+    text = _replace_placeholder_in_section(text, apiurl, "credentials_mgr_class", "")
+
+    sio = StringIO(text)
     cp = OscConfigParser.OscConfigParser()
     cp.read_file(sio)
-    cp.set(config['apiurl'], 'user', config['user'])
+
     if creds_mgr_descriptor:
         creds_mgr = creds_mgr_descriptor.create(cp)
     else:
-        creds_mgr = _get_credentials_manager(config['apiurl'], cp)
-    creds_mgr.set_password(config['apiurl'], config['user'], config['pass'])
+        creds_mgr = _get_credentials_manager(apiurl, cp)
+    creds_mgr.set_password(apiurl, user, passwd)
+
     write_config(conffile, cp)
 
 
@@ -1823,10 +1998,18 @@ def add_section(filename, url, user, passwd, creds_mgr_descriptor=None, allow_ht
 
 
 def _get_credentials_manager(url, cp):
-    if cp.has_option(url, credentials.AbstractCredentialsManager.config_entry):
+    try:
+        entry = cp.get(url, credentials.AbstractCredentialsManager.config_entry, raw=True)
+    except OscConfigParser.configparser.NoOptionError:
+        entry = None
+
+    if entry is not None:
+        entry = entry.strip()
+
+    if entry:
         creds_mgr = credentials.create_credentials_manager(url, cp)
         if creds_mgr is None:
-            msg = f'Unable to instantiate creds mgr (section: {url})'
+            msg = f"Unable to instantiate creds mgr (section: {url})"
             conffile = get_configParser.conffile
             raise oscerr.ConfigMissingCredentialsError(msg, conffile, url)
         return creds_mgr
@@ -2169,19 +2352,49 @@ def interactive_config_setup(conffile, apiurl, initial=True):
 
     apiurl_no_scheme = urlsplit(apiurl)[1] or apiurl
     user_prompt = f"Username [{apiurl_no_scheme}]: "
-    user = raw_input(user_prompt)
+    user = ""
+    max_attempts = 3
+    for attempt in range(max_attempts):
+        user = raw_input(user_prompt).strip()
+        if user:
+            break
+        remaining = max_attempts - attempt - 1
+        if remaining > 0:
+            print("Username must not be empty, please try again.", file=sys.stderr)
+        else:
+            print("No username entered. Aborting.", file=sys.stderr)
+            raise oscerr.UserAbort()
+
     pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "
     passwd = getpass.getpass(pass_prompt)
-    creds_mgr_descr = select_credentials_manager_descr()
+    if not passwd:
+        print("Password is empty. To use SSH, enter no password again.")
+        pass_prompt = f"Password [{user}@{apiurl_no_scheme}]: "
+        passwd = getpass.getpass(pass_prompt)
+        if not passwd:
+            print("Password is empty. Use SSH or run 'osc initconfig' to re-create the config file.")
+
     if initial:
-        config = {'user': user, 'pass': passwd}
+        config = {"user": user, "pass": passwd}
         if apiurl:
-            config['apiurl'] = apiurl
+            config["apiurl"] = apiurl
         if http:
-            config['allow_http'] = 1
-        write_initial_config(conffile, config, creds_mgr_descriptor=creds_mgr_descr)
+            config["allow_http"] = 1
+
+        write_initial_config(
+            conffile,
+            config,
+            creds_mgr_descriptor=select_credentials_manager_descr(),
+        )
     else:
-        add_section(conffile, apiurl, user, passwd, creds_mgr_descriptor=creds_mgr_descr, allow_http=http)
+        add_section(
+            conffile,
+            apiurl,
+            user,
+            passwd,
+            creds_mgr_descriptor=select_credentials_manager_descr(),
+            allow_http=http,
+        )
 
 
 def select_credentials_manager_descr():
