@@ -39,12 +39,6 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             help="Do not actually create the pull request or push changes",
         )
         self.add_argument(
-            "-f",
-            "--force",
-            action="store_true",
-            help="Force push to the fork (overwrite remote branch history)",
-        )
-        self.add_argument(
             "--source-url",
             help="URL of the source git repository (if different from upstream)",
         )
@@ -55,6 +49,16 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
         self.add_argument(
             "--description",
             help="Pull request description (body)",
+        )
+        self.add_argument(
+            "-e", "--edit",
+            action="store_true",
+            help="Open an editor to edit the pull request title and description.",
+        )
+        self.add_argument(
+            "--allow-unrelated-histories",
+            action="store_true",
+            help="Allow merging unrelated histories",
         )
 
     def run(self, args):
@@ -88,7 +92,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
         upstream_repo_obj = gitea_api.Repo.get(self.gitea_conn, upstream_owner, upstream_repo)
         fork_repo_obj = gitea_api.Repo.get(self.gitea_conn, fork_owner, fork_repo)
 
-        upstream_url = upstream_repo_obj.ssh_url 
+        upstream_url = upstream_repo_obj.ssh_url
         fork_url = fork_repo_obj.ssh_url # Prefer SSH for push if possible
 
         # Setup Workdir
@@ -109,7 +113,14 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 if not os.path.exists(repo_dir):
                     os.makedirs(repo_dir)
         else:
-            repo_dir = tempfile.mkdtemp(prefix="git-obs-forward-")
+            try:
+                repo_dir = tempfile.mkdtemp(prefix="git-obs-forward-")
+            except Exception as e:
+                print(f"Error creating temporary directory: {
+                      e}", file=sys.stderr)
+                import traceback
+                traceback.print_exc()
+                sys.exit(1)
             cleanup = not args.no_cleanup
 
         print(f"Working in: {repo_dir}", file=sys.stderr)
@@ -123,7 +134,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 try:
                     git.clone(fork_url, directory=".")
                 except Exception as e:
-                     raise e
+                    raise e
             else:
                 print(f"Using existing git repo in {repo_dir}", file=sys.stderr)
 
@@ -149,7 +160,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     git.add_remote("source", source_url)
                 else:
                     git._run_git(["remote", "set-url", "source", source_url])
-                
+
                 print("Fetching source ...", file=sys.stderr)
                 git.fetch("source")
                 source_ref = f"source/{source_branch}"
@@ -163,48 +174,134 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     pass
                 source_ref = f"upstream/{source_branch}"
 
+            # Define a unique branch name for the forward operation
+            try:
+                source_commit_sha = git._run_git(
+                    ["rev-parse", "--short=7", source_ref]).strip()
+            except Exception as e:
+                print(f"{tty.colorize('ERROR', 'red,bold')}: Could not get SHA for {
+                      source_ref}: {e}", file=sys.stderr)
+                sys.exit(1)
+            forward_branch = f"PR_{source_branch}_{source_commit_sha}"
+            print(f"Using forward branch on fork: {
+                  forward_branch}", file=sys.stderr)
+
             # Optimize LFS fetch: fetch only objects for new commits
             # We identify commits in source_ref that are not in target_branch
             # and fetch LFS objects for them from the appropriate remote.
             lfs_remote = "source" if source_url else "upstream"
             print(f"Fetching LFS objects from {lfs_remote} for incoming commits ...", file=sys.stderr)
-            
+
             try:
                 # Get list of commits unique to source_branch that are not in target_branch
                 commits = git._run_git(["rev-list", f"{lfs_remote}/{source_branch}", f"^{lfs_remote}/{target_branch}"]).splitlines()
-                
+
                 if commits:
                     print(f" * Found {len(commits)} commits to fetch LFS objects for.", file=sys.stderr)
                     # Loop through commits as requested
                     for commit in commits:
                         print(f"   Fetching LFS for commit {commit} ...", file=sys.stderr, end="\r")
                         git._run_git(["lfs", "fetch", lfs_remote, commit])
-                    print("", file=sys.stderr) # Newline after progress
+                    print("", file=sys.stderr)  # Newline after progress
                 else:
                     print(" * No new commits to fetch LFS objects for.", file=sys.stderr)
             except Exception as e:
                 # Fallback or ignore if LFS fails/missing
                 print(f"LFS fetch warning: {e}", file=sys.stderr)
 
-            # Checkout Target Branch (tracking upstream)
-            print(f"Checking out target branch: {target_branch} (tracking upstream/{target_branch})", file=sys.stderr)
+            # Checkout forward branch (tracking upstream/target_branch)
+            print(f"Creating/resetting forward branch '{forward_branch}' from 'upstream/{target_branch}'", file=sys.stderr)
             try:
-                git._run_git(["checkout", "-B", target_branch, f"upstream/{target_branch}"])
+                git._run_git(["checkout", "-B", forward_branch, f"upstream/{target_branch}"])
             except Exception:
                 print(f"{tty.colorize('ERROR', 'red,bold')}: Failed to checkout upstream/{target_branch}. Does it exist?", file=sys.stderr)
                 sys.exit(1)
 
-            # Merge Source Branch (Theirs)
-            print(f"Merging {source_ref} with strategy 'theirs' ...", file=sys.stderr)
+            # Check for unrelated histories
             try:
-                git._run_git(["merge", "-X", "theirs", "--allow-unrelated-histories", "--no-edit", source_ref])
+                # Returns non-zero if no common ancestor
+                git._run_git(["merge-base", source_ref, forward_branch])
+            except Exception:
+                if not args.allow_unrelated_histories:
+                    print(
+                        f"{tty.colorize('ERROR', 'red,bold')}: "
+                        f"Unrelated histories in '{
+                            source_ref}' and 'upstream/{target_branch}'. "
+                        "Use --allow-unrelated-histories to merge.",
+                        file=sys.stderr
+                    )
+                    sys.exit(1)
+
+            # Determine PR message and merge commit message
+            title = args.title or f"Forward {source_branch} to {target_branch}"
+            description = args.description or f"Automated forward of {
+                source_branch} to {target_branch} using git-obs."
+
+            if args.edit and not args.dry_run:
+                from osc.gitea_api.common import run_editor
+
+                message = (
+                    f"{title}\n\n"
+                    f"{description}\n\n"
+                    f"# Please enter the pull request title and description.\n"
+                    f"# The first line is the title, the rest (after a blank line) is the description.\n"
+                    f"# Lines starting with '#' will be ignored.\n"
+                )
+
+                tmp_path = ''
+                try:
+                    fd, tmp_path = tempfile.mkstemp(
+                        prefix='osc-pr-forward-', text=True)
+                    with os.fdopen(fd, 'w') as tmp:
+                        tmp.write(message)
+
+                    run_editor(tmp_path)
+
+                    with open(tmp_path, 'r') as tmp:
+                        edited_message = tmp.read()
+                finally:
+                    if tmp_path and os.path.exists(tmp_path):
+                        os.unlink(tmp_path)
+
+                # Filter out comments and strip whitespace
+                lines = [line for line in edited_message.split(
+                    '\n') if not line.strip().startswith('#')]
+                while lines and not lines[0].strip():
+                    lines.pop(0)  # remove leading blank lines
+
+                if not lines:
+                    print(f"{tty.colorize('ERROR', 'red,bold')
+                             }: Aborting due to empty message.", file=sys.stderr)
+                    sys.exit(1)
+
+                title = lines.pop(0).strip()
+                if not title:
+                    print(f"{tty.colorize('ERROR', 'red,bold')
+                             }: Aborting due to empty title.", file=sys.stderr)
+                    sys.exit(1)
+
+                # remove blank lines between title and body
+                while lines and not lines[0].strip():
+                    lines.pop(0)
+
+                description = "\n".join(lines).strip()
+
+            # Merge Source Branch (Theirs)
+            commit_message = f"{title}\n\n{description}"
+            print(f"Merging {source_ref} into {forward_branch} with strategy 'theirs' ...", file=sys.stderr)
+            try:
+                merge_cmd = ["merge", "-X", "theirs"]
+                if args.allow_unrelated_histories:
+                    merge_cmd.append("--allow-unrelated-histories")
+                merge_cmd.extend(["-m", commit_message, source_ref])
+                git._run_git(merge_cmd)
             except Exception as e:
                 print(f"{tty.colorize('ERROR', 'red,bold')}: Merge failed: {e}", file=sys.stderr)
                 sys.exit(1)
 
             # Clean files not in Source
             print("Cleaning files not present in source ...", file=sys.stderr)
-            
+
             # Get list of files in source (recurse)
             source_files_output = git._run_git(["ls-tree", "-r", "--name-only", source_ref])
             source_files = set(source_files_output.splitlines())
@@ -214,40 +311,34 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             head_files = set(head_files_output.splitlines())
 
             files_to_remove = list(head_files - source_files)
-            
+
             if files_to_remove:
                 print(f"Removing {len(files_to_remove)} files not present in {source_branch} ...", file=sys.stderr)
                 # Batching git rm to avoid command line length limits
                 chunk_size = 100
                 for i in range(0, len(files_to_remove), chunk_size):
-                    chunk = files_to_remove[i : i + chunk_size]
+                    chunk = files_to_remove[i: i + chunk_size]
                     git._run_git(["rm", "-f", "--"] + chunk)
-                
+
                 git.commit(f"Clean files not present in {source_branch}")
             else:
                 print("No extra files to clean.", file=sys.stderr)
 
             # Push to Fork
             if args.dry_run:
-                print("[DRY RUN] Would push to origin", file=sys.stderr)
+                print(f"[DRY RUN] Would push '{forward_branch}' to origin", file=sys.stderr)
             else:
-                print(f"Pushing to {fork_owner}/{fork_repo} ...", file=sys.stderr)
+                print(f"Pushing '{forward_branch}' to {fork_owner}/{fork_repo} ...", file=sys.stderr)
                 try:
-                    git.push("origin", target_branch, force=args.force)
+                    # Always force-push to the temporary forward branch
+                    git.push("origin", forward_branch, force=True)
                 except Exception as e:
                     print(f"{tty.colorize('ERROR', 'red,bold')}: Push failed: {e}", file=sys.stderr)
-                    if not args.force:
-                        print(f"{tty.colorize('HINT', 'yellow,bold')}: The local branch has diverged from the remote branch.", file=sys.stderr)
-                        print(f"{tty.colorize('HINT', 'yellow,bold')}: This is expected when forwarding/resetting a branch.", file=sys.stderr)
-                        print(f"{tty.colorize('HINT', 'yellow,bold')}: Run with --force to overwrite your fork's branch.", file=sys.stderr)
                     sys.exit(1)
 
             # Create PR
-            title = args.title or f"Forward {source_branch} to {target_branch}"
-            description = args.description or f"Automated forward of {source_branch} to {target_branch} using git-obs."
-            
             if args.dry_run:
-                print(f"[DRY RUN] Would create PR: {title}", file=sys.stderr)
+                print(f"[DRY RUN] Would create PR for branch '{forward_branch}': {title}", file=sys.stderr)
                 return
 
             print("Creating Pull Request ...", file=sys.stderr)
@@ -258,7 +349,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     target_repo=upstream_repo,
                     target_branch=target_branch,
                     source_owner=fork_owner,
-                    source_branch=target_branch,
+                    source_branch=forward_branch,
                     title=title,
                     description=description,
                 )
@@ -268,7 +359,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             except gitea_api.GiteaException as e:
                 # Handle case where PR already exists
                 if "pull request already exists" in str(e).lower():
-                     print(f" * Pull request already exists.", file=sys.stderr)
+                    print(f" * Pull request already exists.", file=sys.stderr)
                 else:
                     raise
 
