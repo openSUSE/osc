@@ -1,3 +1,20 @@
+- 1.24.0
+  - Command-line:
+    - Add '--target-owner' option to 'git-obs repo fork' command
+    - Add '--self' parameter to fix 'no matching parent repo' error message in 'git-obs pr create'
+    - Fix 'osc aggregatepac' for scmsync packages
+    - Fix 'osc build' to retrieve buildconfig from git package's cache
+    - Fix 'osc token' error handling for project wide trigger
+    - Fix string formatting for id in obs-request.xml in 'git-obs pr dump'
+  - Library:
+    - Consolidate build types in build.py and commandline.py
+    - Fix build.get_build_type() by comparing binary_type only if specified
+    - Make use of queryconfig tool configurable and consistent
+    - Fix how get_request_collection() filters the projects and packages
+    - Support copying packages from an scmsync source, when target exists
+    - Add timestamps to the DEBUG output
+    - Update new project template
+
 - 1.23.0
   - Command-line:
     - Add '--target-owner' option to 'git-obs pr create' to specify the target owner explicitly
