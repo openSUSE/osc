@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 
@@ -77,9 +78,20 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Use the local git repository as the target for the pull request",
         )
+        self.add_argument(
+            "--separate-requests",
+            action="store_true",
+            help="Create separate pull requests for each package in the project",
+        )
+        self.add_argument(
+            "--dry-run",
+            action="store_true",
+            help="Do not actually create the pull request",
+        )
 
     def run(self, args):
-        from osc import gitea_api
+        if args.separate_requests:
+            return self._run_separate_requests(args)
 
         # the source args are optional, but if one of them is used, the others must be used too
         source_args = (args.source_owner, args.source_repo, args.source_branch)
@@ -87,14 +99,56 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             self.parser.error("All of the following options must be used together: --source-owner, --source-repo, --source-branch")
 
         self.print_gitea_settings()
+        self._create_pr(args)
+
+    def _run_separate_requests(self, args):
+        from osc import gitea_api
+        from osc.git_scm.manifest import Manifest
+
+        # Packages discovery
+        cwd = os.getcwd()
+        packages = []
+        if os.path.exists("_manifest"):
+            manifest = Manifest.from_file("_manifest")
+            packages = manifest.get_package_paths(cwd)
+        else:
+            packages = [os.path.join(cwd, i) for i in os.listdir(cwd)]
+
+        # Filtering: must be a dir and contain .git
+        packages = [i for i in packages if os.path.isdir(i) and os.path.exists(os.path.join(i, ".git"))]
+        packages.sort()
+
+        if not packages:
+            print("No packages found.", file=sys.stderr)
+            return
+
+        self.print_gitea_settings()
+
+        for pkg_path in packages:
+            pkg_name = os.path.basename(pkg_path)
+            # print(f"Processing {pkg_name}...", file=sys.stderr)
+            try:
+                self._create_pr(args, git_dir=pkg_path, ignore_identical=True)
+            except gitea_api.GitObsRuntimeError as e:
+                print(f"Skipping {pkg_name}: {e}", file=sys.stderr)
+            except Exception as e:
+                print(f"Error processing {pkg_name}: {e}", file=sys.stderr)
+
+    def _create_pr(self, args, git_dir=".", ignore_identical=False):
+        from osc import gitea_api
+        from osc.output import tty
 
         use_local_git = args.source_owner is None
 
         if use_local_git:
             # local git repo
-            git = gitea_api.Git(".")
+            git = gitea_api.Git(git_dir)
             local_owner, local_repo = git.get_owner_repo()
             local_branch = git.current_branch
+
+            if not local_branch:
+                raise gitea_api.GitObsRuntimeError(f"Unable to determine current branch in {git_dir}. Are you in 'detached HEAD' state?")
+
             local_commit = git.get_branch_head(local_branch)
         
         if args.self and not use_local_git:
@@ -143,6 +197,11 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
 
         target_branch_obj = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch)
 
+        # Check difference: Local vs Target (specific for separate-requests/package iteration)
+        if ignore_identical and use_local_git and local_commit == target_branch_obj.commit:
+            print(f"Skipping {os.path.basename(git_dir)}: up to date ({target_branch_obj.commit}).", file=sys.stderr)
+            return
+
         print("Creating a pull request ...", file=sys.stderr)
         if use_local_git:
             print(f" * Local git: branch: {local_branch}, commit: {local_commit}", file=sys.stderr)
@@ -150,54 +209,69 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         print(f" * Target: {target_owner}/{target_repo}, branch: {target_branch_obj.name}, commit: {target_branch_obj.commit}", file=sys.stderr)
 
         if use_local_git and local_commit != source_branch_obj.commit:
-            from osc.output import tty
-            print(f"{tty.colorize('ERROR', 'red,bold')}: Local commit doesn't correspond with the latest commit in the remote source branch")
+            msg = "Local commit doesn't correspond with the latest commit in the remote source branch"
+            if ignore_identical:
+                raise gitea_api.GitObsRuntimeError(msg)
+            print(f"{tty.colorize('ERROR', 'red,bold')}: {msg}")
             sys.exit(1)
 
         if source_branch_obj.commit == target_branch_obj.commit:
-            from osc.output import tty
-            print(f"{tty.colorize('ERROR', 'red,bold')}: Source and target are identical, make and push changes to the remote source repo first")
+            msg = "Source and target are identical, make and push changes to the remote source repo first"
+            if ignore_identical:
+                return 
+            print(f"{tty.colorize('ERROR', 'red,bold')}: {msg}")
             sys.exit(1)
 
         title = args.title or ""
         description = args.description or ""
 
         if not title or not description:
-            # TODO: add list of commits and list of changed files to the template; requires local git repo
-            if use_local_git:
-                git_status = git.status(untracked_files=True)
-                git_status = "\n".join([f"# {i}" for i in git_status.splitlines()])
+            if args.dry_run:
+                title = "[DRY RUN] Title"
+                description = "[DRY RUN] Description"
             else:
-                git_status = "#"
+                # TODO: add list of commits and list of changed files to the template; requires local git repo
+                if use_local_git:
+                    git_status = git.status(untracked_files=True)
+                    git_status = "\n".join([f"# {i}" for i in git_status.splitlines()])
+                else:
+                    git_status = "#"
 
-            if use_local_git:
-                git_commits = git._run_git(["log", "--format=- %s", f"{target_branch_obj.commit}..{source_branch_obj.commit}"])
-                git_commits = "\n".join([f"# {i}" for i in git_commits.splitlines()])
-            else:
-                git_commits = "#"
+                if use_local_git:
+                    git_commits = git._run_git(["log", "--format=- %s", f"{target_branch_obj.commit}..{source_branch_obj.commit}"])
+                    git_commits = "\n".join([f"# {i}" for i in git_commits.splitlines()])
+                else:
+                    git_commits = "#"
 
-            message = gitea_api.edit_message(template=NEW_PULL_REQUEST_TEMPLATE.format(**locals()))
+                message = gitea_api.edit_message(template=NEW_PULL_REQUEST_TEMPLATE.format(**locals()))
 
-            # remove comments
-            message = "\n".join([i for i in message.splitlines() if not i.startswith("#")])
+                # remove comments
+                message = "\n".join([i for i in message.splitlines() if not i.startswith("#")])
 
-            # strip leading and trailing spaces
-            message = message.strip()
+                # strip leading and trailing spaces
+                message = message.strip()
 
-            if not message:
-                raise gitea_api.GitObsRuntimeError("Aborting operation due to empty title and description.")
+                if not message:
+                    raise gitea_api.GitObsRuntimeError("Aborting operation due to empty title and description.")
 
-            parts = re.split(r"\n\n", message, 1)
-            if len(parts) == 1:
-                # empty description
-                title = parts[0]
-                description = ""
-            else:
-                title = parts[0]
-                description = parts[1]
+                parts = re.split(r"\n\n", message, 1)
+                if len(parts) == 1:
+                    # empty description
+                    title = parts[0]
+                    description = ""
+                else:
+                    title = parts[0]
+                    description = parts[1]
 
-            title = title.strip()
-            description = description.strip()
+                title = title.strip()
+                description = description.strip()
+
+        if args.dry_run:
+            print("", file=sys.stderr)
+            print("Pull request would be created (DRY RUN):", file=sys.stderr)
+            print(f"Title: {title}", file=sys.stderr)
+            print(f"Description: {description}", file=sys.stderr)
+            return
 
         pr_obj = gitea_api.PullRequest.create(
             self.gitea_conn,
