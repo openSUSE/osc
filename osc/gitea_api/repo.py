@@ -51,6 +51,10 @@ class Repo(GiteaModel):
     def default_branch(self) -> str:
         return self._data["default_branch"]
 
+    @property
+    def can_push(self) -> bool:
+        return self._data["permissions"]["push"] or self._data["permissions"]["admin"]
+
     @classmethod
     def split_id(cls, repo_id: str) -> Tuple[str, str]:
         """
@@ -286,11 +290,24 @@ class Repo(GiteaModel):
 
         :param conn: Gitea ``Connection`` instance.
         """
+        url = conn.makeurl("orgs", owner, "repos")
+        obj_list = []
+        for response in conn.request_all_pages("GET", url):
+            obj_list.extend([cls(i, response=response) for i in response.json()])
+        return obj_list
+
+    @classmethod
+    def list_my_repos(cls, conn: Connection) -> List["Repo"]:
+        """
+        List repos owned by a user.
+
+        :param conn: Gitea ``Connection`` instance.
+        """
         q = {
             # XXX: limit works in range 1..50, setting it any higher doesn't help, we need to handle paginated results
             "limit": 10**6,
         }
-        url = conn.makeurl("orgs", owner, "repos", query=q)
+        url = conn.makeurl("user", "repos", query=q)
         obj_list = []
         for response in conn.request_all_pages("GET", url):
             obj_list.extend([cls(i, response=response) for i in response.json()])

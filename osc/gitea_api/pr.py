@@ -256,6 +256,15 @@ class PullRequest(GiteaModel):
         return self._data["head"]["repo"]["ssh_url"]
 
     @property
+    def head_can_push(self) -> bool:
+        if not self.is_pull_request:
+            return False
+        if self._data["head"]["repo"] is None:
+            return False
+        repo_obj = Repo(self._data["head"]["repo"])
+        return repo_obj.can_push
+
+    @property
     def merge_commit(self) -> Optional[str]:
         if not self.is_pull_request:
             return None
