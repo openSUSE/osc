@@ -167,6 +167,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                     for repo in forks:
                         if repo.owner.lower() == fork_owner.lower():
                             fork_repo = repo.repo
+                            break
                     if not fork_repo:
                         raise gitea_api.GitObsRuntimeError(f"Cannot find a matching fork of {target_owner}/{target_repo} for user {fork_owner}")
 
