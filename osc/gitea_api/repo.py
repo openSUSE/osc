@@ -51,6 +51,10 @@ class Repo(GiteaModel):
     def default_branch(self) -> str:
         return self._data["default_branch"]
 
+    @property
+    def can_push(self) -> bool:
+        return self._data["permissions"]["push"] or self._data["permissions"]["admin"]
+
     @classmethod
     def split_id(cls, repo_id: str) -> Tuple[str, str]:
         """

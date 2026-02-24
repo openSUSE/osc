@@ -152,8 +152,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                 user_repos = gitea_api.Repo.list_my_repos(self.gitea_conn)
                 for repo in user_repos:
                     repo_name = repo._data["full_name"]
-                    permissions = repo._data["permissions"]
-                    if target_repo_full_name == repo_name.lower() and (permissions["push"] or permissions["admin"]):
+                    if target_repo_full_name == repo_name.lower() and repo.can_push:
                         has_push_access = True
                         print(f"You have push access to the target repository {target_owner}/{target_repo}, the pull request will be created from a branch in the target repository.")
                         break
@@ -225,7 +224,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
             target.clone()
 
             has_push_access = False
-            if target.pr_obj._data['head']['repo']['permissions']['push'] or target.pr_obj._data['head']['repo']['permissions']['admin']:
+            if target.pr_obj.head_can_push:
                 print(f"You have push access to the head repository of the target pull request {target_owner}/{target_repo}#{target_number}, the pull request will be updated by pushing to the head branch.")
                 has_push_access = True
 
