@@ -110,8 +110,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # Case C: args.workdir is a parent dir, repo doesn't exist yet -> create args.workdir/repo
             else:
                 repo_dir = os.path.join(args.workdir, fork_repo)
-                if not os.path.exists(repo_dir):
-                    os.makedirs(repo_dir)
+                os.makedirs(repo_dir, exist_ok=True)
         else:
             try:
                 repo_dir = tempfile.mkdtemp(prefix="git-obs-forward-")
