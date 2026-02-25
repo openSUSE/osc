@@ -102,10 +102,10 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
         if args.workdir:
             # Smart detection of workdir
             # Case A: args.workdir IS the repo (has .git)
-            if os.path.isdir(os.path.join(args.workdir, ".git")):
+            if os.path.exists(os.path.join(args.workdir, ".git")):
                 repo_dir = args.workdir
             # Case B: args.workdir contains the repo (args.workdir/repo/.git)
-            elif os.path.isdir(os.path.join(args.workdir, fork_repo, ".git")):
+            elif os.path.exists(os.path.join(args.workdir, fork_repo, ".git")):
                 repo_dir = os.path.join(args.workdir, fork_repo)
             # Case C: args.workdir is a parent dir, repo doesn't exist yet -> create args.workdir/repo
             else:
