@@ -6679,6 +6679,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.alias('bl')
     @cmdln.alias('blt')
     @cmdln.alias('buildlogtail')
+    @cmdln.alias('rbl')
+    @cmdln.alias('rbuildlog')
+    @cmdln.alias('remotebuildlog')
+    @cmdln.alias('rblt')
+    @cmdln.alias('rbuildlogtail')
+    @cmdln.alias('remotebuildlogtail')
     @cmdln.option('-l', '--last', action='store_true',
                         help='Show the last finished log file')
     @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
@@ -6695,14 +6701,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         Shows the log file of the build of a package. Can be used to follow the
         log while it is being written.
-        Needs to be called from within a package directory.
 
         When called as buildlogtail (or blt) it just shows the end of the logfile.
         This is useful to see just a build failure reasons.
 
         The arguments REPOSITORY and ARCH are the first two columns in the 'osc
-        results' output. If the buildlog url is used buildlog command has the
-        same behavior as remotebuildlog.
+        results' output.
 
         buildlog [PROJECT PACKAGE REPOSITORY [ARCH] | REPOSITORY ARCH | BUILDLOGURL]
         """
@@ -6755,7 +6759,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             package = package + ":" + opts.multibuild_package
 
         offset = 0
-        if subcmd in ("blt", "buildlogtail"):
+        if subcmd in ("blt", "buildlogtail", "rblt", "rbuildlogtail", "remotebuildlogtail"):
             query = {'view': 'entry'}
             if opts.last:
                 query['last'] = 1
@@ -6806,84 +6810,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 self.do_repositories(None, None, *args)
         raise exc_class(exc_msg)
-
-    @cmdln.alias('rbl')
-    @cmdln.alias('rbuildlog')
-    @cmdln.alias('rblt')
-    @cmdln.alias('rbuildlogtail')
-    @cmdln.alias('remotebuildlogtail')
-    @cmdln.option('-l', '--last', action='store_true',
-                        help='Show the last finished log file')
-    @cmdln.option('--lastsucceeded', '--last-succeeded', action='store_true',
-                  help='Show the last succeeded log file')
-    @cmdln.option('-M', '--multibuild-package', metavar='FLAVOR',
-                  help=HELP_MULTIBUILD_ONE)
-    @cmdln.option('-o', '--offset', metavar='OFFSET',
-                  help='get log starting or ending from the offset')
-    @cmdln.option('-s', '--strip-time', action='store_true',
-                        help='strip leading build time from the log')
-    def do_remotebuildlog(self, subcmd, opts, *args):
-        """
-        Shows the build log of a package
-
-        Shows the log file of the build of a package. Can be used to follow the
-        log while it is being written.
-
-        remotebuildlogtail shows just the tail of the log file.
-
-        usage:
-            osc remotebuildlog project package[:flavor] repository arch
-            or
-            osc remotebuildlog project/package[:flavor]/repository/arch
-            or
-            osc remotebuildlog buildlogurl
-        """
-
-        from . import conf
-        from .core import ET
-        from .core import http_GET
-        from .core import makeurl
-        from .core import parse_buildlogurl
-        from .core import print_buildlog
-        from .core import slash_split
-
-        if len(args) == 1 and args[0].startswith('http'):
-            apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
-        else:
-            args = slash_split(args)
-            apiurl = self.get_api_url()
-            if len(args) < 4:
-                raise oscerr.WrongArgs('Too few arguments.')
-            elif len(args) > 4:
-                raise oscerr.WrongArgs('Too many arguments.')
-            else:
-                project, package, repository, arch = args
-                project = self._process_project_name(project)
-
-        if opts.multibuild_package:
-            package = package + ":" + opts.multibuild_package
-
-        offset = 0
-        if subcmd in ("rblt", "rbuildlogtail", "remotebuildlogtail"):
-            query = {'view': 'entry'}
-            if opts.last:
-                query['last'] = 1
-            if opts.lastsucceeded:
-                query['lastsucceeded'] = 1
-            u = makeurl(self.get_api_url(), ['build', project, repository, arch, package, '_log'], query=query)
-            f = http_GET(u)
-            root = xml_parse(f).getroot()
-            offset = int(root.find('entry').get('size'))
-            if opts.offset:
-                offset = offset - int(opts.offset)
-            else:
-                offset = offset - (8 * 1024)
-            if offset < 0:
-                offset = 0
-        elif opts.offset:
-            offset = int(opts.offset)
-        strip_time = opts.strip_time or conf.config['buildlog_strip_time']
-        print_buildlog(apiurl, project, package, repository, arch, offset, strip_time, opts.last, opts.lastsucceeded)
 
     def _find_last_repo_arch(self, repo=None, fatal=True):
         from .core import ET
