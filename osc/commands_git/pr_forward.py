@@ -298,30 +298,15 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 print(f"{tty.colorize('ERROR', 'red,bold')}: Merge failed: {e}", file=sys.stderr)
                 sys.exit(1)
 
-            # Clean files not in Source
+            # The git merge above only merges the sources while resolving conflicts,
+            # but it doesn't remove any files that do not exist in the ref we're merging from.
+            # Running git read-tree does the cleanup for us.
             print("Cleaning files not present in source ...", file=sys.stderr)
+            git._run_git(["read-tree", "-u", "--reset", source_ref])
 
-            # Get list of files in source (recurse)
-            source_files_output = git._run_git(["ls-tree", "-r", "--name-only", source_ref])
-            source_files = set(source_files_output.splitlines())
-
-            # Get list of files in current HEAD
-            head_files_output = git._run_git(["ls-tree", "-r", "--name-only", "HEAD"])
-            head_files = set(head_files_output.splitlines())
-
-            files_to_remove = list(head_files - source_files)
-
-            if files_to_remove:
-                print(f"Removing {len(files_to_remove)} files not present in {source_branch} ...", file=sys.stderr)
-                # Batching git rm to avoid command line length limits
-                chunk_size = 100
-                for i in range(0, len(files_to_remove), chunk_size):
-                    chunk = files_to_remove[i: i + chunk_size]
-                    git._run_git(["rm", "-f", "--"] + chunk)
-
-                git.commit(f"Clean files not present in {source_branch}")
-            else:
-                print("No extra files to clean.", file=sys.stderr)
+            if git.has_changes:
+                # amend the staged changes to the merge commit
+                git.commit(msg="", amend=True, no_edit=True)
 
             # Push to Fork
             if args.dry_run:
