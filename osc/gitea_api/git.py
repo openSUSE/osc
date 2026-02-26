@@ -398,10 +398,14 @@ class Git:
     def add(self, files: List[str]):
         self._run_git(["add", *files])
 
-    def commit(self, msg, *, allow_empty: bool = False):
+    def commit(self, msg, *, allow_empty: bool = False, amend: bool = False, no_edit: bool = False):
         cmd = ["commit", "-m", msg]
         if allow_empty:
             cmd += ["--allow-empty"]
+        if amend:
+            cmd += ["--amend"]
+        if no_edit:
+            cmd += ["--no-edit"]
         self._run_git(cmd)
 
     def push(self, remote: Optional[str] = None, branch: Optional[str] = None, *, set_upstream: Optional[str] = None, force: bool = False):
