@@ -1,5 +1,6 @@
 import os
 import shutil
+import subprocess
 import sys
 import tempfile
 
@@ -63,7 +64,6 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
 
     def run(self, args):
         from osc import gitea_api
-        from osc.output import tty
 
         self.print_gitea_settings()
 
@@ -175,12 +175,10 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
 
             # Define a unique branch name for the forward operation
             try:
-                source_commit_sha = git._run_git(
-                    ["rev-parse", "--short=7", source_ref]).strip()
-            except Exception as e:
-                print(f"{tty.colorize('ERROR', 'red,bold')}: Could not get SHA for {
-                      source_ref}: {e}", file=sys.stderr)
-                sys.exit(1)
+                source_commit_sha = git._run_git(["rev-parse", "--short=7", source_ref]).strip()
+            except subprocess.CalledProcessError as e:
+                raise gitea_api.GitObsRuntimeError(f"Could not get SHA for {source_ref}: {e}")
+
             forward_branch = f"for/{target_branch}/forward-{source_commit_sha}"
             print(f"Using forward branch on fork: {
                   forward_branch}", file=sys.stderr)
@@ -204,7 +202,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     print("", file=sys.stderr)  # Newline after progress
                 else:
                     print(" * No new commits to fetch LFS objects for.", file=sys.stderr)
-            except Exception as e:
+            except subprocess.CalledProcessError as e:
                 # Fallback or ignore if LFS fails/missing
                 print(f"LFS fetch warning: {e}", file=sys.stderr)
 
@@ -212,24 +210,16 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             print(f"Creating/resetting forward branch '{forward_branch}' from 'upstream/{target_branch}'", file=sys.stderr)
             try:
                 git._run_git(["checkout", "-B", forward_branch, f"upstream/{target_branch}"])
-            except Exception:
-                print(f"{tty.colorize('ERROR', 'red,bold')}: Failed to checkout upstream/{target_branch}. Does it exist?", file=sys.stderr)
-                sys.exit(1)
+            except subprocess.CalledProcessError:
+                raise gitea_api.GitObsRuntimeError(f"Failed to checkout upstream/{target_branch}. Does it exist?")
 
             # Check for unrelated histories
             try:
                 # Returns non-zero if no common ancestor
                 git._run_git(["merge-base", source_ref, forward_branch])
-            except Exception:
+            except subprocess.CalledProcessError:
                 if not args.allow_unrelated_histories:
-                    print(
-                        f"{tty.colorize('ERROR', 'red,bold')}: "
-                        f"Unrelated histories in '{
-                            source_ref}' and 'upstream/{target_branch}'. "
-                        "Use --allow-unrelated-histories to merge.",
-                        file=sys.stderr
-                    )
-                    sys.exit(1)
+                    raise gitea_api.GitObsRuntimeError(f"Unrelated histories in '{source_ref}' and 'upstream/{target_branch}'. Use --allow-unrelated-histories to merge.")
 
             # Determine PR message and merge commit message
             title = args.title or f"Forward {source_branch} to {target_branch}"
@@ -269,15 +259,11 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     lines.pop(0)  # remove leading blank lines
 
                 if not lines:
-                    print(f"{tty.colorize('ERROR', 'red,bold')
-                             }: Aborting due to empty message.", file=sys.stderr)
-                    sys.exit(1)
+                    raise gitea_api.GitObsRuntimeError("Aborting due to empty message.")
 
                 title = lines.pop(0).strip()
                 if not title:
-                    print(f"{tty.colorize('ERROR', 'red,bold')
-                             }: Aborting due to empty title.", file=sys.stderr)
-                    sys.exit(1)
+                    raise gitea_api.GitObsRuntimeError("Aborting due to empty title.")
 
                 # remove blank lines between title and body
                 while lines and not lines[0].strip():
@@ -294,9 +280,8 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     merge_cmd.append("--allow-unrelated-histories")
                 merge_cmd.extend(["-m", commit_message, source_ref])
                 git._run_git(merge_cmd)
-            except Exception as e:
-                print(f"{tty.colorize('ERROR', 'red,bold')}: Merge failed: {e}", file=sys.stderr)
-                sys.exit(1)
+            except subprocess.CalledProcessError as e:
+                raise gitea_api.GitObsRuntimeError(f"Merge failed: {e}")
 
             # The git merge above only merges the sources while resolving conflicts,
             # but it doesn't remove any files that do not exist in the ref we're merging from.
@@ -316,9 +301,8 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 try:
                     # Always force-push to the temporary forward branch
                     git.push("origin", forward_branch, force=True)
-                except Exception as e:
-                    print(f"{tty.colorize('ERROR', 'red,bold')}: Push failed: {e}", file=sys.stderr)
-                    sys.exit(1)
+                except subprocess.CalledProcessError as e:
+                    raise gitea_api.GitObsRuntimeError(f"Push failed: {e}")
 
             # Create PR
             if args.dry_run:
