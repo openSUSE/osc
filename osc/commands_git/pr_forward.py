@@ -227,34 +227,19 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 source_branch} to {target_branch} using git-obs."
 
             if args.edit and not args.dry_run:
-                from osc.gitea_api.common import run_editor
+                from osc.gitea_api.common import edit_message
 
-                message = (
+                template = (
                     f"{title}\n\n"
                     f"{description}\n\n"
                     f"# Please enter the pull request title and description.\n"
                     f"# The first line is the title, the rest (after a blank line) is the description.\n"
                     f"# Lines starting with '#' will be ignored.\n"
                 )
-
-                tmp_path = ''
-                try:
-                    fd, tmp_path = tempfile.mkstemp(
-                        prefix='osc-pr-forward-', text=True)
-                    with os.fdopen(fd, 'w') as tmp:
-                        tmp.write(message)
-
-                    run_editor(tmp_path)
-
-                    with open(tmp_path, 'r') as tmp:
-                        edited_message = tmp.read()
-                finally:
-                    if tmp_path and os.path.exists(tmp_path):
-                        os.unlink(tmp_path)
+                message = edit_message(template)
 
                 # Filter out comments and strip whitespace
-                lines = [line for line in edited_message.split(
-                    '\n') if not line.strip().startswith('#')]
+                lines = [line for line in message.split("\n") if not line.strip().startswith("#")]
                 while lines and not lines[0].strip():
                     lines.pop(0)  # remove leading blank lines
 
