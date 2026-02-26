@@ -258,6 +258,18 @@ class Git:
         self._run_git(cmd)
         return target_branch
 
+    @property
+    def has_changes(self) -> bool:
+        """
+        Determine if the current branch has any changes (staged or unstaged).
+        """
+        cmd = ["diff-index", "--quiet", "HEAD", "--"]
+        try:
+            self._run_git(cmd)
+            return False
+        except subprocess.CalledProcessError:
+            return True
+
     # CONFIG
 
     def set_config(self, key: str, value: str):
