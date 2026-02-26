@@ -186,9 +186,15 @@ class Git:
         except subprocess.CalledProcessError:
             return False
 
-    def get_branch_head(self, branch: Optional[str] = None) -> str:
+    def get_branch_head(self, branch: Optional[str] = None, *, remote: Optional[str] = None) -> str:
         if not branch:
             branch = self.current_branch
+
+        if remote:
+            try:
+                return self._run_git(["rev-parse", f"refs/remotes/{remote}/{branch}"], mute_stderr=True)
+            except subprocess.CalledProcessError:
+                raise exceptions.GitObsRuntimeError(f"Unable to retrieve HEAD from remote '{remote}', branch '{branch}'. Does the branch exist?")
 
         try:
             return self._run_git(["rev-parse", f"refs/heads/{branch}"], mute_stderr=True)
