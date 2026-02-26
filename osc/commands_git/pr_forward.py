@@ -164,29 +164,22 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 git.fetch("source")
                 source_ref = f"source/{source_branch}"
             else:
-                try:
-                    # Generic fetch for upstream in case we need history objects?
-                    # But per request, we should optimize.
-                    # Let's rely on the loop below.
-                    pass
-                except Exception:
-                    pass
+                source_url = git.get_remote_url("upstream")
                 source_ref = f"upstream/{source_branch}"
 
             # Define a unique branch name for the forward operation
             try:
-                source_commit_sha = git._run_git(["rev-parse", "--short=7", source_ref]).strip()
+                source_commit_sha = git.get_branch_head(source_branch, remote="upstream")
             except subprocess.CalledProcessError as e:
                 raise gitea_api.GitObsRuntimeError(f"Could not get SHA for {source_ref}: {e}")
 
             forward_branch = f"for/{target_branch}/forward-{source_commit_sha}"
-            print(f"Using forward branch on fork: {
-                  forward_branch}", file=sys.stderr)
+            print(f"Using forward branch on fork: {forward_branch}", file=sys.stderr)
 
             # Optimize LFS fetch: fetch only objects for new commits
             # We identify commits in source_ref that are not in target_branch
             # and fetch LFS objects for them from the appropriate remote.
-            lfs_remote = "source" if source_url else "upstream"
+            lfs_remote = "source" if args.source_url else "upstream"
             print(f"Fetching LFS objects from {lfs_remote} for incoming commits ...", file=sys.stderr)
 
             try:
@@ -222,9 +215,8 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                     raise gitea_api.GitObsRuntimeError(f"Unrelated histories in '{source_ref}' and 'upstream/{target_branch}'. Use --allow-unrelated-histories to merge.")
 
             # Determine PR message and merge commit message
-            title = args.title or f"Forward {source_branch} to {target_branch}"
-            description = args.description or f"Automated forward of {
-                source_branch} to {target_branch} using git-obs."
+            title = args.title or f"Sync with {source_branch} branch"
+            description = args.description or f"URL: {source_url}\nBranch: {source_branch}\nCommit: {source_commit_sha}"
 
             if args.edit and not args.dry_run:
                 from osc.gitea_api.common import edit_message
