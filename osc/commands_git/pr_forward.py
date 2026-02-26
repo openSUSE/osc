@@ -181,7 +181,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 print(f"{tty.colorize('ERROR', 'red,bold')}: Could not get SHA for {
                       source_ref}: {e}", file=sys.stderr)
                 sys.exit(1)
-            forward_branch = f"PR_{source_branch}_{source_commit_sha}"
+            forward_branch = f"for/{target_branch}/forward-{source_commit_sha}"
             print(f"Using forward branch on fork: {
                   forward_branch}", file=sys.stderr)
 
