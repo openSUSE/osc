@@ -92,7 +92,6 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
         fork_repo_obj = gitea_api.Repo.get(self.gitea_conn, fork_owner, fork_repo)
 
         upstream_url = upstream_repo_obj.ssh_url
-        fork_url = fork_repo_obj.ssh_url # Prefer SSH for push if possible
 
         # Setup Workdir
         repo_dir = None
