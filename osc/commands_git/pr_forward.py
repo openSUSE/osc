@@ -70,7 +70,6 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
         upstream_owner, upstream_repo = args.owner_repo
         source_branch = args.source_branch
         target_branch = args.target_branch
-        source_url = args.source_url
 
         # Fork if not exists
         print(f"Checking fork for {upstream_owner}/{upstream_repo} ...", file=sys.stderr)
@@ -153,7 +152,11 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             git.fetch("upstream")
 
             # Determine Source Ref
-            if source_url:
+            if args.source_url:
+                source_url = args.source_url
+                source_ref = f"source/{source_branch}"
+                lfs_remote = "source"
+
                 if "source" not in current_remotes:
                     print(f"Adding source remote: {source_url}", file=sys.stderr)
                     git.add_remote("source", source_url)
@@ -162,10 +165,10 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
 
                 print("Fetching source ...", file=sys.stderr)
                 git.fetch("source")
-                source_ref = f"source/{source_branch}"
             else:
                 source_url = git.get_remote_url("upstream")
                 source_ref = f"upstream/{source_branch}"
+                lfs_remote = "upstream"
 
             # Define a unique branch name for the forward operation
             try:
@@ -179,7 +182,6 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # Optimize LFS fetch: fetch only objects for new commits
             # We identify commits in source_ref that are not in target_branch
             # and fetch LFS objects for them from the appropriate remote.
-            lfs_remote = "source" if args.source_url else "upstream"
             print(f"Fetching LFS objects from {lfs_remote} for incoming commits ...", file=sys.stderr)
 
             try:
