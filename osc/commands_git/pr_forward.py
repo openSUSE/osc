@@ -111,14 +111,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 repo_dir = os.path.join(args.workdir, fork_repo)
                 os.makedirs(repo_dir, exist_ok=True)
         else:
-            try:
-                repo_dir = tempfile.mkdtemp(prefix="git-obs-forward-")
-            except Exception as e:
-                print(f"Error creating temporary directory: {
-                      e}", file=sys.stderr)
-                import traceback
-                traceback.print_exc()
-                sys.exit(1)
+            repo_dir = tempfile.mkdtemp(prefix="git-obs-forward-")
             cleanup = not args.no_cleanup
 
         print(f"Working in: {repo_dir}", file=sys.stderr)
@@ -129,10 +122,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # Clone / Init
             if not os.path.exists(os.path.join(repo_dir, ".git")):
                 print(f"Cloning {fork_owner}/{fork_repo} ...", file=sys.stderr)
-                try:
-                    git.clone(fork_url, directory=".")
-                except Exception as e:
-                    raise e
+                git.clone(fork_url, directory=".")
             else:
                 print(f"Using existing git repo in {repo_dir}", file=sys.stderr)
 
