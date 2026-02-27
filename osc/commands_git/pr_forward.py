@@ -241,10 +241,15 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 description = "\n".join(lines).strip()
 
             # Merge Source Branch (Theirs)
+            is_fast_forwardable = git.branch_is_fast_forwardable(source_ref)
             commit_message = f"{title}\n\n{description}"
             print(f"Merging {source_ref} into {forward_branch} with strategy 'theirs' ...", file=sys.stderr)
             try:
                 merge_cmd = ["merge", "-X", "theirs"]
+                if is_fast_forwardable:
+                    merge_cmd += ["--ff-only"]
+                else:
+                    merge_cmd += ["--no-ff"]
                 if args.allow_unrelated_histories:
                     merge_cmd.append("--allow-unrelated-histories")
                 merge_cmd.extend(["-m", commit_message, source_ref])
@@ -255,12 +260,13 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # The git merge above only merges the sources while resolving conflicts,
             # but it doesn't remove any files that do not exist in the ref we're merging from.
             # Running git read-tree does the cleanup for us.
-            print("Cleaning files not present in source ...", file=sys.stderr)
-            git._run_git(["read-tree", "-u", "--reset", source_ref])
+            if not is_fast_forwardable:
+                print("Cleaning files not present in source ...", file=sys.stderr)
+                git._run_git(["read-tree", "-u", "--reset", source_ref])
 
-            if git.has_changes:
-                # amend the staged changes to the merge commit
-                git.commit(msg="", amend=True, no_edit=True)
+                if git.has_changes:
+                    # amend the staged changes to the merge commit
+                    git.commit(msg="", amend=True, no_edit=True)
 
             # Push to Fork
             if args.dry_run:
