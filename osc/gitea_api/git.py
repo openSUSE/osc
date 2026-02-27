@@ -186,9 +186,23 @@ class Git:
         except subprocess.CalledProcessError:
             return False
 
-    def get_branch_head(self, branch: Optional[str] = None) -> str:
+    def branch_is_fast_forwardable(self, other_branch: str) -> bool:
+        cmd = ["merge-base", "--is-ancestor", "HEAD", other_branch]
+        try:
+            self._run_git(cmd)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
+    def get_branch_head(self, branch: Optional[str] = None, *, remote: Optional[str] = None) -> str:
         if not branch:
             branch = self.current_branch
+
+        if remote:
+            try:
+                return self._run_git(["rev-parse", f"refs/remotes/{remote}/{branch}"], mute_stderr=True)
+            except subprocess.CalledProcessError:
+                raise exceptions.GitObsRuntimeError(f"Unable to retrieve HEAD from remote '{remote}', branch '{branch}'. Does the branch exist?")
 
         try:
             return self._run_git(["rev-parse", f"refs/heads/{branch}"], mute_stderr=True)
@@ -257,6 +271,18 @@ class Git:
             ]
         self._run_git(cmd)
         return target_branch
+
+    @property
+    def has_changes(self) -> bool:
+        """
+        Determine if the current branch has any changes (staged or unstaged).
+        """
+        cmd = ["diff-index", "--quiet", "HEAD", "--"]
+        try:
+            self._run_git(cmd)
+            return False
+        except subprocess.CalledProcessError:
+            return True
 
     # CONFIG
 
@@ -386,10 +412,14 @@ class Git:
     def add(self, files: List[str]):
         self._run_git(["add", *files])
 
-    def commit(self, msg, *, allow_empty: bool = False):
+    def commit(self, msg, *, allow_empty: bool = False, amend: bool = False, no_edit: bool = False):
         cmd = ["commit", "-m", msg]
         if allow_empty:
             cmd += ["--allow-empty"]
+        if amend:
+            cmd += ["--amend"]
+        if no_edit:
+            cmd += ["--no-edit"]
         self._run_git(cmd)
 
     def push(self, remote: Optional[str] = None, branch: Optional[str] = None, *, set_upstream: Optional[str] = None, force: bool = False):
