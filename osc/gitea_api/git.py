@@ -186,6 +186,14 @@ class Git:
         except subprocess.CalledProcessError:
             return False
 
+    def branch_is_fast_forwardable(self, other_branch: str) -> bool:
+        cmd = ["merge-base", "--is-ancestor", "HEAD", other_branch]
+        try:
+            self._run_git(cmd)
+            return True
+        except subprocess.CalledProcessError:
+            return False
+
     def get_branch_head(self, branch: Optional[str] = None, *, remote: Optional[str] = None) -> str:
         if not branch:
             branch = self.current_branch
