@@ -122,7 +122,17 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # Clone / Init
             if not os.path.exists(os.path.join(repo_dir, ".git")):
                 print(f"Cloning {fork_owner}/{fork_repo} ...", file=sys.stderr)
-                git.clone(fork_url, directory=".")
+                gitea_api.Repo.clone(
+                    self.gitea_conn,
+                    fork_owner,
+                    fork_repo,
+                    # branch=args.branch,
+                    directory=repo_dir,
+                    use_http=self.gitea_login.git_uses_http,
+                    add_remotes=False,
+                    ssh_private_key_path=self.gitea_login.ssh_key,
+                    # ssh_strict_host_key_checking=not(args.no_ssh_strict_host_key_checking),
+                )
             else:
                 print(f"Using existing git repo in {repo_dir}", file=sys.stderr)
 
