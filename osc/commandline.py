@@ -7583,16 +7583,23 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # only persist our own repos
                 store_obj.build_repositories = repositories
 
+        if not repositories:
+            raise oscerr.WrongArgs('no configured repos to build against')
+
+        arch_repos = sorted({r.name for r in repositories if r.arch == arg_arch})
+        if not arch_repos:
+            raise oscerr.WrongArgs('no configured repos for arch %s' % (arg_arch))
+
         no_repo = False
         repo_names = sorted({r.name for r in repositories})
-        if not arg_repository and repositories:
+        if not arg_repository:
             # XXX: we should avoid hardcoding repository names
             # Use a default value from config, but just even if it's available
             # unless try standard, or openSUSE_Factory, or openSUSE_Tumbleweed
             no_repo = True
-            arg_repository = repositories[-1].name
+            arg_repository = arch_repos[-1]
             for repository in (conf.config['build_repository'], 'standard', 'openSUSE_Factory', 'openSUSE_Tumbleweed'):
-                if repository in repo_names:
+                if repository in arch_repos:
                     arg_repository = repository
                     no_repo = False
                     break
