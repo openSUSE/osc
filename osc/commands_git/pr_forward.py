@@ -154,7 +154,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             if args.source_url:
                 source_url = args.source_url
                 source_ref = f"source/{source_branch}"
-                lfs_remote = "source"
+                source_remote = "source"
 
                 if "source" not in current_remotes:
                     print(f"Adding source remote: {source_url}", file=sys.stderr)
@@ -167,11 +167,11 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             else:
                 source_url = git.get_remote_url("upstream")
                 source_ref = f"upstream/{source_branch}"
-                lfs_remote = "upstream"
+                source_remote = "upstream"
 
             # Define a unique branch name for the forward operation
             try:
-                source_commit_sha = git.get_branch_head(source_branch, remote="upstream")
+                source_commit_sha = git.get_branch_head(source_branch, remote=source_remote)
             except subprocess.CalledProcessError as e:
                 raise gitea_api.GitObsRuntimeError(f"Could not get SHA for {source_ref}: {e}")
 
@@ -181,18 +181,18 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # Optimize LFS fetch: fetch only objects for new commits
             # We identify commits in source_ref that are not in target_branch
             # and fetch LFS objects for them from the appropriate remote.
-            print(f"Fetching LFS objects from {lfs_remote} for incoming commits ...", file=sys.stderr)
+            print(f"Fetching LFS objects from {source_remote} for incoming commits ...", file=sys.stderr)
 
             try:
                 # Get list of commits unique to source_branch that are not in target_branch
-                commits = git._run_git(["rev-list", f"{lfs_remote}/{source_branch}", f"^{lfs_remote}/{target_branch}"]).splitlines()
+                commits = git._run_git(["rev-list", f"{source_remote}/{source_branch}", f"^{source_remote}/{target_branch}"]).splitlines()
 
                 if commits:
                     print(f" * Found {len(commits)} commits to fetch LFS objects for.", file=sys.stderr)
                     # Loop through commits as requested
                     for commit in commits:
                         print(f"   Fetching LFS for commit {commit} ...", file=sys.stderr, end="\r")
-                        git._run_git(["lfs", "fetch", lfs_remote, commit])
+                        git._run_git(["lfs", "fetch", source_remote, commit])
                     print("", file=sys.stderr)  # Newline after progress
                 else:
                     print(" * No new commits to fetch LFS objects for.", file=sys.stderr)
