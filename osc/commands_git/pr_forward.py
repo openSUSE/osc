@@ -57,9 +57,14 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             help="Open an editor to edit the pull request title and description.",
         )
         self.add_argument(
-            "--allow-unrelated-histories",
-            action="store_true",
-            help="Allow merging unrelated histories",
+            "--mode",
+            required=True,
+            choices=["merge", "merge-unrelated", "fast-forward", "sync", "auto"],
+            help="merge: Merge the source branch into the target branch, remove any extra files not found in the target.\n"
+                 "merge-unrelated: Same as merge, but with merging unrelated histories allowed. Consider using other modes first.\n"
+                 "fast-forward: Fast-forward changes, don't create any merge commit.\n"
+                 "sync: Create a new commit that synchronizes the contents of the branch with the source branch.\n"
+                 "auto: Use fast-forward if possible, merge otherwise.",
         )
 
     def run(self, args):
@@ -208,16 +213,23 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
                 raise gitea_api.GitObsRuntimeError(f"Failed to checkout upstream/{target_branch}. Does it exist?")
 
             # Check for unrelated histories
-            try:
-                # Returns non-zero if no common ancestor
-                git._run_git(["merge-base", source_ref, forward_branch])
-            except subprocess.CalledProcessError:
-                if not args.allow_unrelated_histories:
-                    raise gitea_api.GitObsRuntimeError(f"Unrelated histories in '{source_ref}' and 'upstream/{target_branch}'. Use --allow-unrelated-histories to merge.")
+            if args.mode == "merge":
+                try:
+                    # Returns non-zero if no common ancestor
+                    git._run_git(["merge-base", source_ref, forward_branch])
+                except subprocess.CalledProcessError:
+                    if args.mode not in ["merge-unrelated", "sync"]:
+                       raise gitea_api.GitObsRuntimeError(f"Unrelated histories in '{source_ref}' and 'upstream/{target_branch}'. Use --mode=merge-unrelated or --mode=sync")
 
             # Determine PR message and merge commit message
             title = args.title or f"Sync with {source_branch} branch"
             description = args.description or f"URL: {source_url}\nBranch: {source_branch}\nCommit: {source_commit_sha}"
+
+            if git.has_changes:
+                raise gitea_api.GitObsRuntimeError("There are uncommited changes in git. Aborting.")
+
+            if git.get_branch_head() == source_commit_sha:
+                raise gitea_api.GitObsRuntimeError("There are no changes. Aborting.")
 
             if args.edit and not args.dry_run:
                 from osc.gitea_api.common import edit_message
@@ -252,30 +264,36 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             # Merge Source Branch (Theirs)
             is_fast_forwardable = git.branch_is_fast_forwardable(source_ref)
             commit_message = f"{title}\n\n{description}"
-            print(f"Merging {source_ref} into {forward_branch} with strategy 'theirs' ...", file=sys.stderr)
-            try:
-                merge_cmd = ["merge", "-X", "theirs"]
-                if is_fast_forwardable:
-                    merge_cmd += ["--ff-only"]
-                else:
-                    merge_cmd += ["--no-ff"]
-                if args.allow_unrelated_histories:
-                    merge_cmd.append("--allow-unrelated-histories")
-                merge_cmd.extend(["-m", commit_message, source_ref])
-                git._run_git(merge_cmd)
-            except subprocess.CalledProcessError as e:
-                raise gitea_api.GitObsRuntimeError(f"Merge failed: {e}")
+            if args.mode in ["merge", "merge-unrelated", "fast-forward", "auto"]:
+                print(f"Merging {source_ref} into {forward_branch} using mode '{args.mode}' ...", file=sys.stderr)
+                try:
+                    merge_cmd = ["merge", "--no-commit", "-X", "theirs"]
+
+                    if args.mode == "auto":
+                        # don't enforce fast-forwarding mode in any way
+                        pass
+                    elif args.mode == "fast-forward" or is_fast_forwardable:
+                        merge_cmd += ["--ff-only"]
+                    else:
+                        merge_cmd += ["--no-ff"]
+
+                    if args.mode == "merge-unrelated":
+                        merge_cmd.append("--allow-unrelated-histories")
+
+                    merge_cmd += [source_ref]
+                    git._run_git(merge_cmd)
+                except subprocess.CalledProcessError as e:
+                    raise gitea_api.GitObsRuntimeError(f"Merge failed: {e}")
 
             # The git merge above only merges the sources while resolving conflicts,
             # but it doesn't remove any files that do not exist in the ref we're merging from.
             # Running git read-tree does the cleanup for us.
-            if not is_fast_forwardable:
-                print("Cleaning files not present in source ...", file=sys.stderr)
+            if not is_fast_forwardable or args.mode == "sync":
+                print("Syncing file tree with in {forward_branch} with {source_ref} ...", file=sys.stderr)
                 git._run_git(["read-tree", "-u", "--reset", source_ref])
 
-                if git.has_changes:
-                    # amend the staged changes to the merge commit
-                    git.commit(msg="", amend=True, no_edit=True)
+            if git.has_changes:
+                git.commit(msg=commit_message)
 
             # Push to Fork
             if args.dry_run:
