@@ -89,7 +89,7 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
 
         # Get clone URLs
         upstream_repo_obj = gitea_api.Repo.get(self.gitea_conn, upstream_owner, upstream_repo)
-        fork_repo_obj = gitea_api.Repo.get(self.gitea_conn, fork_owner, fork_repo)
+        _fork_repo_obj = gitea_api.Repo.get(self.gitea_conn, fork_owner, fork_repo)
 
         upstream_url = upstream_repo_obj.ssh_url
 
