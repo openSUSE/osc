@@ -183,27 +183,28 @@ class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
             forward_branch = f"for/{target_branch}/forward-{source_commit_sha}"
             print(f"Using forward branch on fork: {forward_branch}", file=sys.stderr)
 
-            # Optimize LFS fetch: fetch only objects for new commits
-            # We identify commits in source_ref that are not in target_branch
-            # and fetch LFS objects for them from the appropriate remote.
-            print(f"Fetching LFS objects from {source_remote} for incoming commits ...", file=sys.stderr)
+            if args.mode not in ["sync"]:
+                # Optimize LFS fetch: fetch only objects for new commits
+                # We identify commits in source_ref that are not in target_branch
+                # and fetch LFS objects for them from the appropriate remote.
+                print(f"Fetching LFS objects from {source_remote} for incoming commits ...", file=sys.stderr)
 
-            try:
-                # Get list of commits unique to source_branch that are not in target_branch
-                commits = git._run_git(["rev-list", f"{source_remote}/{source_branch}", f"^{source_remote}/{target_branch}"]).splitlines()
+                try:
+                    # Get list of commits unique to source_branch that are not in target_branch
+                    commits = git._run_git(["rev-list", f"{source_remote}/{source_branch}", f"^{source_remote}/{target_branch}"]).splitlines()
 
-                if commits:
-                    print(f" * Found {len(commits)} commits to fetch LFS objects for.", file=sys.stderr)
-                    # Loop through commits as requested
-                    for commit in commits:
-                        print(f"   Fetching LFS for commit {commit} ...", file=sys.stderr, end="\r")
-                        git._run_git(["lfs", "fetch", source_remote, commit])
-                    print("", file=sys.stderr)  # Newline after progress
-                else:
-                    print(" * No new commits to fetch LFS objects for.", file=sys.stderr)
-            except subprocess.CalledProcessError as e:
-                # Fallback or ignore if LFS fails/missing
-                print(f"LFS fetch warning: {e}", file=sys.stderr)
+                    if commits:
+                        print(f" * Found {len(commits)} commits to fetch LFS objects for.", file=sys.stderr)
+                        # Loop through commits as requested
+                        for commit in commits:
+                            print(f"   Fetching LFS for commit {commit} ...", file=sys.stderr, end="\r")
+                            git._run_git(["lfs", "fetch", source_remote, commit])
+                        print("", file=sys.stderr)  # Newline after progress
+                    else:
+                        print(" * No new commits to fetch LFS objects for.", file=sys.stderr)
+                except subprocess.CalledProcessError as e:
+                    # Fallback or ignore if LFS fails/missing
+                    print(f"LFS fetch warning: {e}", file=sys.stderr)
 
             # Checkout forward branch (tracking upstream/target_branch)
             print(f"Creating/resetting forward branch '{forward_branch}' from 'upstream/{target_branch}'", file=sys.stderr)
