@@ -62,6 +62,7 @@ class LinkedbuildModes(str, Enum):
     OFF = "off"
     LOCALDEP = "localdep"
     ALLDIRECT = "alldirect"
+    ALLDIRECT_OR_LOCALDEP = "alldirect_or_localdep"
     ALL = "all"
 
 
