@@ -32,12 +32,16 @@ Background:
 Scenario: Scenario 1: staging group --no-ssh-strict-host-key-checking with --target and existing PR
     When I execute git-obs with args "-G alice staging group --no-ssh-strict-host-key-checking --target=pool/test-GitPkgA#1 pool/test-GitPkgA#2"
     Then the exit code is 0
+     And stdout contains "Unable to add the 'staging/In Progress' label to pull request pool/test-GitPkgA#2"
+     And stdout contains "Unable to remove the 'staging/Backlog' label from pull request pool/test-GitPkgA#2"
      And I execute git-obs with args "-G alice pr get pool/test-GitPkgA#1"
     Then the exit code is 0
      And stdout contains "State       : open"
      And stdout contains "Description : PR: foo/bar!1"
      # It should also contain the reference from #2
      And stdout contains "PR: foo/bar!2"
+     And stdout doesn't contain "staging/In Progress"
+     And stdout contains "staging/Backlog"
      And I execute git-obs with args "-G alice pr get pool/test-GitPkgA#2"
     Then the exit code is 0
      And stdout contains "State       : closed"
@@ -47,6 +51,13 @@ Scenario: Scenario 1: staging group --no-ssh-strict-host-key-checking with --tar
 Scenario: Scenario 2: staging group --no-ssh-strict-host-key-checking with --target and --remove-pr-references
     When I execute git-obs with args "-G alice staging group --no-ssh-strict-host-key-checking --target=pool/test-GitPkgA#1 pool/test-GitPkgA#2 --remove-pr-references"
     Then the exit code is 0
+     And stdout contains "Unable to add the 'staging/In Progress' label to pull request pool/test-GitPkgA#2"
+     And stdout contains "Unable to remove the 'staging/Backlog' label from pull request pool/test-GitPkgA#2"
+     And I execute git-obs with args "-G alice pr get pool/test-GitPkgA#1"
+    Then the exit code is 0
+     And stdout contains "State       : open"
+     And stdout doesn't contain "staging/In Progress"
+     And stdout contains "staging/Backlog"
      And I execute git-obs with args "-G alice pr get pool/test-GitPkgA#2"
     Then the exit code is 0
      And stdout contains "State       : closed"
@@ -61,6 +72,8 @@ Scenario: Scenario 3: staging group --no-ssh-strict-host-key-checking without --
      And stdout contains "State       : open"
      And stdout contains "PR: foo/bar!1"
      And stdout contains "PR: foo/bar!2"
+     And stdout contains "Labels      : staging/In Progress"
+     And stdout doesn't contain "staging/Backlog"
      And I execute git-obs with args "-G alice pr get pool/test-GitPkgA#1"
     Then the exit code is 0
      # PR #1 should be closed because it was merged into #3
@@ -78,6 +91,8 @@ Scenario: Scenario 4: staging group --no-ssh-strict-host-key-checking without --
     Then the exit code is 0
      And stdout contains "PR: foo/bar!1"
      And stdout contains "PR: foo/bar!2"
+     And stdout contains "Labels      : staging/In Progress"
+     And stdout doesn't contain "staging/Backlog"
      And I execute git-obs with args "-G alice pr get pool/test-GitPkgA#1"
     Then the exit code is 0
      And stdout contains "State       : closed"
@@ -104,6 +119,8 @@ Scenario: Scenario 5: staging group --no-ssh-strict-host-key-checking by another
      And stdout contains "Author      : Bob \(bob@example.com\)"
      And stdout contains "PR: foo/bar!1"
      And stdout contains "PR: foo/bar!2"
+     And stdout contains "Labels      : staging/In Progress"
+     And stdout doesn't contain "staging/Backlog"
 
 @destructive
 Scenario: Scenario 6: staging group --no-ssh-strict-host-key-checking by another user with push permissions to the target repository
@@ -125,3 +142,5 @@ Scenario: Scenario 6: staging group --no-ssh-strict-host-key-checking by another
      And stdout contains "Source      : pool/test-GitPkgA"
      And stdout contains "PR: foo/bar!1"
      And stdout contains "PR: foo/bar!2"
+     And stdout contains "Labels      : staging/In Progress"
+     And stdout doesn't contain "staging/Backlog"

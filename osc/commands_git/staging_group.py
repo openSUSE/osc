@@ -151,6 +151,30 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                 allow_maintainer_edit=True,
             )
 
+            # update labels
+            try:
+                gitea_api.PullRequest.add_labels(
+                    self.gitea_conn,
+                    target_pr_obj.base_owner,
+                    target_pr_obj.base_repo,
+                    int(target_pr_obj.number),
+                    labels=[gitea_api.StagingPullRequestWrapper.INPROGRESS_LABEL],
+                )
+            except Exception as e:
+                print(f"Unable to add the '{gitea_api.StagingPullRequestWrapper.INPROGRESS_LABEL}' label to pull request {pr_obj.id}: {e}")
+
+            try:
+                if gitea_api.StagingPullRequestWrapper.BACKLOG_LABEL in target_pr_obj.labels:
+                    gitea_api.PullRequest.remove_labels(
+                        self.gitea_conn,
+                        target_pr_obj.base_owner,
+                        target_pr_obj.base_repo,
+                        int(target_pr_obj.number),
+                        labels=[gitea_api.StagingPullRequestWrapper.BACKLOG_LABEL],
+                    )
+            except Exception as e:
+                print(f"Unable to remove the '{gitea_api.StagingPullRequestWrapper.BACKLOG_LABEL}' label from pull request {pr_obj.id}: {e}")
+
         else:
             has_push_access = False
             if not args.fork_owner:
