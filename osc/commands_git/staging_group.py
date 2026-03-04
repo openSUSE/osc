@@ -144,17 +144,36 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                     raise gitea_api.GitObsRuntimeError(f"Pull request {owner}/{repo}#{number} doesn't have any submodules changed.")
 
             if not args.target:
-                fork_owner = args.fork_owner if args.fork_owner else user_obj.login
+                target_repo_full_name = f"{target_owner}/{target_repo}".lower()
+
+                # determine fork_owner and fork_repo for pull request creation
+                has_push_access = False
+
+                user_repos = gitea_api.Repo.list_my_repos(self.gitea_conn)
+                for repo in user_repos:
+                    repo_name = repo._data["full_name"]
+                    if target_repo_full_name == repo_name.lower() and repo.can_push:
+                        has_push_access = True
+                        print(f"You have push access to the target repository {target_owner}/{target_repo}, the pull request will be created from a branch in the target repository.")
+                        break
+
+                if has_push_access and not args.fork_owner:
+                    fork_owner = target_owner
+                    fork_repo = target_repo
+                else:
+                    fork_owner = args.fork_owner if args.fork_owner else user_obj.login
+                    fork_repo = None
+                    forks = gitea_api.Fork.list(self.gitea_conn, target_owner, target_repo)
+                    for repo in forks:
+                        if repo.owner.lower() == fork_owner.lower():
+                            fork_repo = repo.repo
+                            break
+                    if not fork_repo:
+                        raise gitea_api.GitObsRuntimeError(f"Cannot find a matching fork of {target_owner}/{target_repo} for user {fork_owner}")
+
                 # dates in ISO 8601 format cannot be part of a valid branch name, we need a custom format
                 fork_branch = args.fork_branch if args.fork_branch else f"for/{target_branch}/group-{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"
 
-                fork_repo = None
-                forks = gitea_api.Fork.list(self.gitea_conn, target_owner, target_repo)
-                for repo in forks:
-                    if repo.owner.lower() == fork_owner.lower():
-                        fork_repo = repo.repo
-                if not fork_repo:
-                    raise gitea_api.GitObsRuntimeError(f"Cannot find a matching fork of {target_owner}/{target_repo}")
 
                 clone_dir = gitea_api.Repo.clone(
                     self.gitea_conn,
@@ -205,18 +224,43 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
             target = gitea_api.StagingPullRequestWrapper(self.gitea_conn, target_owner, target_repo, target_number, topdir=temp_dir, cache_directory=cache_dir)
             target.clone()
 
+            has_push_access = False
+            if target.pr_obj.head_can_push:
+                print(f"You have push access to the head repository of the target pull request {target_owner}/{target_repo}#{target_number}, the pull request will be updated by pushing to the head branch.")
+                has_push_access = True
+
+            if target.pr_obj._data['head']['repo']['fork'] and has_push_access:
+                # if the head repo is a fork and we have push access to it, we can push directly to the head branch
+                target.git._run_git(["remote", "set-url", "fork", target.pr_obj._data['head']['repo']['ssh_url']])
+
             # locally merge package pull requests to the target project pull request (don't change anything on server yet)
+            updated_packages = []
             for owner, repo, number in args.pr_list:
                 pr = pr_map[(owner.lower(), repo.lower(), number)]
                 target.merge(pr)
+                for (pkg_owner, pkg_repo, pkg_number), pr_obj in pr.package_pr_map.items():
+                    updated_packages.append(os.path.basename(pr.submodules_by_owner_repo[pkg_owner.lower(), pkg_repo.lower()]["path"]))
+
+            if target.pr_obj._data['head']['repo']['fork']:
+                remote="fork"
+            else:
+                remote="origin"
 
             # push to git repo associated with the target pull request
-            target.git.push(remote="fork", branch=f"pull/{target.pr_obj.number}:{target.pr_obj.head_branch}")
+            print(f"Pushing changes to {remote} on pull/{target.pr_obj.number}:{target.pr_obj.head_branch}")
+            target.git.push(remote=remote, branch=f"pull/{target.pr_obj.number}:{target.pr_obj.head_branch}")
             # update target pull request
             if args.target:
+                # we keep only the first ``max_packages``, because the title might get too long quite easily
+                max_packages = 5
+                updated_packages_str = ", ".join(sorted(updated_packages)[:max_packages])
+                if len(updated_packages) > max_packages:
+                    updated_packages_str += f" + {len(updated_packages) - max_packages} more"
+                title = args.title if args.title else f"{target.pr_obj.title}, {updated_packages_str}"
+
                 # if args.target is not set, we've created a new pull request with all 'PR:' references included
                 # if args.target is set (which is the case here), we need to update the description with the newly added 'PR:' references
-                target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, description=target.pr_obj.body)
+                target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, title=title, description=target.pr_obj.body)
 
             for owner, repo, number in args.pr_list:
                 pr = pr_map[(owner.lower(), repo.lower(), number)]
