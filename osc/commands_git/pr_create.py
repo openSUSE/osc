@@ -133,6 +133,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         from osc.output import tty
 
         use_local_git = args.source_owner is None
+        local_commit = None
 
         if use_local_git:
             # local git repo
