@@ -102,7 +102,11 @@ class Manifest:
 
         for path in self.package_directories:
             topdir_path = os.path.normpath(os.path.join(project_path, path))
-            for fn in os.listdir(topdir_path):
+            try:
+                fn_list = os.listdir(topdir_path)
+            except FileNotFoundError:
+                continue
+            for fn in fn_list:
                 if fn.startswith("."):
                     continue
                 package_path = os.path.join(topdir_path, fn)
