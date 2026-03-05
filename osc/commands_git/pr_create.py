@@ -103,16 +103,10 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
 
     def _run_separate_requests(self, args):
         from osc import gitea_api
-        from osc.git_scm.manifest import Manifest
+        from osc import git_scm
 
-        # Packages discovery
-        cwd = os.getcwd()
-        packages = []
-        if os.path.exists("_manifest"):
-            manifest = Manifest.from_file("_manifest")
-            packages = manifest.get_package_paths(cwd)
-        else:
-            packages = [os.path.join(cwd, i) for i in os.listdir(cwd)]
+        store = git_scm.LocalGitStore(".", check=False)
+        packages = store.manifest.get_package_paths(store.topdir)
 
         # Filtering: must be a dir and contain .git
         packages = [i for i in packages if os.path.isdir(i) and os.path.exists(os.path.join(i, ".git"))]
