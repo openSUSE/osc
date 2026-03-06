@@ -216,6 +216,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
                 " - GIT_OBS_LOGIN_<LOGIN-NAME>_USER\n"
                 " - GIT_OBS_LOGIN_<LOGIN-NAME>_TOKEN\n"
                 " - GIT_OBS_LOGIN_<LOGIN-NAME>_SSH_KEY\n"
+                " - GIT_OBS_LOGIN_<LOGIN-NAME>_SSH_STRICT_HOST_KEY_CHECKING\n"
                 "Setting new ``name`` or ``url`` is not possible.\n"
                 "Please note that the login name that is part of the environmental variable name is case sensitive."
             ),

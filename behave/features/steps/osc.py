@@ -122,6 +122,7 @@ class GitObs(CommandBase):
                     "user": "Admin",
                     "token": 40 * "1",
                     "ssh_key": f"{self.context.fixtures}/ssh-keys/admin",
+                    "ssh_strict_host_key_checking": False,
                     "default": True,
                 },
                 {
@@ -130,6 +131,7 @@ class GitObs(CommandBase):
                     "user": "Alice",
                     "token": 40 * "a",
                     "ssh_key": f"{self.context.fixtures}/ssh-keys/alice",
+                    "ssh_strict_host_key_checking": False,
                     "default": False,
                 },
                 {
@@ -138,6 +140,7 @@ class GitObs(CommandBase):
                     "user": "Bob",
                     "token": 40 * "b",
                     "ssh_key": f"{self.context.fixtures}/ssh-keys/bob",
+                    "ssh_strict_host_key_checking": False,
                     "default": False,
                 },
             ],

@@ -20,6 +20,7 @@ class Login(BaseModel):
     user: str = Field()  # type: ignore[assignment]
     token: str = Field()  # type: ignore[assignment]
     ssh_key: Optional[str] = Field()  # type: ignore[assignment]
+    ssh_strict_host_key_checking: Optional[bool] = Field()  # type: ignore[assignment]
     git_uses_http: Optional[bool] = Field()  # type: ignore[assignment]
     quiet: Optional[bool] = Field()  # type: ignore[assignment]
     default: Optional[bool] = Field()  # type: ignore[assignment]
@@ -77,6 +78,11 @@ class Login(BaseModel):
         table.add("User", self.user)
         if self.ssh_key:
             table.add("Private SSH key path", self.ssh_key)
+        if self.ssh_strict_host_key_checking is not None:
+            table.add(
+                "SSH strict host key checking",
+                "yes" if self.ssh_strict_host_key_checking else "no",
+            )
         if self.git_uses_http:
             table.add("Git uses http(s)", "yes" if self.git_uses_http else "no")
         if self.quiet:
@@ -143,6 +149,9 @@ class Config:
             env_gitea_user = os.environ.get("GIT_OBS_GITEA_USER", None)
             env_gitea_token = os.environ.get("GIT_OBS_GITEA_TOKEN", None)
             env_ssh_key = os.environ.get("GIT_OBS_GITEA_SSH_KEY", None)
+            env_ssh_strict_host_key_checking = os.environ.get("GIT_OBS_GITEA_SSH_STRICT_HOST_KEY_CHECKING", None)
+            if env_ssh_strict_host_key_checking is not None:
+                env_ssh_strict_host_key_checking = env_ssh_strict_host_key_checking.lower() in ("1", "yes", "true")
             if env_gitea_url and env_gitea_user and env_gitea_token:
                 return Login(
                     name="<ENV>",
@@ -150,6 +159,7 @@ class Config:
                     user=env_gitea_user,
                     token=env_gitea_token,
                     ssh_key=env_ssh_key,
+                    ssh_strict_host_key_checking=env_ssh_strict_host_key_checking,
                 )
 
         for login in self.list_logins():
@@ -241,6 +251,7 @@ class Config:
         new_user: Optional[str] = None,
         new_token: Optional[str] = None,
         new_ssh_key: Optional[str] = None,
+        new_ssh_strict_host_key_checking: Optional[bool] = None,
         new_git_uses_http: Optional[bool] = None,
         new_quiet: Optional[bool] = None,
         set_as_default: Optional[bool] = None,
@@ -257,6 +268,12 @@ class Config:
             login.token = new_token
         if new_ssh_key is not None:
             login.ssh_key = new_ssh_key
+
+        if new_ssh_strict_host_key_checking is None:
+            # keep the original value
+            pass
+        else:
+            login.ssh_strict_host_key_checking = new_ssh_strict_host_key_checking
 
         if new_git_uses_http is None:
             # keep the original value

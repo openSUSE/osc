@@ -102,7 +102,7 @@ class Repo(GiteaModel):
         reference_if_able: Optional[str] = None,
         depth: Optional[int] = None,
         ssh_private_key_path: Optional[str] = None,
-        ssh_strict_host_key_checking: bool = True,
+        ssh_strict_host_key_checking: Optional[bool] = None,
     ) -> str:
         """
         Clone a repository using 'git clone' command, return absolute path to it.
@@ -161,6 +161,11 @@ class Repo(GiteaModel):
                 "-o IdentitiesOnly=yes",
                 f"-o IdentityFile={shlex.quote(ssh_private_key_path)}",
             ]
+
+        if ssh_strict_host_key_checking is None:
+            ssh_strict_host_key_checking = conn.login.ssh_strict_host_key_checking
+        if ssh_strict_host_key_checking is None:
+            ssh_strict_host_key_checking = True
 
         if not ssh_strict_host_key_checking:
             ssh_args += [
@@ -233,6 +238,7 @@ class Repo(GiteaModel):
         depth: Optional[int] = None,
         remote: Optional[str] = None,
         ssh_private_key_path: Optional[str] = None,
+        ssh_strict_host_key_checking: Optional[bool] = None,
     ):
         from osc import gitea_api
 
@@ -248,6 +254,7 @@ class Repo(GiteaModel):
                 reference_if_able=reference_if_able,
                 depth=depth,
                 ssh_private_key_path=ssh_private_key_path,
+                ssh_strict_host_key_checking=ssh_strict_host_key_checking,
             )
 
         git = gitea_api.Git(directory)
