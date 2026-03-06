@@ -41,12 +41,12 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
             self.parser.error("For SSH authentication, either --ssh-key or --ssh-agent must be specified together with --ssh-key-agent-pub")
         elif (args.ssh_key and args.ssh_agent) or (args.ssh_key and args.token) or (args.ssh_agent and args.token):
             self.parser.error("SSH authentication cannot be used together with token authentication, and --ssh-key and --ssh-agent cannot be used together")
-            
-        ssh_login = (args.ssh_key or args.ssh_agent) and args.ssh_key_agent_pub 
-        
+
+        ssh_login = (args.ssh_key or args.ssh_agent) and args.ssh_key_agent_pub
+
         if args.ssh_key:
             from cryptography.hazmat.primitives import serialization
-            
+
             if not os.path.isfile(args.ssh_key):
                 self.parser.error(f"SSH key file '{args.ssh_key}' does not exist")
             if not os.access(args.ssh_key, os.R_OK):
@@ -56,7 +56,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
                     serialization.load_ssh_private_key(key_file.read(), password=None)
                 except Exception:
                     self.parser.error(f"SSH key file '{args.ssh_key}' is not a valid SSH private key")
-                    
+
         if not ssh_login:
             while not args.token or args.token == "-":
                 args.token = getpass.getpass(prompt=f"Enter Gitea token for user '{args.user}': ")
