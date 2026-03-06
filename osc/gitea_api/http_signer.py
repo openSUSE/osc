@@ -17,6 +17,8 @@ class HttpSigner:
         from cryptography.hazmat.primitives import hashes
 
         key_path = self.login_obj.ssh_key
+        if key_path:
+            key_path = os.path.expanduser(key_path)
 
         if not os.path.exists(key_path):
             raise FileNotFoundError(f"SSH private key not found at: {key_path}")
@@ -152,10 +154,10 @@ class HttpSigner:
         Sign the request data using the configured authentication method (SSH key or agent).
         Returns a tuple of (signature, algorithm_name).
         """
-        if self.login_obj.ssh_key:
-            sign_func, algorithm_name = self._get_signer_from_file()
-        elif self.login_obj.ssh_agent:
+        if self.login_obj.ssh_agent:
             sign_func, algorithm_name = self._get_signer_from_agent()
+        elif self.login_obj.ssh_key:
+            sign_func, algorithm_name = self._get_signer_from_file()
         else:
             raise ValueError("No SSH authentication method configured for this login entry.")
 

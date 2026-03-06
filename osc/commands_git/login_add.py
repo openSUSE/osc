@@ -23,7 +23,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
         self.parser.add_argument("--token", help="Gitea access token; omit or set to '-' to invoke a secure interactive prompt")
         self.parser.add_argument("--ssh-key", metavar="PATH", help="Path to a private SSH key").completer = complete_ssh_key_path
         self.parser.add_argument("--ssh-agent", action="store_true", help="Use ssh-agent for authentication")
-        self.parser.add_argument("--ssh-key-agent-pub", help="Public SSH key signature for ssh-agent authentication")
+        self.parser.add_argument("--ssh-key-agent-pub", help="Public SSH key signature for ssh authentication. Setting this option switches from token to ssh auth.")
         self.parser.add_argument("--git-uses-http", action="store_true", help="Git uses http(s) instead of SSH", default=None)
         self.parser.add_argument("--quiet", action="store_true", help="Mute unnecessary output when using this login entry")
         self.parser.add_argument("--set-as-default", help="Set the new login entry as default", action="store_true", default=None)
@@ -37,12 +37,15 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
 
         # TODO: try to authenticate to verify that the new entry works
 
-        if not (args.ssh_key or args.ssh_agent) or not args.ssh_key_agent_pub:
-            self.parser.error("For SSH authentication, either --ssh-key or --ssh-agent must be specified together with --ssh-key-agent-pub")
-        elif (args.ssh_key and args.ssh_agent) or (args.ssh_key and args.token) or (args.ssh_agent and args.token):
-            self.parser.error("SSH authentication cannot be used together with token authentication, and --ssh-key and --ssh-agent cannot be used together")
+        # make sure we set at least one auth method
+        if not args.token and not args.ssh_key_agent_pub:
+            self.parser.error("Specify either --token or --ssh-key-agent-pub with either --ssh-key or --ssh-agent")
 
-        ssh_login = (args.ssh_key or args.ssh_agent) and args.ssh_key_agent_pub
+        # --ssh-key-agent-pub enables ssh auth; we need the key configured
+        if args.ssh_key_agent_pub and not (args.ssh_key or args.ssh_agent):
+            self.parser.error("For SSH authentication, --ssh-key-agent-pub requires either either --ssh-key or --ssh-agent")
+
+        ssh_login = bool(args.ssh_key_agent_pub)
 
         if args.ssh_key:
             from cryptography.hazmat.primitives import serialization

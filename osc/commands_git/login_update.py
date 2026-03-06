@@ -24,7 +24,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         self.parser.add_argument("--new-token", metavar="TOKEN", help="Gitea access token; set to '-' to invoke a secure interactive prompt")
         self.parser.add_argument("--new-ssh-key", metavar="PATH", help="Path to a private SSH key").completer = complete_ssh_key_path
         self.parser.add_argument("--new-ssh-agent", help="Use ssh-agent for authentication", choices=["0", "1", "yes", "no"], default=None)
-        self.parser.add_argument("--new-ssh-key-agent-pub", help="Public SSH key signature for ssh-agent authentication")
+        self.parser.add_argument("--new-ssh-key-agent-pub", help="Public SSH key signature for ssh authentication. Setting this option switches from token to ssh auth.")
         self.parser.add_argument("--new-git-uses-http", help="Git uses http(s) instead of SSH", choices=["0", "1", "yes", "no"], default=None)
         self.parser.add_argument("--new-quiet", help="Mute unnecessary output when using this login entry", choices=["0", "1", "yes", "no"], default=None)
         self.parser.add_argument("--set-as-default", action="store_true", help="Set the login entry as default")
@@ -41,54 +41,45 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             self.parser.error("Cannot specify both --new-ssh-key and --new-ssh-agent")
 
         # Determine final state
+        final_token = original_login_obj.token
         final_ssh_key = original_login_obj.ssh_key
         final_ssh_agent = original_login_obj.ssh_agent
         final_ssh_key_agent_pub = original_login_obj.ssh_key_agent_pub
 
-        if args.new_ssh_key:
+        if args.new_token is not None:
+            final_token = args.new_token
+
+        if args.new_ssh_key is not None:
             final_ssh_key = args.new_ssh_key
-            # If setting a key, disable agent
-            final_ssh_agent = False
 
         if new_ssh_agent is not None:
             final_ssh_agent = new_ssh_agent
-            # If enabling agent, clear key
-            if new_ssh_agent:
-                final_ssh_key = None
 
-        if args.new_ssh_key_agent_pub:
+        if args.new_ssh_key_agent_pub is not None:
             final_ssh_key_agent_pub = args.new_ssh_key_agent_pub
 
-        # Validate SSH configuration changes
-        if args.new_ssh_key or args.new_ssh_agent:
-            # If SSH is being enabled or modified, require the pub key
-            if (final_ssh_key or final_ssh_agent) and not args.new_ssh_key_agent_pub:
-                self.parser.error("For SSH authentication, either --new-ssh-key or --new-ssh-agent must be specified together with --new-ssh-key-agent-pub")
+        # make sure we set at least one auth method
+        if not final_token and not final_ssh_key_agent_pub:
+            self.parser.error("Specify either --new-token or ---new-ssh-key-agent-pub with either --new-ssh-key or --new-ssh-agent")
 
-        if original_login_obj.ssh_agent and final_ssh_agent is False and not final_ssh_key:
-             self.parser.error("Cannot switch from ssh-agent authentication to SSH key authentication without specifying a new SSH key")
-
-        if original_login_obj.ssh_key and final_ssh_agent is True:
-             print("Warning: switching from SSH key authentication to ssh-agent authentication, the specified SSH key will be deleted", file=sys.stderr)
-
-        if original_login_obj.ssh_agent and args.new_ssh_key:
-             print("Warning: switching from ssh-agent authentication to SSH key authentication, the ssh-agent setting will be disabled", file=sys.stderr)
-
-        if (final_ssh_key or final_ssh_agent) and args.new_token:
-            self.parser.error("Token authentication cannot be used together with SSH authentication")
+        # --ssh-key-agent-pub enables ssh auth; we need the key configured
+        if final_ssh_key_agent_pub and not (final_ssh_key or final_ssh_agent):
+            self.parser.error("For SSH authentication, --new-ssh-key-agent-pub requires either either --new-ssh-key or --new-ssh-agent")
 
         if args.new_ssh_key:
             from cryptography.hazmat.primitives import serialization
 
-            if not os.path.isfile(args.new_ssh_key):
+            new_ssh_key = os.path.expanduser(args.new_ssh_key)
+
+            if not os.path.isfile(new_ssh_key):
                 self.parser.error(f"SSH key file '{args.new_ssh_key}' does not exist")
-            if not os.access(args.new_ssh_key, os.R_OK):
+            if not os.access(new_ssh_key, os.R_OK):
                 self.parser.error(f"SSH key file '{args.new_ssh_key}' is not readable")
-            with open(args.new_ssh_key, "rb") as key_file:
+            with open(new_ssh_key, "rb") as key_file:
                 try:
                     serialization.load_ssh_private_key(key_file.read(), password=None)
-                except Exception:
-                    self.parser.error(f"SSH key file '{args.new_ssh_key}' is not a valid SSH private key")
+                except Exception as e:
+                    self.parser.error(f"SSH key file '{args.new_ssh_key}' is not a valid SSH private key: {e}")
 
         return final_ssh_key, final_ssh_agent, final_ssh_key_agent_pub
 
@@ -139,7 +130,6 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             set_as_default=args.set_as_default,
         )
 
-        print("")
         print("Original entry:")
         print(original_login_obj.to_human_readable_string())
         print("")

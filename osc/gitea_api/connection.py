@@ -130,7 +130,8 @@ class Connection:
         headers = {
             "Content-Type": "application/json",
         }
-        if self.login.ssh_key or self.login.ssh_agent:
+        ssh_auth = bool(self.login.ssh_key_agent_pub)
+        if ssh_auth:
             try:
                 headers.update(HttpSigner(self.login).get_signed_header(method, url))
             except Exception as e:
