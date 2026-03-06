@@ -1,0 +1,5 @@
+<package name="test-GitPkgB" project="test:factory">
+  <title/>
+  <description/>
+  <scmsync>http://localhost:3000/pool/test-GitPkgB#factory</scmsync>
+</package>

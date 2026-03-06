@@ -96,6 +96,9 @@ function add_ssh_key {
 
 create_org pool
 create_org_repo pool test-GitPkgA
+create_org_repo pool test-GitPkgB
+create_org openSUSE
+create_org_repo openSUSE Leap
 add_ssh_key admin $TOKEN_ADMIN /root/.ssh/admin.pub
 add_ssh_key alice $TOKEN_ALICE /root/.ssh/alice.pub
 add_ssh_key bob $TOKEN_BOB /root/.ssh/bob.pub
@@ -141,6 +144,72 @@ popd
 
 # create test-GitPkgA package in test:factory that has scmsync set to gitea
 $OSC api -X PUT '/source/test:factory/test-GitPkgA/_meta' --file "$TOPDIR"/fixtures/pac/test-GitPkgA.xml
+
+
+# create test-GitPkgB package based on test-pkgA
+# * change the package name
+# * use changelog dates as commit/commiter dates for reproducibility
+
+GITDIR="$(mktemp -d)"
+pushd "$GITDIR"
+
+git init --initial-branch factory
+# git commiter equals to the configured user
+git config user.name "Geeko Packager"
+git config user.email "email@example.com"
+
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.spec test-GitPkgB.spec
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.changes test-GitPkgB.changes
+sed 's@test-pkgA@test-GitPkgB@' -i *
+git add *
+DATE="2022-01-03 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Initial commit" --date "$DATE"
+
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-2.spec test-GitPkgB.spec
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-2.changes test-GitPkgB.changes
+sed 's@test-pkgA@test-GitPkgB@' -i *
+git add *
+DATE="2022-01-04 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Version 2" --date "$DATE"
+
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-3.spec test-GitPkgB.spec
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-3.changes test-GitPkgB.changes
+sed 's@test-pkgA@test-GitPkgB@' -i *
+git add *
+DATE="2022-01-05 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Version 3" --date "$DATE"
+
+git remote add origin http://admin:opensuse@localhost:3000/pool/test-GitPkgB.git
+git push --set-upstream origin factory
+
+popd
+
+# create test-GitPkgB package in test:factory that has scmsync set to gitea
+$OSC api -X PUT '/source/test:factory/test-GitPkgB/_meta' --file "$TOPDIR"/fixtures/pac/test-GitPkgB.xml
+
+
+# create openSUSE/Leap project repository with submodules test-GitPkgA and test-GitPkgB
+
+GITDIR="$(mktemp -d)"
+pushd "$GITDIR"
+
+git init --initial-branch factory
+git config user.name "Geeko Packager"
+git config user.email "email@example.com"
+git remote add origin http://admin:opensuse@localhost:3000/openSUSE/Leap.git
+
+# Add test-GitPkgA as a submodule
+git submodule add -b factory ../../pool/test-GitPkgA.git test-GitPkgA
+# Add test-GitPkgB as a submodule
+git submodule add -b factory ../../pool/test-GitPkgB.git test-GitPkgB
+
+git add .gitmodules test-GitPkgA test-GitPkgB
+DATE="2022-01-06 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Add package submodules" --date "$DATE"
+
+git push --set-upstream origin factory
+
+popd
 
 
 # gitea-action-runner

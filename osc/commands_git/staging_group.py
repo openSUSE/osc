@@ -1,4 +1,5 @@
 import os
+import sys
 
 import osc.commandline_git
 
@@ -25,6 +26,11 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
         self.add_argument(
             "--fork-owner",
             help="Owner of the fork used to create a new pull request. Defaults to the currently logged user. Conflicts with --target.",
+        )
+
+        self.add_argument(
+            "--fork-repo",
+            help="Name of the fork repository used to create a new pull request. Conflicts with --target.",
         )
 
         self.add_argument(
@@ -74,6 +80,9 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
 
         if args.fork_owner and args.target:
             self.parser.error("--fork-owner conflicts with --target")
+
+        if args.fork_repo and args.target:
+            self.parser.error("--fork-repo conflicts with --target")
 
         if args.fork_branch and args.target:
             self.parser.error("--fork-branch conflicts with --target")
@@ -161,15 +170,50 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                     fork_owner = target_owner
                     fork_repo = target_repo
                 else:
-                    fork_owner = args.fork_owner if args.fork_owner else user_obj.login
-                    fork_repo = None
-                    forks = gitea_api.Fork.list(self.gitea_conn, target_owner, target_repo)
-                    for repo in forks:
-                        if repo.owner.lower() == fork_owner.lower():
-                            fork_repo = repo.repo
-                            break
-                    if not fork_repo:
-                        raise gitea_api.GitObsRuntimeError(f"Cannot find a matching fork of {target_owner}/{target_repo} for user {fork_owner}")
+                    if args.fork_owner:
+                        fork_owner = args.fork_owner
+                    else:
+                        fork_owner = user_obj.login
+                        from osc.output import tty
+                        print(f" * {tty.colorize('WARNING', 'yellow,bold')}: No fork organization specified. Defaulting to a private fork in '{fork_owner}'.", file=sys.stderr)
+
+                    if args.fork_repo:
+                        fork_repo = args.fork_repo
+                        try:
+                            gitea_api.Repo.get(self.gitea_conn, fork_owner, fork_repo)
+                        except gitea_api.GiteaException as e:
+                            if e.status == 404:
+                                print(f"Fork {fork_owner}/{fork_repo} doesn't exist, creating it...", file=sys.stderr)
+                                try:
+                                    # Only pass target_org if fork_owner is not the current user (i.e., forking to an org)
+                                    fork_target_org = None if fork_owner.lower() == user_obj.login.lower() else fork_owner
+                                    repo_obj = gitea_api.Fork.create(
+                                        self.gitea_conn, target_owner, target_repo,
+                                        new_repo_name=fork_repo, target_org=fork_target_org
+                                    )
+                                except gitea_api.ForkExists as e2:
+                                    pass
+                            else:
+                                raise
+                    else:
+                        fork_repo = None
+                        forks = gitea_api.Fork.list(self.gitea_conn, target_owner, target_repo)
+                        for repo in forks:
+                            if repo.owner.lower() == fork_owner.lower():
+                                fork_repo = repo.repo
+                                break
+                        if not fork_repo:
+                            print(f"Cannot find a matching fork of {target_owner}/{target_repo} for user {fork_owner}, creating one...", file=sys.stderr)
+                            try:
+                                # Only pass target_org if fork_owner is not the current user (i.e., forking to an org)
+                                fork_target_org = None if fork_owner.lower() == user_obj.login.lower() else fork_owner
+                                repo_obj = gitea_api.Fork.create(
+                                    self.gitea_conn, target_owner, target_repo,
+                                    target_org=fork_target_org
+                                )
+                                fork_repo = repo_obj.repo
+                            except gitea_api.ForkExists as e:
+                                fork_repo = e.fork_repo
 
                 # dates in ISO 8601 format cannot be part of a valid branch name, we need a custom format
                 fork_branch = args.fork_branch if args.fork_branch else f"for/{target_branch}/group-{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}"

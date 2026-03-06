@@ -109,6 +109,10 @@ class GitOscPrecommitHook(CommandBase):
 class GitObs(CommandBase):
     CONFIG_NAME = "config.yml"
 
+    def __init__(self, context):
+        self.login_name = "admin"
+        super().__init__(context)
+
     def write_config(self):
         data = {
             "logins": [
@@ -147,7 +151,7 @@ class GitObs(CommandBase):
         git_obs_cmd = self.context.config.userdata.get("git-obs", "git-obs")
         cmd = [git_obs_cmd]
         cmd += ["--gitea-config", self.config]
-        cmd += ["-G", f"admin"]
+        cmd += ["-G", self.login_name]
         return cmd
 
 
@@ -174,6 +178,11 @@ def step_impl(context, args):
     run_in_context(context, cmd, can_fail=True)
     # remove InsecureRequestWarning that is irrelevant to the tests
     context.cmd_stderr = re.sub(r"^.*InsecureRequestWarning.*\n  warnings.warn\(\n", "", context.cmd_stderr)
+
+
+@behave.step("I use git-obs login \"{login}\"")
+def step_impl(context, login):
+    context.git_obs.login_name = login
 
 
 @behave.step('I execute git-osc-precommit-hook with args "{args}"')

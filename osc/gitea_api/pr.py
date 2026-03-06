@@ -6,6 +6,8 @@ from typing import List
 from typing import Optional
 from typing import Tuple
 
+from osc.gitea_api.exceptions import GitObsRuntimeError
+
 from .common import GiteaModel
 from .connection import Connection
 from .connection import GiteaHTTPResponse
@@ -374,6 +376,10 @@ class PullRequest(GiteaModel):
         url = conn.makeurl("repos", target_owner, target_repo, "pulls")
         if labels:
             ids = Repo.get_label_ids(conn, target_owner, target_repo)
+            # Check that all requested labels exist in the target repo
+            missing_labels = [i for i in labels if i not in ids]
+            if missing_labels:
+                raise GitObsRuntimeError(f"Label(s) not found in {target_owner}/{target_repo}: {', '.join(missing_labels)}")
             labels = [ids[i] for i in labels]
         data = {
             "base": target_branch,
