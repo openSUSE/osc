@@ -49,13 +49,13 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             final_ssh_key = args.new_ssh_key
             # If setting a key, disable agent
             final_ssh_agent = False
-        
+
         if new_ssh_agent is not None:
             final_ssh_agent = new_ssh_agent
             # If enabling agent, clear key
             if new_ssh_agent:
                 final_ssh_key = None
-        
+
         if args.new_ssh_key_agent_pub:
             final_ssh_key_agent_pub = args.new_ssh_key_agent_pub
 
@@ -73,13 +73,13 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
 
         if original_login_obj.ssh_agent and args.new_ssh_key:
              print("Warning: switching from ssh-agent authentication to SSH key authentication, the ssh-agent setting will be disabled", file=sys.stderr)
-        
+
         if (final_ssh_key or final_ssh_agent) and args.new_token:
             self.parser.error("Token authentication cannot be used together with SSH authentication")
-            
+
         if args.new_ssh_key:
             from cryptography.hazmat.primitives import serialization
-            
+
             if not os.path.isfile(args.new_ssh_key):
                 self.parser.error(f"SSH key file '{args.new_ssh_key}' does not exist")
             if not os.access(args.new_ssh_key, os.R_OK):
@@ -100,7 +100,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         # TODO: try to authenticate to verify that the updated entry works
 
         original_login_obj = self.gitea_conf.get_login(args.name)
-        
+
         final_ssh_key, final_ssh_agent, final_ssh_key_agent_pub = self._get_ssh_settings(args, original_login_obj)
 
         if args.new_token == "-":
@@ -117,7 +117,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             new_git_uses_http = True
         else:
             new_git_uses_http = None
-           
+
         if args.new_quiet in ("0", "no"):
             new_quiet = False
         elif args.new_quiet in ("1", "yes"):
@@ -138,7 +138,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
             new_quiet=new_quiet,
             set_as_default=args.set_as_default,
         )
-        
+
         print("")
         print("Original entry:")
         print(original_login_obj.to_human_readable_string())
