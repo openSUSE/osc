@@ -186,6 +186,22 @@ def step_impl(context, args):
 @behave.step("I use git-obs login \"{login}\"")
 def step_impl(context, login):
     context.git_obs.login_name = login
+    # Set git identity env vars to match the Gitea user for this login,
+    # so commits made in subsequent steps are attributed to the right author.
+    git_identity = {
+        "admin": ("Admin", "admin@example.com"),
+        "alice": ("Alice", "alice@example.com"),
+        "bob":   ("Bob",   "bob@example.com"),
+    }
+    name, email = git_identity.get(login.lower(), (login, f"{login.lower()}@example.com"))
+    context.env["GIT_AUTHOR_NAME"] = name
+    context.env["GIT_AUTHOR_EMAIL"] = email
+    context.env["GIT_COMMITTER_NAME"] = name
+    context.env["GIT_COMMITTER_EMAIL"] = email
+    # Clear GIT_SSH_COMMAND so that git-obs can use its own SSH key management
+    # (core.sshCommand / ssh_private_key_path) without being overridden by a
+    # key that may have been set for a different user in a previous step.
+    context.env.pop("GIT_SSH_COMMAND", None)
 
 
 @behave.step('I execute git-osc-precommit-hook with args "{args}"')

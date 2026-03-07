@@ -1,4 +1,5 @@
 import os
+import subprocess
 import sys
 
 import osc.commandline_git
@@ -203,7 +204,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                                 fork_repo = repo.repo
                                 break
                         if not fork_repo:
-                            print(f"Cannot find a matching fork of {target_owner}/{target_repo} for user {fork_owner}, creating one...", file=sys.stderr)
+                            print(f"Cannot find a matching fork of {target_owner}/{target_repo} for {fork_owner}, creating one...", file=sys.stderr)
                             try:
                                 # Only pass target_org if fork_owner is not the current user (i.e., forking to an org)
                                 fork_target_org = None if fork_owner.lower() == user_obj.login.lower() else fork_owner
@@ -270,12 +271,17 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
 
             has_push_access = False
             if target.pr_obj.head_can_push:
-                print(f"You have push access to the head repository of the target pull request {target_owner}/{target_repo}#{target_number}, the pull request will be updated by pushing to the head branch.")
+                print(f"You have push access to the head repository {target.pr_obj._data['head']['repo']['full_name']}, the pull request will be updated by pushing to the head branch.")
                 has_push_access = True
 
             if target.pr_obj._data['head']['repo']['fork'] and has_push_access:
                 # if the head repo is a fork and we have push access to it, we can push directly to the head branch
-                target.git._run_git(["remote", "set-url", "fork", target.pr_obj._data['head']['repo']['ssh_url']])
+                fork_ssh_url = target.pr_obj._data['head']['repo']['ssh_url']
+                try:
+                    target.git._run_git(["remote", "set-url", "fork", fork_ssh_url])
+                except subprocess.CalledProcessError:
+                    target.git._run_git(["remote", "add", "fork", fork_ssh_url])
+
 
             # locally merge package pull requests to the target project pull request (don't change anything on server yet)
             updated_packages = []
