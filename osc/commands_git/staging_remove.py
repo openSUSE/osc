@@ -1,5 +1,5 @@
 import osc.commandline_git
-
+import subprocess
 
 class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
     """
@@ -52,7 +52,7 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
             refs = [(owner.lower(), repo.lower(), number) for owner, repo, number in refs]
             missing_refs = []
             for owner, repo, number in args.pr_list:
-                if (owner, repo, number) not in refs:
+                if (owner.lower(), repo.lower(), number) not in refs:
                     missing_refs.append(f"{owner}/{repo}#{number}")
             if missing_refs:
                 msg = f"The following pull requests are not referenced in the project pull request: {', '.join(missing_refs)}"
@@ -73,6 +73,13 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
                 pr = pr_map[(owner.lower(), repo.lower(), number)]
                 target.remove(pr)
 
+            if target.pr_obj._data['head']['repo']['fork']:
+                fork_ssh_url = target.pr_obj._data['head']['repo']['ssh_url']
+                try:
+                    target.git._run_git(["remote", "set-url", "fork", fork_ssh_url])
+                except subprocess.CalledProcessError:
+                    target.git._run_git(["remote", "add", "fork", fork_ssh_url])
+                    
             # push to git repo associated with the target pull request
             target.git.push(remote="fork", branch=f"pull/{target.pr_obj.number}:{target.pr_obj.head_branch}")
             # update target pull request

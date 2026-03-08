@@ -130,7 +130,7 @@ class StagingPullRequestWrapper:
         from . import GitObsRuntimeError
         from . import PullRequest
 
-        self.pr_obj._data["body"] = PullRequest.remove_pr_references(self.pr_obj.body, [(package_pr.owner, package_pr.repo, package_pr.number)])
+        self.pr_obj._data["body"] = PullRequest.remove_pr_references(self.pr_obj.body, [(package_pr.owner.lower(), package_pr.repo.lower(), package_pr.number)])
 
         submodule = self.submodules_by_owner_repo.get((package_pr.owner.lower(), package_pr.repo.lower()), None)
         base_submodule = self.base_submodules_by_owner_repo.get((package_pr.owner.lower(), package_pr.repo.lower()), None)

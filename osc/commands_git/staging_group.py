@@ -308,9 +308,12 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                     updated_packages_str += f" + {len(updated_packages) - max_packages} more"
                 title = args.title if args.title else f"{target.pr_obj.title}, {updated_packages_str}"
 
-                # if args.target is not set, we've created a new pull request with all 'PR:' references included
-                # if args.target is set (which is the case here), we need to update the description with the newly added 'PR:' references
-                target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, title=title, description=target.pr_obj.body)
+                try:
+                    # if args.target is not set, we've created a new pull request with all 'PR:' references included
+                    # if args.target is set (which is the case here), we need to update the description with the newly added 'PR:' references
+                    target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, title=title, description=target.pr_obj.body)
+                except Exception as e:
+                    print(f"Unable to update pull request {target_owner}/{target_repo}#{target_number}: {e}")
 
             for owner, repo, number in args.pr_list:
                 pr = pr_map[(owner.lower(), repo.lower(), number)]

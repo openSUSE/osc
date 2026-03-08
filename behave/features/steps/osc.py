@@ -198,10 +198,20 @@ def step_impl(context, login):
     context.env["GIT_AUTHOR_EMAIL"] = email
     context.env["GIT_COMMITTER_NAME"] = name
     context.env["GIT_COMMITTER_EMAIL"] = email
-    # Clear GIT_SSH_COMMAND so that git-obs can use its own SSH key management
-    # (core.sshCommand / ssh_private_key_path) without being overridden by a
-    # key that may have been set for a different user in a previous step.
-    context.env.pop("GIT_SSH_COMMAND", None)
+    # Set GIT_SSH_COMMAND for this login so that both direct git commands and
+    # submodule clones (which spawn child git processes that don't inherit
+    # core.sshCommand from the parent repo config) use the right SSH key.
+    ssh_keys = {
+        "admin": "admin",
+        "alice": "alice",
+        "bob":   "bob",
+    }
+    key_name = ssh_keys.get(login.lower(), login.lower())
+    key_path = f"{context.fixtures}/ssh-keys/{key_name}"
+    context.env["GIT_SSH_COMMAND"] = (
+        f"ssh -o IdentitiesOnly=yes -o IdentityFile={key_path}"
+        f" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
+    )
 
 
 @behave.step('I execute git-osc-precommit-hook with args "{args}"')

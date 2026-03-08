@@ -97,6 +97,7 @@ function add_ssh_key {
 create_org pool
 create_org_repo pool test-GitPkgA
 create_org_repo pool test-GitPkgB
+create_org_repo pool test-GitPkgC
 create_org openSUSE
 create_org_repo openSUSE Leap
 add_ssh_key admin $TOKEN_ADMIN /root/.ssh/admin.pub
@@ -188,7 +189,49 @@ popd
 $OSC api -X PUT '/source/test:factory/test-GitPkgB/_meta' --file "$TOPDIR"/fixtures/pac/test-GitPkgB.xml
 
 
-# create openSUSE/Leap project repository with submodules test-GitPkgA and test-GitPkgB
+# create test-GitPkgC package based on test-pkgA
+# * change the package name
+# * use changelog dates as commit/commiter dates for reproducibility
+
+GITDIR="$(mktemp -d)"
+pushd "$GITDIR"
+
+git init --initial-branch factory
+# git commiter equals to the configured user
+git config user.name "Geeko Packager"
+git config user.email "email@example.com"
+
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.spec test-GitPkgC.spec
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-1.changes test-GitPkgC.changes
+sed 's@test-pkgA@test-GitPkgC@' -i *
+git add *
+DATE="2022-01-03 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Initial commit" --date "$DATE"
+
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-2.spec test-GitPkgC.spec
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-2.changes test-GitPkgC.changes
+sed 's@test-pkgA@test-GitPkgC@' -i *
+git add *
+DATE="2022-01-04 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Version 2" --date "$DATE"
+
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-3.spec test-GitPkgC.spec
+cp -a "$TOPDIR"/fixtures/pac/test-pkgA-3.changes test-GitPkgC.changes
+sed 's@test-pkgA@test-GitPkgC@' -i *
+git add *
+DATE="2022-01-05 11:22:33 UTC"
+GIT_COMMITTER_DATE="$DATE" git commit -a -m "Version 3" --date "$DATE"
+
+git remote add origin http://admin:opensuse@localhost:3000/pool/test-GitPkgC.git
+git push --set-upstream origin factory
+
+popd
+
+# create test-GitPkgC package in test:factory that has scmsync set to gitea
+$OSC api -X PUT '/source/test:factory/test-GitPkgC/_meta' --file "$TOPDIR"/fixtures/pac/test-GitPkgC.xml
+
+
+# create openSUSE/Leap project repository with submodules test-GitPkgA, test-GitPkgB and test-GitPkgC
 
 GITDIR="$(mktemp -d)"
 pushd "$GITDIR"
@@ -202,8 +245,10 @@ git remote add origin http://admin:opensuse@localhost:3000/openSUSE/Leap.git
 git submodule add -b factory ../../pool/test-GitPkgA.git test-GitPkgA
 # Add test-GitPkgB as a submodule
 git submodule add -b factory ../../pool/test-GitPkgB.git test-GitPkgB
+# Add test-GitPkgC as a submodule
+git submodule add -b factory ../../pool/test-GitPkgC.git test-GitPkgC
 
-git add .gitmodules test-GitPkgA test-GitPkgB
+git add .gitmodules test-GitPkgA test-GitPkgB test-GitPkgC
 DATE="2022-01-06 11:22:33 UTC"
 GIT_COMMITTER_DATE="$DATE" git commit -a -m "Add package submodules" --date "$DATE"
 
