@@ -18,8 +18,10 @@ class Login(BaseModel):
     name: str = Field()  # type: ignore[assignment]
     url: str = Field()  # type: ignore[assignment]
     user: str = Field()  # type: ignore[assignment]
-    token: str = Field()  # type: ignore[assignment]
+    token: Optional[str] = Field()  # type: ignore[assignment]
     ssh_key: Optional[str] = Field()  # type: ignore[assignment]
+    ssh_agent: Optional[bool] = Field()  # type: ignore[assignment]
+    ssh_key_agent_pub: Optional[str] = Field()  # type: ignore[assignment]
     git_uses_http: Optional[bool] = Field()  # type: ignore[assignment]
     quiet: Optional[bool] = Field()  # type: ignore[assignment]
     default: Optional[bool] = Field()  # type: ignore[assignment]
@@ -77,6 +79,10 @@ class Login(BaseModel):
         table.add("User", self.user)
         if self.ssh_key:
             table.add("Private SSH key path", self.ssh_key)
+        if self.ssh_agent:
+            table.add("Use ssh-agent", "yes" if self.ssh_agent else "no")
+        if self.ssh_key_agent_pub:
+            table.add("Public SSH key for ssh-agent", self.ssh_key_agent_pub)
         if self.git_uses_http:
             table.add("Git uses http(s)", "yes" if self.git_uses_http else "no")
         if self.quiet:
@@ -241,6 +247,8 @@ class Config:
         new_user: Optional[str] = None,
         new_token: Optional[str] = None,
         new_ssh_key: Optional[str] = None,
+        new_ssh_agent: Optional[bool] = None,
+        new_ssh_key_agent_pub: Optional[str] = None,
         new_git_uses_http: Optional[bool] = None,
         new_quiet: Optional[bool] = None,
         set_as_default: Optional[bool] = None,
@@ -255,8 +263,18 @@ class Config:
             login.user = new_user
         if new_token is not None:
             login.token = new_token
-        if new_ssh_key is not None:
+        # ssh_key can be set to None to switch to SSH agent authentication
+        if new_ssh_key is None and login.ssh_key:
+            login.ssh_key = None
+        elif new_ssh_key is not None:
             login.ssh_key = new_ssh_key
+        # ssh_agent can be set to None to switch to SSH key authentication
+        if new_ssh_agent is None and login.ssh_agent:
+            login.ssh_agent = None
+        elif new_ssh_agent is not None:
+            login.ssh_agent = new_ssh_agent
+        if new_ssh_key_agent_pub is not None:
+            login.ssh_key_agent_pub = new_ssh_key_agent_pub
 
         if new_git_uses_http is None:
             # keep the original value
