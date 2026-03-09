@@ -1,3 +1,23 @@
+- 1.25.0
+  - Command-line:
+    - Add 'git-obs pr forward' command that is close to 'osc sr',
+      allowing forwarding sources from one branch to another (e.g., Factory to Leap/SLFO) via a Pull Request
+    - Add --separate-requests and --dry-run to 'git-obs pr create'
+    - Add support for SSH authentication of Gitea API calls in git-obs
+    - Change 'git-obs staging group' command to allow PR creation without a fork
+    - Change 'git-obs staging group' to rely on the workflow-pr bot
+    - Extend 'osc search' with gitea data cached in an external service
+    - Use PullRequest.list branch filter in 'git-obs pr list'
+    - Make 'osc remotebuildlog' an alias of 'osc buildlog'
+  - Library:
+    - Add 'target_branch' filter to PullRequest.list()
+    - Update gitea_api.Git.get_branch_head() to take optional argument 'remote'
+    - Add gitea_api.Git.branch_is_fast_forwardable() method
+    - Add gitea_api.Git.has_changes property to determine if there are any staged or unstaged changes in the current working copy
+    - Add 'alldirect_or_localdep' entry to LinkedbuildModes enum
+    - Fix git_scm.Manifest to skip subdirectories that do not exist
+    - Fix oscrc lookup: prefer XDG location, warn if there are multiple configs
+
 - 1.24.0
   - Command-line:
     - Add '--target-owner' option to 'git-obs repo fork' command
