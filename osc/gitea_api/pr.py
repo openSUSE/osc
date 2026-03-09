@@ -1,7 +1,6 @@
 import functools
 import re
 import typing
-from typing import Dict
 from typing import List
 from typing import Optional
 from typing import Tuple
@@ -470,6 +469,7 @@ class PullRequest(GiteaModel):
         *,
         state: Optional[str] = "open",
         labels: Optional[List[int]] = None,
+        target_branch: Optional[str] = None,
     ) -> List["PullRequest"]:
         """
         List pull requests in a repo.
@@ -478,6 +478,9 @@ class PullRequest(GiteaModel):
         :param owner: Owner of the repo.
         :param repo: Name of the repo.
         :param state: Filter by state: open, closed, all. Defaults to open.
+        :param labels: Filter by labels, defaults to no filtering
+        :param target_branch: Filter by the branch that the pull request targets
+                              (also confusingly called `base_branch`)
         """
         if state == "all":
             state = None
@@ -486,10 +489,12 @@ class PullRequest(GiteaModel):
             "state": state,
             "limit": 50,
         }
-        
+
         if labels:
             q["labels"] = labels
-                        
+        if target_branch:
+            q["base_branch"] = target_branch
+
         url = conn.makeurl("repos", owner, repo, "pulls", query=q)
         obj_list = []
         for response in conn.request_all_pages("GET", url):
