@@ -621,6 +621,16 @@ class Options(OscOptions):
         ),
     )  # type: ignore[assignment]
 
+    http_manual_approve: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            A debugging option. Manually approve all requests except GET and HEAD.
+            """
+        ),
+
+    )  # type: ignore[assignment]
+
     post_mortem: bool = Field(
         default=False,
         description=textwrap.dedent(
