@@ -6719,6 +6719,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import makeurl
         from .core import parse_buildlogurl
         from .core import print_buildlog
+        from .core import slash_split
 
         project = package = repository = arch = None
 
@@ -6726,34 +6727,36 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if len(args) == 1 and args[0].startswith('http'):
             apiurl, project, package, repository, arch = parse_buildlogurl(args[0])
-        elif len(args) > 2:
-            project = args[0]
-            project = self._process_project_name(project)
-            package = args[1]
-            repository = args[2]
-            if len(args) == 3:
-                arch = osc_build.hostarch
-            elif len(args) > 4:
-                raise oscerr.WrongArgs('Too many arguments.')
-            else:
-                arch = args[3]
         else:
-            store = osc_store.get_store(Path.cwd())
-            store.assert_is_package()
-            project = store.project
-            package = store.package
-            if len(args) == 1:
-                repository, arch = self._find_last_repo_arch(args[0], fatal=False)
-                if repository is None:
-                    # no local build with this repo was done
-                    print('failed to guess arch, using hostarch')
-                    repository = args[0]
+            args = slash_split(args)
+            if len(args) > 2:
+                project = args[0]
+                project = self._process_project_name(project)
+                package = args[1]
+                repository = args[2]
+                if len(args) == 3:
                     arch = osc_build.hostarch
-            elif len(args) < 2:
-                self.print_repos()
+                elif len(args) > 4:
+                    raise oscerr.WrongArgs('Too many arguments.')
+                else:
+                    arch = args[3]
             else:
-                repository = args[0]
-                arch = args[1]
+                store = osc_store.get_store(Path.cwd())
+                store.assert_is_package()
+                project = store.project
+                package = store.package
+                if len(args) == 1:
+                    repository, arch = self._find_last_repo_arch(args[0], fatal=False)
+                    if repository is None:
+                        # no local build with this repo was done
+                        print('failed to guess arch, using hostarch')
+                        repository = args[0]
+                        arch = osc_build.hostarch
+                    elif len(args) < 2:
+                        self.print_repos()
+                    else:
+                        repository = args[0]
+                        arch = args[1]
 
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
