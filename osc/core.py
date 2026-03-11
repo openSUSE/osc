@@ -4668,6 +4668,8 @@ def print_buildlog(
             data = buildlog_strip_time(data)
         # to protect us against control characters (CVE-2012-1095)
         output_buffer.write(sanitize_text(data))
+        if output_buffer.isatty():
+            output_buffer.flush()
 
     query = {'nostream': '1', 'start': f'{offset}'}
     if last:
