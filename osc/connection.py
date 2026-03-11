@@ -342,13 +342,32 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         http.client.print(40 * '-')
         http.client.print(method, url)
 
-    if method != "GET" and os.environ['OSC_HTTP_MANUAL_APPROVE']:
-        print("osc is going to send "+ method +" request to " + urlopen_url)
+    if method not in ("GET", "HEAD") and conf.config.http_manual_approve:
+        print(f"Sending HTTP request: {method} {urlopen_url}")
         if data:
-            print(data.decode("utf-8"))
-        y = input("press 'y' to continue or any other key to cancel")
-        if y != 'y' and y != 'Y':
-            raise Exception("Manual abort")
+            print("Data:")
+
+            if file:
+                data_str = file.read()
+                file.seek(0)
+            else:
+                data_str = data
+
+            try:
+                data_str = data_str.decode("utf-8")
+            except UnicodeDecodeError:
+                # we'll just print the bytes
+                pass
+
+            print(data_str)
+
+        reply = output.get_user_input(
+            "Really send the request?",
+            answers={"y": "yes", "n": "no"},
+            default_answer="n",
+        )
+        if reply != "y":
+            raise oscerr.UserAbort()
 
     try:
         response = pool.urlopen(
