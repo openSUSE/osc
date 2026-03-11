@@ -1,5 +1,6 @@
 import functools
 import re
+import sys
 import typing
 from typing import Dict
 from typing import List
@@ -299,13 +300,13 @@ class PullRequest(GiteaModel):
 
         return str(table)
 
-    def to_light_dict(self, exclude_columns: Optional[list] = None):
+    def to_light_dict(self, exclude_columns: Optional[List] = None):
         x = ["allow_maintainer_edit", "body"]
         if exclude_columns:
             x += exclude_columns
         return self.dict(x)
 
-    def dict(self, exclude_columns: Optional[list] = None):
+    def dict(self, exclude_columns: Optional[List] = None):
         import inspect
 
         exclude_columns = exclude_columns or []
@@ -810,10 +811,10 @@ class PullRequest(GiteaModel):
         owner: str,
         repo: str,
         number: int,
-        users: Optional[list],
-        exclude: Optional[list],
+        users: Optional[List],
+        exclude: Optional[List],
         dry_run: Optional[bool],
-    ) -> GiteaHTTPResponse:
+    ) -> Optional[GiteaHTTPResponse]:
         """
         Internal method to cancel all pending review requests. Empty user list means for all users.
         """
@@ -867,11 +868,10 @@ class PullRequest(GiteaModel):
 
         url = conn.makeurl("repos", owner, repo, "pulls", str(number), "/requested_reviewers")
         if dry_run:
-            import sys
+            print(f"[dry-run] DELETE {url} {data}", file=sys.stderr)
+            return None
 
-            print(f"DELETE {url} {data}", file=sys.stderr)
-        else:
-            conn.request("DELETE", url, data)
+        return conn.request("DELETE", url, data)
 
     @classmethod
     def cancel_review_requests_all(
@@ -880,9 +880,9 @@ class PullRequest(GiteaModel):
         owner: str,
         repo: str,
         number: int,
-        exclude: Optional[list],
+        exclude: Optional[List],
         dry_run: Optional[bool] = False,
-    ) -> GiteaHTTPResponse:
+    ) -> Optional[GiteaHTTPResponse]:
         """
         Cancel all pending review requests.
         """
@@ -896,9 +896,9 @@ class PullRequest(GiteaModel):
         repo: str,
         number: int,
         users: List[str],
-        exclude: Optional[list],
+        exclude: Optional[List],
         dry_run: Optional[bool] = False,
-    ) -> GiteaHTTPResponse:
+    ) -> Optional[GiteaHTTPResponse]:
         """
         Cancel pending review requests for particular users.
         """
