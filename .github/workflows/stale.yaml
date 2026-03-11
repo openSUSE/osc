@@ -34,4 +34,4 @@ jobs:
 
           # exempt issues/PRs with specific labels from staling/closing
           exempt-issue-labels: "security,MVP,Priority: High"
-          exempt-pr-labels: "security,MVP,Priority: High
+          exempt-pr-labels: "security,MVP,Priority: High"
