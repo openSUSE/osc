@@ -220,7 +220,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         title = args.title or ""
         description = args.description or ""
 
-        if not title or not description:
+        if not title:
             if args.dry_run:
                 title = "[DRY RUN] Title"
                 description = "[DRY RUN] Description"
