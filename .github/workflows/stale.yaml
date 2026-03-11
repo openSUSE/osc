@@ -1,0 +1,37 @@
+name: "Close stale issues and PRs"
+
+on:
+  schedule:
+    - cron: "0 0 * * *"
+
+  # allow manual execution from the GitHub web interface
+  workflow_dispatch:
+
+jobs:
+  stale:
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - uses: actions/stale@v10
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+          # time configuration (in days)
+          days-before-stale: 200
+          days-before-close: 60
+
+          # issue configuration
+          stale-issue-message: "This issue is stale because it has been open 200 days with no activity."
+          close-issue-message: "This issue was closed because it has been inactive for a long time."
+          stale-issue-label: "stale"
+
+          # pull request configuration
+          stale-pr-message: "This PR is stale because it has been open 200 days with no activity."
+          close-pr-message: "This PR was closed because it has been inactive for a long time."
+          stale-pr-label: "stale"
+
+          # exempt issues/PRs with specific labels from staling/closing
+          exempt-issue-labels: "security,MVP,Priority: High"
+          exempt-pr-labels: "security,MVP,Priority: High
