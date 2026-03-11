@@ -18,6 +18,9 @@ jobs:
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
+          # max number of processed items per run
+          operations-per-run: 200
+
           # time configuration (in days)
           days-before-stale: 200
           days-before-close: 60
