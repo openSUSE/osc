@@ -274,9 +274,12 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             try:
                 self._gitea_login = self.gitea_conf.get_login(name=self._args.gitea_login)
             except gitea_api.Login.DoesNotExist as e:
-                try:
-                    self._gitea_login = self.gitea_conf.get_login_by_url_user(url=self._args.gitea_login)
-                except gitea_api.Login.DoesNotExist:
+                if self._args.gitea_login:
+                    try:
+                        self._gitea_login = self.gitea_conf.get_login_by_url_user(url=self._args.gitea_login)
+                    except gitea_api.Login.DoesNotExist:
+                        raise e
+                else:
                     raise e
 
         return self._gitea_login
