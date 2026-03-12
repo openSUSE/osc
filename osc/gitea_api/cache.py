@@ -91,6 +91,8 @@ def gitea_cache_search_package_maintainers(
     users__like: Optional[List[str]] = None,
     packages: Optional[List[str]] = None,
     packages__like: Optional[List[str]] = None,
+    projects: Optional[List[str]] = None,
+    projects__like: Optional[List[str]] = None,
 ):
     from ..core import http_request
     from ..core import makeurl
@@ -101,8 +103,10 @@ def gitea_cache_search_package_maintainers(
     q = {
         "user": users,
         "user__like": users__like,
-        "packages__name": packages,
-        "packages__name__like": packages__like,
+        "package__name": packages,
+        "package__name__like": packages__like,
+        "package__project__name": projects,
+        "package__project__name__like": projects__like,
     }
     url = makeurl(base_url, ["api", "v1", "package", "maintainer", "search"], q)
     response = http_request("GET", url)

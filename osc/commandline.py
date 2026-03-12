@@ -9848,6 +9848,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         else:
             raise oscerr.WrongArgs('Wrong number of arguments.')
 
+        # the values get overwritten, let's make a copy
+        git_prj = prj
+        git_pac = pac
+
         apiurl = self.get_api_url()
 
         # Try the OBS 2.4 way first.
@@ -10046,6 +10050,70 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             print(indent, end=' ')
                             print(', '.join(maintainers.get(role, [])) or '-')
                         print()
+
+        from .gitea_api.cache import gitea_cache_search_projects
+        from .gitea_api.cache import gitea_cache_search_packages
+        from .gitea_api.cache import gitea_cache_search_project_maintainers
+        from .gitea_api.cache import gitea_cache_search_package_maintainers
+
+        # query a new service that caches various gitea information
+
+        if opts.user or opts.group:
+            q = {}
+            if opts.user:
+                q["users"] = [opts.user]
+            elif opts.group:
+                q["users"] = [f"@{opts.group}"]
+
+            results = gitea_cache_search_project_maintainers(**q)
+            for i in results:
+                print(f"Defined in git project: {i['project']['name']}")
+
+            results = gitea_cache_search_package_maintainers(**q)
+            for i in results:
+                print(f"Defined in git package: {i['package']['project']['name']}/{i['package']['name']}")
+
+        else:
+
+            def print_package_owners(data):
+                grouped = {}
+
+                for i in data:
+                    key = (i["package"]["project"]["name"], i["package"]["name"])
+                    grouped.setdefault(key, set()).add(i["user"])
+
+                for (pr, pa), users in sorted(grouped.items()):
+                    users = sorted(users)
+                    print(f"Maintainer of {pr}/{pa} in git: {', '.join(users)}")
+
+            def print_project_owners(data):
+                grouped = {}
+
+                for i in data:
+                    key = i["project"]["name"]
+                    grouped.setdefault(key, set()).add(i["user"])
+
+                for pr, users in sorted(grouped.items()):
+                    users = sorted(users)
+                    print(f"Maintainer of {pr} in git: {', '.join(users)}")
+
+            if git_prj and git_pac:
+                q = {}
+                q["packages"] = [git_pac]
+                q["projects"] = [git_prj]
+                results = gitea_cache_search_package_maintainers(**q)
+                print_package_owners(results)
+
+            elif git_prj:
+                q = {}
+                q["packages"] = [git_prj]
+                results = gitea_cache_search_package_maintainers(**q)
+                print_package_owners(results)
+
+                q = {}
+                q["projects"] = [git_prj]
+                results = gitea_cache_search_project_maintainers(**q)
+                print_project_owners(results)
 
     @cmdln.alias('who')
     @cmdln.alias('user')
