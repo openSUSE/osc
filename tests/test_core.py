@@ -7,7 +7,40 @@ from osc.core import binary_file
 from osc.core import makeurl
 from osc.core import UrlQueryArray
 from osc.core import parseRevisionOption
+from osc.core import slash_split
 from osc.oscerr import OscInvalidRevision
+
+
+class TestSlashSplit(unittest.TestCase):
+    def test_no_slash(self):
+        expected = ["text"]
+        actual = slash_split(["text"])
+        self.assertEqual(expected, actual)
+
+    def test_leading_slash(self):
+        expected = ["text"]
+        actual = slash_split(["/text"])
+        self.assertEqual(expected, actual)
+
+    def test_trailing_slash(self):
+        expected = ["text"]
+        actual = slash_split(["text/"])
+        self.assertEqual(expected, actual)
+
+    def test_middle_slash(self):
+        expected = ["project", "package"]
+        actual = slash_split(["project/package"])
+        self.assertEqual(expected, actual)
+
+    def test_double_slash(self):
+        expected = ["project", "package"]
+        actual = slash_split(["project//package"])
+        self.assertEqual(expected, actual)
+
+    def test_mega_slash(self):
+        expected = ["project", "package"]
+        actual = slash_split(["project/////////package"])
+        self.assertEqual(expected, actual)
 
 
 class TestParseRevisionOption(unittest.TestCase):
