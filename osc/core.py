@@ -1055,6 +1055,7 @@ def slash_split(args):
     """
     result = []
     for arg in args:
+        arg = re.sub("//+", "/", arg)
         arg = arg.strip("/")
         result += arg.split("/")
     return result
