@@ -5,7 +5,7 @@ import shutil
 import os
 import sys
 import tempfile
-from functools import total_ordering
+from functools import total_ordering, wraps
 from typing import Optional
 
 from .. import conf
@@ -28,6 +28,42 @@ from .store import store
 from .store import store_read_file
 from .store import store_write_project
 from .store import store_write_string
+
+
+def skip_if_git(result=None):
+    """
+    Decorator for Package methods: if self.store is a GitStore,
+    return result, else run the original method.
+    """
+    def decorator(func):
+        @wraps(func)
+        def wrapper(self, *args, **kwargs):
+            if self.is_git_store:
+                return result
+            return func(self, *args, **kwargs)
+        return wrapper
+    return decorator
+
+
+def fail_if_git(func=None, *, msg=None):
+    """
+    Decorator for Package methods: if self.store is a GitStore,
+    raise an OscError, else run the original method.
+    """
+    def decorator(f):
+        @wraps(f)
+        def wrapper(self, *args, **kwargs):
+            if self.is_git_store:
+                if not msg:
+                    cls_name = f.__class__.__name__
+                    meth_name = f.__name__
+                    msg = f"Method {cls_name}.{meth_name} not supported with GitStore"
+                raise oscerr.OscBaseError(msg)
+            return f(self, *args, **kwargs)
+        return wrapper
+    if func is None:
+        return decorator
+    return decorator(func)
 
 
 @total_ordering
@@ -158,11 +194,15 @@ class Package:
 
         return packages, failed_to_load
 
-    def wc_check(self):
+    @property
+    def is_git_store(self):
         from ..git_scm import GitStore
+        return isinstance(self.store, GitStore)
 
+    @skip_if_git(result=[])
+    def wc_check(self):
         dirty_files = []
-        if self.scm_url or isinstance(self.store, GitStore):
+        if self.scm_url:
             return dirty_files
         for fname in self.filenamelist:
             if not self.store.sources_is_file(fname) and fname not in self.skipped:
@@ -183,6 +223,7 @@ class Package:
                 dirty_files.append(fname)
         return dirty_files
 
+    @skip_if_git(result=False)
     def wc_repair(self, apiurl: Optional[str] = None) -> bool:
         from ..core import get_source_file
 
@@ -244,6 +285,7 @@ class Package:
 
         return repaired
 
+    @fail_if_git()
     def info(self):
         from ..core import info_templ
         from ..core import makeurl
@@ -252,6 +294,7 @@ class Package:
         r = info_templ % (self.prjname, self.name, self.absdir, self.apiurl, source_url, self.srcmd5, self.rev, self.linkinfo)
         return r
 
+    @fail_if_git()
     def addfile(self, n):
         from ..core import statfrmt
 
@@ -270,6 +313,7 @@ class Package:
         self.write_addlist()
         print(statfrmt('A', pathname))
 
+    @fail_if_git()
     def delete_file(self, n, force=False):
         """deletes a file if possible and marks the file as deleted"""
         state = '?'
@@ -301,24 +345,29 @@ class Package:
             self.write_deletelist()
         return (True, state)
 
+    @fail_if_git()
     def delete_localfile(self, n):
         try:
             os.unlink(os.path.join(self.dir, n))
         except:
             pass
 
+    @fail_if_git()
     def put_on_deletelist(self, n):
         if n not in self.to_be_deleted:
             self.to_be_deleted.append(n)
 
+    @fail_if_git()
     def put_on_conflictlist(self, n):
         if n not in self.in_conflict:
             self.in_conflict.append(n)
 
+    @fail_if_git()
     def put_on_addlist(self, n):
         if n not in self.to_be_added:
             self.to_be_added.append(n)
 
+    @fail_if_git()
     def clear_from_conflictlist(self, n):
         """delete an entry from the file, and remove the file if it would be empty"""
         if n in self.in_conflict:
@@ -341,6 +390,7 @@ class Package:
             self.write_conflictlist()
 
     # XXX: this isn't used at all
+    @fail_if_git()
     def write_meta_mode(self):
         # XXX: the "elif" is somehow a contradiction (with current and the old implementation
         #      it's not possible to "leave" the metamode again) (except if you modify pac.meta
@@ -350,23 +400,28 @@ class Package:
         elif self.ismetamode():
             self.store.unlink("_meta_mode")
 
+    @fail_if_git()
     def write_sizelimit(self):
         if self.size_limit and self.size_limit <= 0:
             self.store.unlink("_size_limit")
         else:
             self.store.size_limit = self.size_limit
 
+    @fail_if_git()
     def write_addlist(self):
         self.store.to_be_added = self.to_be_added or None
 
+    @fail_if_git()
     def write_deletelist(self):
         self.store.to_be_deleted = self.to_be_deleted or None
 
+    @fail_if_git()
     def delete_source_file(self, n):
         """delete local a source file"""
         self.delete_localfile(n)
         self.store.sources_delete_file(n)
 
+    @fail_if_git()
     def delete_remote_source_file(self, n):
         """delete a remote source file (e.g. from the server)"""
         from ..core import http_DELETE
@@ -376,6 +431,7 @@ class Package:
         u = makeurl(self.apiurl, ['source', self.prjname, self.name, n], query=query)
         http_DELETE(u)
 
+    @fail_if_git()
     def put_source_file(self, n, tdir, copy_only=False):
         from ..core import http_PUT
         from ..core import makeurl
@@ -391,11 +447,13 @@ class Package:
         if n in self.to_be_added:
             self.to_be_added.remove(n)
 
+    @fail_if_git()
     def __commit_update_store(self, tdir):
         """move files from transaction directory into the store"""
         for filename in os.listdir(tdir):
             os.rename(os.path.join(tdir, filename), self.store.sources_get_path(filename))
 
+    @fail_if_git()
     def __generate_commitlist(self, todo_send):
         root = ET.Element('directory')
         for i in sorted(todo_send.keys()):
@@ -437,6 +495,7 @@ class Package:
             todo.append(n.get('name'))
         return todo
 
+    @fail_if_git()
     def __send_commitlog(self, msg, local_filelist, validate=False):
         """send the commitlog and the local filelist to the server"""
         query = {}
@@ -454,6 +513,7 @@ class Package:
         return self.commit_filelist(self.apiurl, self.prjname, self.name,
                                     local_filelist, msg, **query)
 
+    @fail_if_git()
     def commit(self, msg='', verbose=False, skip_local_service_run=False, can_branch=False, force=False):
         from ..core import ET_ENCODING
         from ..core import branch_pkg
@@ -651,9 +711,11 @@ class Package:
             # file
             self.update_local_pacmeta()
 
+    @fail_if_git()
     def write_conflictlist(self):
         self.store.in_conflict = self.in_conflict or None
 
+    @fail_if_git()
     def updatefile(self, n, revision, mtime=None):
         from ..core import get_source_file
         from ..core import utime
@@ -677,6 +739,7 @@ class Package:
         if origfile is not None:
             os.unlink(origfile)
 
+    @fail_if_git()
     def mergefile(self, n, revision, mtime=None):
         from ..core import binary_file
         from ..core import get_source_file
@@ -732,6 +795,7 @@ class Package:
                 merge_cmd = 'diff3 ' + ' '.join(args)
                 raise oscerr.ExtRuntimeError(f'diff3 failed with exit code: {ret}', merge_cmd)
 
+    @fail_if_git()
     def update_local_filesmeta(self, revision=None):
         """
         Update the local _files file in the store.
@@ -740,6 +804,7 @@ class Package:
         meta = self.get_files_meta(revision=revision)
         store_write_string(self.absdir, '_files', meta)
 
+    @fail_if_git()
     def get_files_meta(self, revision='latest', skip_service=True):
         from ..core import ET_ENCODING
         from ..core import show_files_meta
@@ -776,23 +841,27 @@ class Package:
 
         return ET.tostring(root, encoding=ET_ENCODING)
 
+    @fail_if_git()
     def get_local_meta(self):
         """Get the local _meta file for the package."""
         meta = store_read_file(self.absdir, '_meta')
         return meta
 
+    @fail_if_git()
     def get_local_origin_project(self):
         """Get the originproject from the _meta file."""
         # if the wc was checked out via some old osc version
         # there might be no meta file: in this case we assume
         # that the origin project is equal to the wc's project
+
         meta = self.get_local_meta()
         if meta is None:
             return self.prjname
         root = xml_fromstring(meta)
         return root.get('project')
 
-    def is_link_to_different_project(self):
+    @skip_if_git(result=False)
+    def is_link_to_different_project(self) -> bool:
         """Check if the package is a link to a different project."""
         if self.name == "_project":
             return False
@@ -806,9 +875,8 @@ class Package:
         called).
         """
         from ..core import DirectoryServiceinfo
-        from ..git_scm import GitStore
 
-        if self.scm_url or isinstance(self.store, GitStore):
+        if self.scm_url or self.is_git_store:
             self.filenamelist = []
             self.filelist = []
             self.skipped = []
@@ -873,43 +941,52 @@ class Package:
                                     if i not in self.excluded
                                     if i not in self.filenamelist]
 
-    def islink(self):
+    @skip_if_git(result=False)
+    def islink(self) -> bool:
         """tells us if the package is a link (has 'linkinfo').
         A package with linkinfo is a package which links to another package.
         Returns ``True`` if the package is a link, otherwise ``False``."""
         return self.linkinfo.islink()
 
-    def isexpanded(self):
+    @skip_if_git(result=True)
+    def isexpanded(self) -> bool:
         """tells us if the package is a link which is expanded.
         Returns ``True`` if the package is expanded, otherwise ``False``."""
         return self.linkinfo.isexpanded()
 
-    def islinkrepair(self):
+    @skip_if_git(result=False)
+    def islinkrepair(self) -> bool:
         """tells us if we are repairing a broken source link."""
         return self.linkrepair
 
-    def ispulled(self):
+    @skip_if_git(result=False)
+    def ispulled(self) -> bool:
         """tells us if we have pulled a link."""
         return self.store.exists("_pulled")
 
-    def isfrozen(self):
+    @skip_if_git(result=False)
+    def isfrozen(self) -> bool:
         """tells us if the link is frozen."""
         return self.store.exists("_frozenlink")
 
-    def ismetamode(self):
+    @skip_if_git(result=False)
+    def ismetamode(self) -> bool:
         """tells us if the package is in meta mode"""
         return self.store.exists("_meta_mode")
 
+    @fail_if_git()
     def get_pulled_srcmd5(self):
         return self.store.read_string("_pulled")
 
-    def haslinkerror(self):
+    @skip_if_git(result=False)
+    def haslinkerror(self) -> bool:
         """
         Returns ``True`` if the link is broken otherwise ``False``.
         If the package is not a link it returns ``False``.
         """
         return self.linkinfo.haserror()
 
+    @fail_if_git()
     def linkerror(self):
         """
         Returns an error message if the link is broken otherwise ``None``.
@@ -917,12 +994,14 @@ class Package:
         """
         return self.linkinfo.error
 
-    def hasserviceinfo(self):
+    @skip_if_git(result=False)
+    def hasserviceinfo(self) -> bool:
         """
         Returns ``True``, if this package contains services.
         """
         return self.serviceinfo.lsrcmd5 is not None or self.serviceinfo.xsrcmd5 is not None
 
+    @fail_if_git()
     def update_local_pacmeta(self):
         """
         Update the local _meta file in the store.
@@ -936,11 +1015,13 @@ class Package:
             meta = b''.join(meta)
             store_write_string(self.absdir, '_meta', meta)
 
+    @fail_if_git()
     def findfilebyname(self, n):
         for i in self.filelist:
             if i.name == n:
                 return i
 
+    @fail_if_git()
     def get_status(self, excluded=False, *exclude_states):
         global store
         todo = self.todo
@@ -957,6 +1038,7 @@ class Package:
                 res.append((st, fname))
         return res
 
+    @fail_if_git()
     def status(self, n):
         """
         status can be::
@@ -1031,6 +1113,7 @@ class Package:
 
         return state
 
+    @fail_if_git()
     def get_diff(self, revision=None, ignoreUnversioned=False):
         from ..core import binary_file
         from ..core import get_source_file
@@ -1160,6 +1243,7 @@ class Package:
         for f in deleted:
             yield diff_add_delete(f, False, revision)
 
+    @fail_if_git()
     def merge(self, otherpac):
         for todo_entry in otherpac.todo:
             if todo_entry not in self.todo:
@@ -1210,6 +1294,7 @@ rev: %s
         self.url = data.get('Url', '')
         self.descr = data.get('%description', '')
 
+    @fail_if_git()
     def update_package_meta(self, force=False):
         """
         for the updatepacmetafromspec subcommand
@@ -1252,6 +1337,7 @@ rev: %s
         if reply == "y":
             package_obj.to_api(self.apiurl)
 
+    @fail_if_git()
     def mark_frozen(self):
         store_write_string(self.absdir, '_frozenlink', '')
         print()
@@ -1260,9 +1346,11 @@ rev: %s
         print("to merge the conflicts.")
         print()
 
+    @fail_if_git()
     def unmark_frozen(self):
         self.store.unlink("_frozenlink")
 
+    @fail_if_git()
     def latest_rev(self, include_service_files=False, expand=False):
         from ..core import show_upstream_rev
         from ..core import show_upstream_xsrcmd5
@@ -1288,6 +1376,7 @@ rev: %s
             upstream_rev = show_upstream_rev(self.apiurl, self.prjname, self.name, meta=self.meta, include_service_files=include_service_files)
         return upstream_rev
 
+    @fail_if_git()
     def __get_files(self, fmeta_root):
         from ..core import ET_ENCODING
 
@@ -1303,6 +1392,7 @@ rev: %s
                      int(i.get('size')), int(i.get('mtime')), skipped))
         return f
 
+    @fail_if_git()
     def __get_rev_changes(self, revfiles):
         kept = []
         added = []
@@ -1331,6 +1421,7 @@ rev: %s
 
         return kept, added, deleted, services
 
+    @fail_if_git()
     def update_needed(self, sinfo):
         # this method might return a false-positive (that is a True is returned,
         # even though no update is needed) (for details, see comments below)
@@ -1367,6 +1458,7 @@ rev: %s
                 return True
         return sinfo.get('srcmd5') != self.srcmd5
 
+    @fail_if_git()
     def update(self, rev=None, service_files=False, size_limit=None):
         from ..core import ET_ENCODING
         from ..core import dgst
@@ -1446,6 +1538,7 @@ rev: %s
             os.rmdir(os.path.join(self.storedir, '_in_update'))
         self.size_limit = old_size_limit
 
+    @fail_if_git()
     def __update(self, kept, added, deleted, services, fm, rev):
         from ..core import get_source_file
         from ..core import getTransActPath
@@ -1546,6 +1639,7 @@ rev: %s
         os.chdir(curdir)
         return r
 
+    @fail_if_git()
     def revert(self, filename):
         if filename not in self.filenamelist and filename not in self.to_be_added:
             raise oscerr.OscIOError(None, f'file \'{filename}\' is not under version control')
