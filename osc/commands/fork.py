@@ -69,6 +69,9 @@ class ForkCommand(osc.commandline.OscCommand):
             help="Fork the specified package instead the package from the devel project (which is the place where the package is developed)",
         )
 
+    # HACK: reuse method from the Osc class
+    _process_project_name = osc.commandline.Osc._process_project_name
+
     def run(self, args):
         from osc import conf as osc_conf
         from osc import core as osc_core
@@ -78,8 +81,9 @@ class ForkCommand(osc.commandline.OscCommand):
         from osc.output import tty
 
         # make a copy of project, package; if we change them, the original values remain in args
-        project = args.project
+        project = self._process_project_name(args.project)
         package = args.package
+        target_project = self._process_project_name(args.target_project)
 
         if project and "/" in project:
             self.parser.error(f"Invalid project: {project}")
@@ -209,7 +213,7 @@ class ForkCommand(osc.commandline.OscCommand):
             project,
             package if is_package else "_project",
             scmsync=fork_scmsync,
-            target_project=args.target_project,
+            target_project=target_project,
             target_package=args.target_package if is_package else None,
         )
         # XXX: the current OBS API is not ideal; we don't get any info whether the new package exists already; 404 would be probably nicer
