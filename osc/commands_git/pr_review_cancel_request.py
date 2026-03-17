@@ -10,10 +10,7 @@ class PullRequestReviewCancelRequestCommand(osc.commandline_git.GitObsCommand):
     parent = "PullRequestReviewCommand"
 
     def init_arguments(self):
-        self.add_argument(
-            "id",
-            help="Pull request ID in <owner>/<repo>#<number> format",
-        )
+        self.add_argument_owner_repo_pull()
         self.add_argument(
             "user",
             nargs="*",
@@ -46,7 +43,7 @@ class PullRequestReviewCancelRequestCommand(osc.commandline_git.GitObsCommand):
 
         self.print_gitea_settings()
 
-        owner, repo, number = gitea_api.PullRequest.split_id(args.id)
+        owner, repo, number = args.owner_repo_pull
         if args.all:
             gitea_api.PullRequest.cancel_review_requests_all(
                 self.gitea_conn, owner, repo, number, args.exclude, args.dry_run

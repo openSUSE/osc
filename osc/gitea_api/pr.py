@@ -883,6 +883,9 @@ class PullRequest(GiteaModel):
                     continue
                 if user[0] == "@":
                     team = user[1:]
+                    if "/" in team:
+                        # make the input more permissive by ignoring the org if specified
+                        team = team.split("/")[-1]
                     if team.lower() not in team_reviews:
                         msg = f"Team {team} has no pending review requests in {owner}/{repo}#{number}"
                         raise GitObsRuntimeError(msg)
@@ -895,7 +898,7 @@ class PullRequest(GiteaModel):
 
         data = {
             "reviewers": users_to_remove,
-            "teams": teams_to_remove,
+            "team_reviewers": teams_to_remove,
         }
 
         if not users_to_remove and not teams_to_remove:
