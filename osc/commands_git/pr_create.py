@@ -88,6 +88,11 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Do not actually create the pull request",
         )
+        self.add_argument(
+            "--allow-empty",
+            action="store_true",
+            help="Allow creating a pull request even if there are no changes",
+        )
 
     def run(self, args):
         if args.separate_requests:
@@ -99,7 +104,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             self.parser.error("All of the following options must be used together: --source-owner, --source-repo, --source-branch")
 
         self.print_gitea_settings()
-        self._create_pr(args)
+        self._create_pr(args, allow_empty=args.allow_empty)
 
     def _run_separate_requests(self, args):
         from osc import gitea_api
@@ -128,7 +133,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             except Exception as e:
                 print(f"Error processing {pkg_name}: {e}", file=sys.stderr)
 
-    def _create_pr(self, args, git_dir=".", ignore_identical=False):
+    def _create_pr(self, args, *, git_dir=".", ignore_identical=False, allow_empty=False):
         from osc import gitea_api
         from osc.output import tty
 
@@ -145,7 +150,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
                 raise gitea_api.GitObsRuntimeError(f"Unable to determine current branch in {git_dir}. Are you in 'detached HEAD' state?")
 
             local_commit = git.get_branch_head(local_branch)
-        
+
         if args.self and not use_local_git:
             self.parser.error("--self can only be used together with local git repository (i.e. without --source-owner, --source-repo, --source-branch)")
 
@@ -211,11 +216,13 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             sys.exit(1)
 
         if source_branch_obj.commit == target_branch_obj.commit:
-            msg = "Source and target are identical, make and push changes to the remote source repo first"
+            msg = "Source and target are identical"
             if ignore_identical:
-                return 
-            print(f"{tty.colorize('ERROR', 'red,bold')}: {msg}")
-            sys.exit(1)
+                return
+            if args.allow_empty:
+                print(f" * {msg}", file=sys.stderr)
+            else:
+                raise gitea_api.GitObsRuntimeError(msg)
 
         title = args.title or ""
         description = args.description or ""
