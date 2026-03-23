@@ -709,7 +709,9 @@ class GitStore(LocalGitStore):
         from shutil import copy
         from ..util.file_utils import merge_configs
 
-        if not Path(f"{self.abspath}/.git").is_dir:
+
+        git_dir = self._git._run_git(["rev-parse", "--path-format=absolute", "--git-dir"])
+        if not Path(git_dir).is_dir:
             return
 
         srcfile = f"{srcdir}/.gitconfig"
@@ -718,7 +720,7 @@ class GitStore(LocalGitStore):
         if not Path(srcfile).is_file():
             return
 
-        dest = f"{self.abspath}/.git/config"
+        dest = os.path.join(git_dir, "config")
         if not Path(dest).is_file():
             copy(srcfile, dest)
             return
