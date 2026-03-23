@@ -6745,7 +6745,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 store.assert_is_package()
                 project = store.project
                 package = store.package
-                if len(args) == 1:
+                if len(args) == 2:
+                    repository = args[0]
+                    arch = args[1]
+                elif len(args) == 1:
                     repository, arch = self._find_last_repo_arch(args[0], fatal=False)
                     if repository is None:
                         # no local build with this repo was done
