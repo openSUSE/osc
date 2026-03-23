@@ -98,6 +98,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         import sys
         from osc import gitea_api
         from osc import obs_api
+        from osc.git_scm import GitStore
         from osc.util.xml import xml_indent
         from osc.util.xml import ET
 
@@ -271,19 +272,24 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
             "changed": {},
         }
 
+        store = GitStore(base_dir, check=False)
+        is_project = store.is_project
+
         # TODO: determine if the submodules point to packages or something else; submodules may point to arbitrary git repos such as other packages, projects or anything else
         all_submodules = sorted(set(base_submodules) | set(head_submodules))
         for i in all_submodules:
+            if is_project:
+                if i in base_submodules:
+                    url = base_submodules[i].get("url", "")
+                    if not url.startswith("../../"):
+                        msg = f"Incorrect path '{url}' in base submodule '{i}'. Relative path starting with '../../' expected'."
+                        raise gitea_api.GitObsRuntimeError(msg)
 
-            if i in base_submodules:
-                url = base_submodules[i].get("url", "")
-                if not url.startswith("../../"):
-                    print(f"Warning: incorrect path '{url}' in base submodule '{i}'", file=sys.stderr)
-
-            if i in head_submodules:
-                url = head_submodules[i].get("url", "")
-                if not url.startswith("../../"):
-                    print(f"Warning: incorrect path '{url}' in head submodule '{i}'", file=sys.stderr)
+                if i in head_submodules:
+                    url = head_submodules[i].get("url", "")
+                    if not url.startswith("../../"):
+                        msg = f"Incorrect path '{url}' in head submodule '{i}'. Relative path starting with '../../' expected'."
+                        raise gitea_api.GitObsRuntimeError(msg)
 
             if i in base_submodules and i not in head_submodules:
                 submodule_diff["removed"][i] = base_submodules[i]
@@ -295,7 +301,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     if key not in base_submodules[i] and key in head_submodules[i]:
                         # we allow adding new keys in the pull request to fix missing data
                         pass
-                    else:
+                    elif is_project:
                         base_value = base_submodules[i].get(key, None)
                         head_value = head_submodules[i].get(key, None)
                         assert base_value == head_value, f"Submodule metadata has changed: key='{key}', base_value='{base_value}', head_value='{head_value}'"
