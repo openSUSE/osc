@@ -18,7 +18,16 @@ def ignore_http_errors(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
-        from urllib3.exceptions import NameResolutionError, MaxRetryError
+        # HACK: NameResolutionError and MaxRetryError are not available in urllib3 v1, let's ignore all exceptions in this case
+        try:
+            from urllib3.exceptions import NameResolutionError
+        except ImportError:
+            NameResolutionError = Exception
+
+        try:
+            from urllib3.exceptions import MaxRetryError
+        except ImportError:
+            MaxRetryError = Exception
 
         try:
             response = func(*args, **kwargs)
