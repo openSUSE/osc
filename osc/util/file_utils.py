@@ -16,18 +16,15 @@ def merge_files_by_prefix(src, dest):
 
 
 def merge_configs(src, dest, sections_to_ignore=()):
-    import configparser
+    import subprocess
 
-    src_obj = configparser.ConfigParser(interpolation=None)
-    src_obj.read(src)
+    src_gitconfig_lines = subprocess.check_output(["git", "config", "--file", src, "--list"], encoding="utf-8").splitlines()
 
-    for section in sections_to_ignore:
-        src_obj.pop(section)
+    for line in src_gitconfig_lines:
+        key, value = line.split("=", 1)
 
-    dest_obj = configparser.ConfigParser(interpolation=None)
-    dest_obj.read(dest)
+        section = key.split(".", 1)[0]
+        if section in sections_to_ignore:
+            continue
 
-    dest_obj.read_dict(src_obj)
-
-    with open(dest, "w") as dest_file:
-        dest_obj.write(dest_file)
+        subprocess.run(["git", "config", "--file", dest, key, value])
