@@ -670,57 +670,50 @@ class GitStore(LocalGitStore):
         """
         Make sure git repository has proper layout (e.g. adjust content in .gitattributes, .gitignore and .gitconfig)
         """
+        import subprocess
+
         from osc import gitea_api
+        from osc.util.gitattributes import GitAttributes
+        from osc.util.gitignore import GitIgnore
 
         need_commit = True
+        changed_files = []
         if self._git.is_initialized():
             need_commit = False
         else:
             self._git.init(initial_branch=initial_branch)
 
-        self._merge_files_if_exist(".gitattributes", template_dir)
-        self._merge_files_if_exist(".gitignore", template_dir)
-        self._merge_configs_if_exist(template_dir)
+        # merge .gitattributes
+        fn = ".gitattributes"
+        other_path = os.path.join(template_dir, fn)
+        if os.path.isfile(other_path):
+            other_obj = GitAttributes.from_file(other_path)
+            self_path = fn
+            self_obj = GitAttributes.from_file(self_path, missing_ok=True)
+            self_obj.merge(other_obj)
+            self_obj.to_file(self_path)
+            changed_files.append(self_path)
+
+        # merge .gitignore
+        fn = ".gitignore"
+        other_path = os.path.join(template_dir, fn)
+        if os.path.isfile(other_path):
+            other_obj = GitIgnore.from_file(other_path)
+            self_path = fn
+            self_obj = GitIgnore.from_file(self_path, missing_ok=True)
+            self_obj.merge(other_obj)
+            self_obj.to_file(self_path)
+            changed_files.append(self_path)
+
+        # merge .gitconfig into the local git config
+        other_path = os.path.join(template_dir, ".gitconfig")
+        if os.path.isfile(other_path):
+            other_lines = subprocess.check_output(["git", "config", "--file", other_path, "--list"], encoding="utf-8").splitlines()
+            for line in other_lines:
+                key, value = line.split("=", 1)
+                subprocess.run(["git", "config", "set", "--local", key, value])
 
         if need_commit:
-            files = []
-            for f in [".gitattributes", ".gitignore"]:
-                if Path(f).is_file():
-                    files += [f]
-            if files:
-                self._git.add(files)
-                self._git.commit("Initial commit")
-
-    def _merge_files_if_exist(self, filename: str, srcdir: str):
-        from shutil import copy
-        from ..util.file_utils import merge_files_by_prefix
-
-        if not Path(f"{srcdir}/{filename}").is_file():
-            return
-
-        if not Path(f"{self.abspath}/{filename}").is_file():
-            copy(f"{srcdir}/{filename}", self.abspath)
-            return
-
-        # here both source and dest file exists - let's merge them
-        merge_files_by_prefix(f"{srcdir}/{filename}", f"{self.abspath}/{filename}")
-
-    def _merge_configs_if_exist(self, srcdir: str):
-        from shutil import copy
-        from ..util.file_utils import merge_configs
-
-
-        git_dir = self._git._run_git(["rev-parse", "--path-format=absolute", "--git-dir"])
-        if not Path(git_dir).is_dir:
-            return
-
-        srcfile = f"{srcdir}/.gitconfig"
-        if not Path(srcfile).is_file():
-            return
-
-        dest = os.path.join(git_dir, "config")
-        if not Path(dest).is_file():
-            copy(srcfile, dest)
-            return
-
-        merge_configs(srcfile, dest)
+            if changed_files:
+                self._git.add(changed_files)
+            self._git.commit("Initial commit")
