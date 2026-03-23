@@ -15,7 +15,7 @@ def merge_files_by_prefix(src, dest):
                     dest_file.write(line)
 
 
-def merge_configs(src, dest, sections_to_ignore=[]):
+def merge_configs(src, dest, sections_to_ignore=()):
     import configparser
 
     src_obj = configparser.ConfigParser(interpolation=None)
