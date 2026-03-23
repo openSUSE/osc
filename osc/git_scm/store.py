@@ -668,7 +668,7 @@ class GitStore(LocalGitStore):
 
     def obs_git_init(self, template_dir, initial_branch="main"):
         """
-        Make sure git repository has proper layout (e.g. adjust content in .gitattributes, .gitignore and .git/config)
+        Make sure git repository has proper layout (e.g. adjust content in .gitattributes, .gitignore and .gitconfig)
         """
         from osc import gitea_api
 
@@ -715,8 +715,6 @@ class GitStore(LocalGitStore):
             return
 
         srcfile = f"{srcdir}/.gitconfig"
-        if not Path(srcfile).is_file():
-            srcfile = f"{srcdir}/.git/config"
         if not Path(srcfile).is_file():
             return
 
