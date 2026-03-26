@@ -40,6 +40,12 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
             help="Filter by target branch.",
         )
         self.add_argument(
+            "--source-owner",
+            dest="source_owners",
+            action="append",
+            help="Filter by source owner.",
+        )
+        self.add_argument(
             "--no-draft",
             action="store_true",
             help="Filter by draft flag. Exclude pull requests with draft flag set.",
@@ -74,6 +80,7 @@ class PullRequestListCommand(osc.commandline_git.GitObsCommand):
                         owner,
                         repo,
                         state=args.state,
+                        source_owners=args.source_owners,
                         target_branch=target_branch,
                     )
                 )
