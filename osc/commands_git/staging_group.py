@@ -14,7 +14,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         self.add_argument_owner_repo_pull(
             dest="--target",
-            help="Target project pull request to modify. If not specified, a new pull request will be created.",
+            help="Target project pull request to modify (format: <owner>/<repo>#<pull-request-number>). If not specified, a new pull request will be created.",
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument(
@@ -46,8 +46,9 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
 
         self.add_argument_owner_repo_pull(
             dest="pr_list",
+            metavar="pr_id",
             nargs="*",
-            help="List of project pull request to be merged into the target project pull request",
+            help="List of project pull request to be merged into the target project pull request (format: <owner>/<repo>#<pull-request-number>)",
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument_owner_repo(
