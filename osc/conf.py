@@ -60,6 +60,7 @@ import sys
 import textwrap
 from io import BytesIO
 from io import StringIO
+from typing import Optional, Tuple
 from urllib.parse import urlsplit
 
 from . import credentials
@@ -1571,7 +1572,10 @@ def sanitize_apiurl(apiurl):
     return urljoin(*parse_apisrv_url(None, apiurl))
 
 
-def parse_apisrv_url(scheme, apisrv):
+def parse_apisrv_url(scheme: Optional[str], apisrv: str) -> Tuple[str, str, str]:
+    """
+    Parses the api server url ``apisrv`` and returns the tuple (scheme, url, path).
+    """
     if apisrv.startswith('http://') or apisrv.startswith('https://'):
         url = apisrv
     elif scheme is not None:
@@ -1582,17 +1586,17 @@ def parse_apisrv_url(scheme, apisrv):
     return scheme, url, path.rstrip('/')
 
 
-def urljoin(scheme, apisrv, path=''):
-    return f"{scheme}://{apisrv}" + path
+def urljoin(scheme: str, apisrv: str, path: str='') -> str:
+    return f"{scheme}://{apisrv}{path}"
 
 
-def is_known_apiurl(url):
+def is_known_apiurl(url: str) -> bool:
     """returns ``True`` if url is a known apiurl"""
     apiurl = sanitize_apiurl(url)
     return apiurl in config['api_host_options']
 
 
-def extract_known_apiurl(url):
+def extract_known_apiurl(url: str) -> Optional[str]:
     """
     Return longest prefix of given url that is known apiurl,
     None if there is no known apiurl that is prefix of given url.
