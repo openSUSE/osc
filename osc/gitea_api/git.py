@@ -3,7 +3,6 @@ import re
 import subprocess
 import urllib
 from typing import Dict
-from pathlib import Path
 from typing import Iterator
 from typing import List
 from typing import Optional
@@ -114,9 +113,6 @@ class Git:
         if quiet:
             cmd += ["-q"]
         self._run_git(cmd, mute_stderr=mute_stderr)
-
-    def is_initialized(self):
-        return Path(f"{self.abspath}/.git").exists()
 
     def clone(self,
         url: str,
@@ -291,7 +287,7 @@ class Git:
     # CONFIG
 
     def set_config(self, key: str, value: str):
-        self._run_git(["config", key, value])
+        self._run_git(["config", "--local", key, value])
 
     # REMOTES
 

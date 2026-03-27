@@ -128,6 +128,6 @@ class RepoInitCommand(osc.commandline_git.GitObsCommand):
             print(f"Destination folder ({dest}) cannot be the template to iself ({src})", file=sys.stderr)
             exit(1)
 
-        git_scm.GitStore(dest, check=False).obs_git_init(src)
+        git_scm.GitStore.obs_git_init(dest, src)
 
         print("", file=sys.stderr)
