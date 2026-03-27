@@ -89,11 +89,12 @@ class Manifest:
 
         return None
 
-    def get_package_paths(self, project_path: str):
+    def get_package_paths(self, project_path: str, *, relative: bool = False):
         """
         Return all paths to the existing package directories in a project.
         """
         result = []
+        project_path = os.path.abspath(project_path)
 
         for path in self.packages:
             package_path = os.path.normpath(os.path.join(project_path, path))
@@ -112,6 +113,9 @@ class Manifest:
                 package_path = os.path.join(topdir_path, fn)
                 if os.path.isdir(package_path):
                     result.append(package_path)
+
+        if relative:
+            result = [os.path.relpath(i, project_path) for i in result]
 
         return result
 
