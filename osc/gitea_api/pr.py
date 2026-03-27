@@ -470,6 +470,7 @@ class PullRequest(GiteaModel):
         *,
         state: Optional[str] = "open",
         labels: Optional[List[int]] = None,
+        source_owners: Optional[List[str]] = None,
         target_branch: Optional[str] = None,
     ) -> List["PullRequest"]:
         """
@@ -480,6 +481,7 @@ class PullRequest(GiteaModel):
         :param repo: Name of the repo.
         :param state: Filter by state: open, closed, all. Defaults to open.
         :param labels: Filter by labels, defaults to no filtering
+        :param source_owner: Filter by the source (head) owner of the pull request.
         :param target_branch: Filter by the branch that the pull request targets
                               (also confusingly called `base_branch`)
         """
@@ -500,6 +502,11 @@ class PullRequest(GiteaModel):
         obj_list = []
         for response in conn.request_all_pages("GET", url):
             obj_list.extend([cls(i, response=response, conn=conn) for i in response.json()])
+
+        if source_owners:
+            source_owners = [i.lower() for i in source_owners]
+            obj_list = [i for i in obj_list if i.head_owner.lower() in source_owners]
+
         return obj_list
 
     @classmethod

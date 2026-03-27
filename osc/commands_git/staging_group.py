@@ -14,7 +14,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         self.add_argument_owner_repo_pull(
             dest="--target",
-            help="Target project pull request to modify. If not specified, a new pull request will be created.",
+            help="Target project pull request to modify (format: <owner>/<repo>#<pull-request-number>). If not specified, a new pull request will be created.",
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument(
@@ -46,9 +46,21 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
 
         self.add_argument_owner_repo_pull(
             dest="pr_list",
-            nargs="+",
-            help="List of project pull request to be merged into the target project pull request",
+            metavar="pr_id",
+            nargs="*",
+            help="List of project pull request to be merged into the target project pull request (format: <owner>/<repo>#<pull-request-number>)",
         ).completer = osc.commandline_git.complete_pr
+
+        self.add_argument_owner_repo(
+            dest="--target-repo",
+            help="Target repo (format: <owner>/<repo>). Requires --source-owner."
+        )
+
+        self.add_argument(
+            "--source-owner",
+            action="append",
+            help="Source owner (e.g. a devel project)",
+        )
 
         self.add_argument(
             "--no-ssh-strict-host-key-checking",
@@ -78,14 +90,33 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
         if args.fork_branch and args.target:
             self.parser.error("--fork-branch conflicts with --target")
 
+        if args.pr_list and args.target_repo:
+            self.parser.error("--target-repo conflicts with a list of pull request IDs")
+
+        if args.target_repo and not args.source_owner:
+            self.parser.error("--target-repo requires --source-owner")
+
+        if not args.pr_list and not args.target_repo:
+            self.parser.error("Either a list of pull request IDs or --target-repo with --source-owner are required")
+
         cache_dir = os.path.abspath(args.cache_dir) if args.cache_dir else None
 
         self.print_gitea_settings()
 
         pr_obj_list = []
         pr_references = []
-        target_owner = None
-        target_repo = None
+        if args.target_repo:
+            target_owner, target_repo = args.target_repo
+            pr_obj_list = gitea_api.PullRequest.list(self.gitea_conn, target_owner, target_repo, source_owners=args.source_owner)
+            pr_list = [(i.base_owner, i.base_repo, i.number) for i in pr_obj_list]
+            if args.target:
+                # explicitly remove the target PR from the pr_list
+                pr_list = [i for i in pr_list if i != args.target]
+        else:
+            target_owner = None
+            target_repo = None
+            pr_list = args.pr_list
+
         target_branch = None
         for owner, repo, number in args.pr_list:
             pr_obj = gitea_api.PullRequest.get(self.gitea_conn, owner, repo, number)

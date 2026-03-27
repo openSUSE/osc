@@ -11,13 +11,14 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
     def init_arguments(self):
         self.add_argument_owner_repo_pull(
             dest="target",
-            help="Project pull request to modify",
+            help="Project pull request to modify (format: <owner>/<repo>#<pull-request-number>)",
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument_owner_repo_pull(
             dest="pr_list",
+            metavar="pr_id",
             nargs="+",
-            help="List of package pull requests to be removed from the project pull request",
+            help="List of package pull requests to be removed from the project pull request (format: <owner>/<repo>#<pull-request-number>)",
         ).completer = osc.commandline_git.complete_pr
 
         self.add_argument(
