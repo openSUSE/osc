@@ -75,11 +75,12 @@ class Git:
     def __init__(self, workdir):
         self.abspath = os.path.abspath(workdir)
 
-    def _run_git(self, args: List[str], mute_stderr: bool = False) -> str:
+    def _run_git(self, args: List[str], use_topdir: bool = False, mute_stderr: bool = False) -> str:
+        cwd = self.topdir if use_topdir else self.abspath
         # HACK: having 2 nearly identical commands is stupid, but it muted a mypy error
         if mute_stderr:
-            return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath, stderr=subprocess.DEVNULL).strip()
-        return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=self.abspath).strip()
+            return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=cwd, stderr=subprocess.DEVNULL).strip()
+        return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=cwd).strip()
 
     @property
     def topdir(self) -> Optional[str]:
@@ -518,7 +519,7 @@ class Git:
             submodule_entry = result.setdefault(submodule, {})
             submodule_entry[key] = value
 
-        lines = self._run_git(["submodule", "status"]).splitlines()
+        lines = self._run_git(["submodule", "status"], use_topdir=True).splitlines()
 
         for line in lines:
             match = STATUS_RE.match(line)

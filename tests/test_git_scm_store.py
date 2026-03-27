@@ -383,6 +383,10 @@ class TestGitStoreProject(unittest.TestCase):
         paths = store.manifest.get_package_paths(store.topdir)
         self.assertEqual(paths, [pkg_path])
 
+        # test relative package paths
+        paths = store.manifest.get_package_paths(store.topdir, relative=True)
+        self.assertEqual(paths, ["package"])
+
 
 if __name__ == "__main__":
     unittest.main()
