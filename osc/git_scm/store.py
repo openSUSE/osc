@@ -665,3 +665,58 @@ class GitStore(LocalGitStore):
             "project": project,
         }
         return result
+
+    @classmethod
+    def obs_git_init(cls, dest, template_dir, initial_branch="main"):
+        """
+        Make sure git repository has proper layout (e.g. adjust content in .gitattributes, .gitignore and .gitconfig)
+        """
+        import subprocess
+
+        from osc import gitea_api
+        from osc.util.gitattributes import GitAttributes
+        from osc.util.gitignore import GitIgnore
+
+        need_commit = True
+        changed_files = []
+
+        git = gitea_api.Git(dest)
+        if os.path.exists(os.path.join(dest, ".git")):
+            need_commit = False
+        else:
+            git.init(initial_branch=initial_branch)
+
+        # merge .gitattributes
+        fn = ".gitattributes"
+        other_path = os.path.join(template_dir, fn)
+        if os.path.isfile(other_path):
+            other_obj = GitAttributes.from_file(other_path)
+            self_path = os.path.join(git.topdir, fn)
+            self_obj = GitAttributes.from_file(self_path, missing_ok=True)
+            self_obj.merge(other_obj)
+            self_obj.to_file(self_path)
+            changed_files.append(self_path)
+
+        # merge .gitignore
+        fn = ".gitignore"
+        other_path = os.path.join(template_dir, fn)
+        if os.path.isfile(other_path):
+            other_obj = GitIgnore.from_file(other_path)
+            self_path = os.path.join(git.topdir, fn)
+            self_obj = GitIgnore.from_file(self_path, missing_ok=True)
+            self_obj.merge(other_obj)
+            self_obj.to_file(self_path)
+            changed_files.append(self_path)
+
+        # merge .gitconfig into the local git config
+        other_path = os.path.join(template_dir, ".gitconfig")
+        if os.path.isfile(other_path):
+            other_lines = subprocess.check_output(["git", "config", "--file", other_path, "--list"], encoding="utf-8").splitlines()
+            for line in other_lines:
+                key, value = line.split("=", 1)
+                git.set_config(key, value)
+
+        if need_commit:
+            if changed_files:
+                git.add(changed_files)
+            git.commit("Initial commit")
