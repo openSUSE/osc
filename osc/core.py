@@ -3868,14 +3868,7 @@ def copy_pac(
         if force_meta_update or not found:
             new_meta = meta
 
-    if new_meta:
-        # we are about to create a new package instance. be sure we don't blindly copy scm sources
-        # instead hinting the user to think about is setup.
-        root = xml_fromstring(b''.join(src_meta))
-        if root.find("scmsync") is not None:
-            print("Note: the source is managed via SCM. You may want to reference directly to the same scm instead?")
-            return
-    else:
+    if not new_meta:
         # destination exists, we copy from any source, but avoid the backend error
         # when trying to copy on an scmsync package.
         dst_meta = show_package_meta(dst_apiurl, dst_project, dst_package)
