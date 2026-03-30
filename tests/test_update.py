@@ -126,6 +126,20 @@ class TestUpdate(OscTestCase):
     def testUpdateRestore(self):
         """local file 'foo' was deleted with a non osc command and will be restored"""
         self._change_to_pkg('restore')
+        # modify the file to force downloading it from the server
+        with open(".osc/foo", "a+") as f:
+            f.write("blah")
+        osc.core.Package('.').update()
+        exp = 'Restored \'foo\'\nAt revision 1.\n'
+        self.assertEqual(sys.stdout.getvalue(), exp)
+        self._check_digests('testUpdateRestore_files')
+
+    @GET('http://localhost/source/osctest/restore?rev=latest', file='testUpdateRestore_files')
+    @GET('http://localhost/source/osctest/restore/_meta', file='meta.xml')
+    def testUpdateRestore_from_osc_sources(self):
+        """local file 'foo' was deleted with a non osc command and will be restored"""
+        self._change_to_pkg('restore')
+        # the file gets restored from .osc from a file that has the expected checksum
         osc.core.Package('.').update()
         exp = 'Restored \'foo\'\nAt revision 1.\n'
         self.assertEqual(sys.stdout.getvalue(), exp)
