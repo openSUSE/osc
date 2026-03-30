@@ -716,7 +716,8 @@ class Package:
         self.store.in_conflict = self.in_conflict or None
 
     @fail_if_git()
-    def updatefile(self, n, revision, mtime=None):
+    def updatefile(self, n, revision, mtime=None, *, md5=None):
+        import hashlib
         from ..core import get_source_file
         from ..core import utime
 
@@ -730,8 +731,20 @@ class Package:
         else:
             origfile = None
 
-        get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=storefilename,
-                        revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
+        storefilename_md5 = None
+        if md5 and os.path.isfile(storefilename):
+            digest = hashlib.md5()
+            with open(storefilename, "rb") as f:
+                while True:
+                    chunk = f.read(1024**2)
+                    if not chunk:
+                        break
+                    digest.update(chunk)
+            storefilename_md5 = digest.hexdigest()
+
+        if not md5 or md5 != storefilename_md5:
+            get_source_file(self.apiurl, self.prjname, self.name, n, targetfilename=storefilename,
+                            revision=revision, progress_obj=self.progress_obj, mtime=mtime, meta=self.meta)
 
         shutil.copyfile(storefilename, filename)
         if mtime:
@@ -1552,7 +1565,7 @@ rev: %s
                                                  f'failed to add file \'{f.name}\' file/dir with the same name already exists')
         # ok, the update can't fail due to existing files
         for f in added:
-            self.updatefile(f.name, rev, f.mtime)
+            self.updatefile(f.name, rev, f.mtime, md5=f.md5)
             print(statfrmt('A', os.path.join(pathn, f.name)))
         for f in deleted:
             # if the storefile doesn't exist we're resuming an aborted update:
@@ -1581,7 +1594,7 @@ rev: %s
                 merge_status = self.mergefile(f.name, rev, f.mtime)
                 print(statfrmt(merge_status, os.path.join(pathn, f.name)))
             elif state == '!':
-                self.updatefile(f.name, rev, f.mtime)
+                self.updatefile(f.name, rev, f.mtime, md5=f.md5)
                 print(f'Restored \'{os.path.join(pathn, f.name)}\'')
             elif state == 'C':
                 get_source_file(self.apiurl, self.prjname, self.name, f.name,
@@ -1601,10 +1614,10 @@ rev: %s
                 else:
                     # XXX: we cannot recover this case because we've no file
                     # to backup
-                    self.updatefile(f.name, rev, f.mtime)
+                    self.updatefile(f.name, rev, f.mtime, md5=f.md5)
                     print(statfrmt('U', os.path.join(pathn, f.name)))
             elif state == ' ' and self.findfilebyname(f.name).md5 != f.md5:
-                self.updatefile(f.name, rev, f.mtime)
+                self.updatefile(f.name, rev, f.mtime, md5=f.md5)
                 print(statfrmt('U', os.path.join(pathn, f.name)))
 
         # checkout service files
