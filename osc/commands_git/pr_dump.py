@@ -275,17 +275,34 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         store = GitStore(base_dir, check=False)
         is_project = store.is_project
 
+        def sanitize_url(submodules, key):
+            """
+            Sanitize submodule url by stripping trailing '.git' and '/'.
+            """
+            url = submodules[key].get("url", None)
+            if url is None:
+                return
+
+            if url.endswith(".git"):
+                url = url[:-4]
+
+            url = url.rstrip("/")
+
+            submodules[key]["url"] = url
+
         # TODO: determine if the submodules point to packages or something else; submodules may point to arbitrary git repos such as other packages, projects or anything else
         all_submodules = sorted(set(base_submodules) | set(head_submodules))
         for i in all_submodules:
             if is_project:
                 if i in base_submodules:
+                    sanitize_url(base_submodules, i)
                     url = base_submodules[i].get("url", "")
                     if not url.startswith("../../"):
                         msg = f"Incorrect path '{url}' in base submodule '{i}'. Relative path starting with '../../' expected'."
                         raise gitea_api.GitObsRuntimeError(msg)
 
                 if i in head_submodules:
+                    sanitize_url(head_submodules, i)
                     url = head_submodules[i].get("url", "")
                     if not url.startswith("../../"):
                         msg = f"Incorrect path '{url}' in head submodule '{i}'. Relative path starting with '../../' expected'."
