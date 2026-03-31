@@ -262,10 +262,7 @@ class Repo(GiteaModel):
             # checkout the pull request and check if HEAD matches head/sha from Gitea
             pr_branch = git.fetch_pull_request(pr_number, commit=commit, depth=depth, force=True)
             git.switch(pr_branch)
-            head_commit = git.get_branch_head()
-            assert (
-                head_commit == commit
-            ), f"HEAD of the current branch '{pr_branch}' is '{head_commit}' but the Gitea pull request points to '{commit}'"
+            git.reset(commit, hard=True)
         elif branch:
             git.switch(branch)
 

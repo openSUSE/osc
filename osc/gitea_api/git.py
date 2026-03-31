@@ -490,6 +490,14 @@ class Git:
             cmd += ["--porcelain"]
         return self._run_git(cmd)
 
+    def clean(self):
+        """
+        Remove untracked files from the working tree.
+        This includes also gitingored files.
+        """
+        cmd = ["clean", "-d", "-x", "--force"]
+        return self._run_git(cmd)
+
     # SUBMODULES
 
     def get_submodules(self) -> dict:
