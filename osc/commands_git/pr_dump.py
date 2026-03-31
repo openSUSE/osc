@@ -251,11 +251,15 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
         base_dir = os.path.join(path, "base")
         # we must use the `merge_base` instead of `head_commit`, because the latter changes after merging the PR and the `base` directory would contain incorrect data
         gitea_api.Repo.clone_or_update(self.gitea_conn, owner, repo, branch=pr_obj.base_branch, commit=pr_obj.merge_base, directory=base_dir)
+        git = gitea_api.Git(base_dir)
+        git.clean()
 
         head_dir = os.path.join(path, "head")
         gitea_api.Repo.clone_or_update(
             self.gitea_conn, owner, repo, pr_number=pr_obj.number, commit=pr_obj.head_commit, directory=head_dir, reference=base_dir
         )
+        git = gitea_api.Git(head_dir)
+        git.clean()
 
         with open(os.path.join(metadata_dir, "submodules-base.json"), "w", encoding="utf-8") as f:
             base_submodules = gitea_api.Git(base_dir).get_submodules()
