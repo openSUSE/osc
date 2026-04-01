@@ -12,9 +12,13 @@ class TestTrustedProjects(unittest.TestCase):
     def test_name(self):
         apiurl = "https://example.com"
         osc.conf.config["apiurl"] = apiurl
-        osc.conf.config.setdefault("api_host_options", {}).setdefault(apiurl, {}).setdefault("trusted_prj", None)
+        host_options = {
+            "apiurl": apiurl,
+            "username": "user",
+            "trusted_prj": [],
+        }
+        osc.conf.config.setdefault("api_host_options", {})[apiurl] = host_options
 
-        osc.conf.config["api_host_options"][apiurl]["trusted_prj"] = []
         self.assertRaises(UserAbort, check_trusted_projects, apiurl, ["foo"], interactive=False)
 
         osc.conf.config["api_host_options"][apiurl]["trusted_prj"] = ["qwerty", "foo", "asdfg"]
@@ -23,7 +27,12 @@ class TestTrustedProjects(unittest.TestCase):
     def test_glob(self):
         apiurl = "https://example.com"
         osc.conf.config["apiurl"] = apiurl
-        osc.conf.config.setdefault("api_host_options", {}).setdefault(apiurl, {}).setdefault("trusted_prj", None)
+        host_options = {
+            "apiurl": apiurl,
+            "username": "user",
+            "trusted_prj": [],
+        }
+        osc.conf.config.setdefault("api_host_options", {})[apiurl] = host_options
 
         osc.conf.config["api_host_options"][apiurl]["trusted_prj"] = ["f*"]
         check_trusted_projects(apiurl, ["foo"], interactive=False)

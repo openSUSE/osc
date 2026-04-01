@@ -165,14 +165,19 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
         else:
             type_ = self.type
 
-        if get_origin(type_) != list:
+        origin = get_origin(type_)
+        if origin not in (list, dict):
             return None
 
         if not hasattr(type_, "__args__"):
             return None
 
-        inner_type = [i for i in type_.__args__ if i != type(None)][0]
-        return inner_type
+        if origin == list:
+            return [i for i in type_.__args__ if i != type(None)][0]
+        elif origin == dict:
+            return type_.__args__[1]
+
+        return None
 
     @property
     def is_optional(self):
@@ -185,7 +190,11 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
 
     @property
     def is_model_list(self):
-        return inspect.isclass(self.inner_type) and issubclass(self.inner_type, BaseModel)
+        return self.origin_type == list and inspect.isclass(self.inner_type) and issubclass(self.inner_type, BaseModel)
+
+    @property
+    def is_model_dict(self):
+        return self.origin_type == dict and inspect.isclass(self.inner_type) and issubclass(self.inner_type, BaseModel)
 
     def validate_type(self, value, expected_types=None):
         if not expected_types and self.is_optional and value is None:
@@ -265,12 +274,18 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
             result = obj._values[self.name]
 
             # convert dictionaries into objects
-            # we can't do it earlier because list is a standalone object that is not under our control
-            if result is not None and self.is_model_list:
-                for num, i in enumerate(result):
-                    if isinstance(i, dict):
-                        klass = self.inner_type
-                        result[num] = klass(**i, _parent=obj)
+            # we can't do it earlier because list/dict is a standalone object that is not under our control
+            if result is not None:
+                if self.is_model_list:
+                    for num, i in enumerate(result):
+                        if isinstance(i, dict):
+                            klass = self.inner_type
+                            result[num] = klass(**i, _parent=obj)
+                elif self.is_model_dict:
+                    for key, i in result.items():
+                        if isinstance(i, dict):
+                            klass = self.inner_type
+                            result[key] = klass(**i, _parent=obj)
 
             if self.get_callback is not None:
                 result = self.get_callback(obj, result)
@@ -332,6 +347,16 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
                 else:
                     i._parent = obj
                     new_value.append(i)
+            value = new_value
+        elif self.is_model_dict and isinstance(value, dict):
+            new_value = {}
+            for k, v in value.items():
+                if isinstance(v, dict):
+                    klass = self.inner_type
+                    new_value[k] = klass(**v, _parent=obj)
+                else:
+                    v._parent = obj
+                    new_value[k] = v
             value = new_value
         elif self.is_model and isinstance(value, str) and hasattr(self.origin_type, "XML_TAG_FIELD"):
             klass = self.origin_type
@@ -454,6 +479,8 @@ class BaseModel(metaclass=ModelMeta):
                 result[name] = value.dict()
             elif value is not None and field.is_model_list:
                 result[name] = [i.dict() for i in value]
+            elif value is not None and field.is_model_dict:
+                result[name] = {k: v.dict() for k, v in value.items()}
             else:
                 result[name] = value
 

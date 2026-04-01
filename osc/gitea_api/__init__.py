@@ -17,6 +17,7 @@ from .git import Git
 from .git_diff_generator import GitDiffGenerator
 from .issue_timeline_entry import IssueTimelineEntry
 from .json import json_dumps
+from .maintainership import Maintainership
 from .pr import PullRequest
 from .pr_review import PullRequestReview
 from .repo import Repo
