@@ -147,6 +147,11 @@ class OscMainCommand(MainCommand):
             # HACK: never ask for credentials when displaying help
             return
 
+        if args.command in ("initconfig", "ic"):
+            # HACK: let command handle config creation
+            self.args = args
+            return
+
         overrides = {}
         for i in args.setopt:
             key, value = i.split("=")
