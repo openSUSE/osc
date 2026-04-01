@@ -250,7 +250,6 @@ class HostOptions(OscOptions):
         super().__init__(_parent=_parent, **kwargs)
 
     apiurl: str = Field(
-        default=None,
         description=textwrap.dedent(
             """
             URL to the API server.
@@ -268,7 +267,6 @@ class HostOptions(OscOptions):
     )  # type: ignore[assignment]
 
     username: str = Field(
-        default=None,
         description=textwrap.dedent(
             """
             Username for the apiurl.
