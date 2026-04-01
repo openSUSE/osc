@@ -457,6 +457,30 @@ class Test(unittest.TestCase):
         m2 = TestModel(dct={"b": TestSubmodel(), "a": TestSubmodel()})
         self.assertEqual(m1, m2)
 
+    def test_dict_submodels(self):
+        class TestSubmodel(BaseModel):
+            text: str = Field(default="default")
+
+        class TestModel(BaseModel):
+            field: Dict[str, TestSubmodel] = Field(default={})
+
+        m = TestModel()
+
+        field = m.__fields__["field"]
+        self.assertEqual(field.is_model, False)
+        self.assertEqual(field.is_model_dict, True)
+        self.assertEqual(m.field, {})
+
+        m = TestModel(field={"a": {"text": "text"}})
+        self.assertIsInstance(m.field["a"], TestSubmodel)
+        self.assertEqual(m.field["a"].text, "text")
+
+        m = TestModel()
+        m.field["b"] = {"text": "value"}
+        # dict is converted to object next time the field is retrieved
+        self.assertIsInstance(m.field["b"], TestSubmodel)
+        self.assertEqual(m.field["b"].text, "value")
+
 
 if __name__ == "__main__":
     unittest.main()
