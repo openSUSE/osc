@@ -710,7 +710,7 @@ class SignatureAuthHandler(AuthHandlerBase):
                 output.print_msg(f"Using the first ssh key from ssh agent (see `ssh-add -L`): {selected_key}", print_to="debug")
 
             self.temp_pubkey = tempfile.NamedTemporaryFile(mode="w+")
-            self.temp_pubkey.write(keys_in_agent[0])
+            self.temp_pubkey.write(selected_key)
             self.temp_pubkey.flush()
             return self.temp_pubkey.name
 
