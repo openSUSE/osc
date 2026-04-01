@@ -1,3 +1,41 @@
+- 1.26.0
+  - Command-line:
+    - Add 'git-obs repo init' command
+    - Add 'git-obs pr review cancel-request' command
+    - Add '--allow-empty' option to 'git-obs pr create' command
+    - Add '--source-owner' option to 'git-obs pr list' command
+    - Add '--target-repo' and '--source-owner' args to 'git-obs staging group'
+    - Improve help of 'git-obs staging' commands
+    - Running 'git-obs pr create' without '--description' no longer pops up an editor
+    - Fix 'git-obs pr dump' by resetting the pull request branch to the target state and removing any untracked files
+    - Allow only relative submodule paths in 'git-obs pr dump'
+    - Fix Git.get_submodules() to always retrieve submodule paths relative to git topdir
+    - Fix 'osc up' to avoid downloading a file when .osc/sources has a matching copy already
+    - Fix 'osc buildlog' output by flushing TTY buffer
+    - Fix 'osc search': NameResolutionError and MaxRetryError are not available in urllib3 v1
+    - Speed fetching LFS objects in 'git-obs pr forward' up
+    - Support '.' expansion for projects in 'osc fork' command
+    - Extend 'osc maintainer' search with git based projects and packages
+  - Connection:
+    - Fix temp ssh public key file creation
+  - Configuration:
+    - Add 'http_manual_approve' with matching 'OSC_HTTP_MANUAL_APPROVE' env variable to enable user approval on HTTP requests that may change something
+  - Library:
+    - Add gitea_api.Maintainership class for parsing maintainership.json
+    - Add 'relative' argument to Manifest.get_package_paths()
+    - Sanitize submodule URLs in'git-obs pr dump' by removing trailing '.git' and '/'
+    - Fix BaseModel to handle Dict[str, BaseModel] fields
+    - Better handle GitStore in obs_scm.Package
+    - Fix GitObsMainCommand.gitea_login
+    - Sanitize multiple consequent slashes in prj/pac strings in core.slash_split()
+  - Tests:
+    - Fix broken tests dicovered after modifying BaseModel for Dict[str, BaseModel] fields
+  - Spec:
+    - Use pip to build rpm package
+    - Add basic pyproject.toml file
+    - Change license to SPDX format in setup.cfg
+    - Add more supported python versions to classifiers in setup.cfg
+
 - 1.25.0
   - Command-line:
     - Add 'git-obs pr forward' command that is close to 'osc sr',
