@@ -10,6 +10,9 @@ from .user import User
 
 class IssueTimelineEntry(GiteaModel):
     def __init__(self, *args, **kwargs):
+        if args and args[0] is None:
+            # gitea sometimes returns `null` instead of a timeline entry, this prevents a crash
+            args = [{}] + list(args[1:])
         super().__init__(*args, **kwargs)
         self._pull_request_review_cache = None
 
