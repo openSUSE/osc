@@ -6761,6 +6761,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         repository = args[0]
                         arch = args[1]
 
+        if not repository or not arch:
+            self.print_repos()
+
         if opts.multibuild_package:
             package = package + ":" + opts.multibuild_package
 
