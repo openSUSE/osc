@@ -20,12 +20,12 @@ class TestMaintainershipConverter(unittest.TestCase):
             f.write(text)
         return path
 
-    def _run_converter(self, path):
+    def _run_converter(self, path, in_place=False):
         from osc.commands_git.file_maintainership_migrate import FileMaintainershipMigrateCommand
 
         cmd = FileMaintainershipMigrateCommand.__new__(FileMaintainershipMigrateCommand)
 
-        args = type("Args", (), {"path": path})()
+        args = type("Args", (), {"path": path, "in_place": in_place})()
         stdout = io.StringIO()
         with contextlib.redirect_stdout(stdout):
             cmd.run(args)
@@ -103,6 +103,21 @@ class TestMaintainershipConverter(unittest.TestCase):
             f.write("not valid json")
         with self.assertRaises(json.JSONDecodeError):
             self._run_converter(path)
+
+    def test_in_place(self):
+        """With --in-place, result is written back to the file."""
+        path = self._write_file('{"":["alice","@group"],"pkg1":["bob"]}')
+        output = self._run_converter(path, in_place=True)
+        self.assertEqual(output, "")
+
+        with open(path, "r", encoding="utf-8") as f:
+            result = json.load(f)
+
+        self.assertEqual(result["header"]["document"], "obs-maintainers")
+        self.assertEqual(result["header"]["version"], "1.0")
+        self.assertEqual(result["project"]["users"], ["alice"])
+        self.assertEqual(result["project"]["groups"], ["group"])
+        self.assertEqual(result["packages"]["pkg1"]["users"], ["bob"])
 
 
 if __name__ == "__main__":

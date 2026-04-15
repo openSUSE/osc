@@ -11,6 +11,13 @@ class FileMaintainershipMigrateCommand(osc.commandline_git.GitObsCommand):
 
     def init_arguments(self):
         self.add_argument(
+            "-i",
+            "--in-place",
+            action="store_true",
+            default=False,
+            help="Write the result back to the original file instead of printing to stdout",
+        )
+        self.add_argument(
             "path",
             nargs="?",
             default="_maintainership.json",
@@ -24,4 +31,9 @@ class FileMaintainershipMigrateCommand(osc.commandline_git.GitObsCommand):
             data = f.read()
 
         obj = maintainership.Maintainership.from_string(data)
-        print(obj.to_string())
+
+        if args.in_place:
+            with open(args.path, "w", encoding="utf-8") as f:
+                f.write(obj.to_string())
+        else:
+            print(obj.to_string())
