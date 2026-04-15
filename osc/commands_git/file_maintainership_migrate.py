@@ -1,12 +1,13 @@
 import osc.commandline_git
 
 
-class MaintainershipCommand(osc.commandline_git.GitObsCommand):
+class FileMaintainershipMigrateCommand(osc.commandline_git.GitObsCommand):
     """
     Read _maintainership.json and convert it from legacy format to the current format
     """
 
-    name = "maintainership-converter"
+    name = "migrate"
+    parent = "FileMaintainershipCommand"
 
     def init_arguments(self):
         self.add_argument(

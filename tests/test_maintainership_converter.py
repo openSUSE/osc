@@ -21,9 +21,9 @@ class TestMaintainershipConverter(unittest.TestCase):
         return path
 
     def _run_converter(self, path):
-        from osc.commands_git.maintainership_converter import MaintainershipCommand
+        from osc.commands_git.file_maintainership_migrate import FileMaintainershipMigrateCommand
 
-        cmd = MaintainershipCommand.__new__(MaintainershipCommand)
+        cmd = FileMaintainershipMigrateCommand.__new__(FileMaintainershipMigrateCommand)
 
         args = type("Args", (), {"path": path})()
         stdout = io.StringIO()
