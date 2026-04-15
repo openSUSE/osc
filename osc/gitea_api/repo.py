@@ -15,10 +15,14 @@ from .user import User
 @functools.total_ordering
 class Repo(GiteaModel):
     def __eq__(self, other):
-        (self.owner, self.repo) == (other.owner, other.repo)
+        if other is None:
+            return False
+        return (self.owner, self.repo) == (other.owner, other.repo)
 
     def __lt__(self, other):
-        (self.owner, self.repo) < (other.owner, other.repo)
+        if other is None:
+            return False
+        return (self.owner, self.repo) < (other.owner, other.repo)
 
     @property
     def owner(self) -> str:

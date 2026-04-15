@@ -54,8 +54,8 @@ Scenario: List repos owned by a user and an organization
     Then the exit code is 0
      And stdout is
         """
-        pool/test-GitPkgA
         Admin/test-GitPkgA
+        pool/test-GitPkgA
         """
      And stderr is
         """
