@@ -3436,8 +3436,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         # Any referenced object does not exist, eg. the superseded request
                         root = xml_fromstring(e.read())
                         summary = root.find('summary')
-                        print(summary.text, file=sys.stderr)
-                        raise oscerr.WrongOptions("Object does not exist")
+                        raise oscerr.WrongOptions(summary.text or "Object does not exist")
 
                     # for OBS 2.0 and before
                     sr_actions = r.get_actions('submit')
