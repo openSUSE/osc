@@ -26,10 +26,11 @@ class TestMaintainershipConverter(unittest.TestCase):
         cmd = FileMaintainershipMigrateCommand.__new__(FileMaintainershipMigrateCommand)
 
         args = type("Args", (), {"path": path, "in_place": in_place})()
-        stdout = io.StringIO()
-        with contextlib.redirect_stdout(stdout):
+        self._stdout = io.StringIO()
+        self._stderr = io.StringIO()
+        with contextlib.redirect_stdout(self._stdout), contextlib.redirect_stderr(self._stderr):
             cmd.run(args)
-        return stdout.getvalue()
+        return self._stdout.getvalue()
 
     def test_legacy_format_converted(self):
         """Legacy format is converted to v1.0 format."""
@@ -91,10 +92,11 @@ class TestMaintainershipConverter(unittest.TestCase):
         self.assertEqual(result["packages"]["pkg"]["groups"], ["team"])
 
     def test_file_not_found(self):
-        """Non-existent file raises an error."""
+        """Non-existent file prints a message to stderr."""
         path = os.path.join(self.tmpdir, "nonexistent.json")
-        with self.assertRaises(FileNotFoundError):
-            self._run_converter(path)
+        output = self._run_converter(path)
+        self.assertEqual(output, "")
+        self.assertIn("File not found", self._stderr.getvalue())
 
     def test_invalid_json(self):
         """Invalid JSON raises an error."""

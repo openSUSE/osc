@@ -25,7 +25,14 @@ class FileMaintainershipMigrateCommand(osc.commandline_git.GitObsCommand):
         )
 
     def run(self, args):
+        import os
+        import sys
+
         from osc.gitea_api import maintainership
+
+        if not os.path.exists(args.path):
+            print(f"File not found: {args.path}", file=sys.stderr)
+            return
 
         with open(args.path, "r", encoding="utf-8") as f:
             data = f.read()

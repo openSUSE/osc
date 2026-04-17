@@ -3,7 +3,7 @@ import osc.commandline_git
 
 class FileCommand(osc.commandline_git.GitObsCommand):
     """
-    Manage files in a package
+    Manage metadata files in a repo
     """
 
     name = "file"
