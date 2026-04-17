@@ -15,10 +15,14 @@ from .user import User
 @functools.total_ordering
 class Repo(GiteaModel):
     def __eq__(self, other):
-        (self.owner, self.repo) == (other.owner, other.repo)
+        if other is None:
+            return False
+        return (self.owner, self.repo) == (other.owner, other.repo)
 
     def __lt__(self, other):
-        (self.owner, self.repo) < (other.owner, other.repo)
+        if other is None:
+            return False
+        return (self.owner, self.repo) < (other.owner, other.repo)
 
     @property
     def owner(self) -> str:
@@ -382,3 +386,13 @@ class Repo(GiteaModel):
             obj = cls.get(conn, obj.parent_obj.owner, obj.parent_obj.repo)
             result.append(obj)
         return result
+
+    @classmethod
+    def get_fork_tree_root(cls, conn: Connection, owner: str, repo: str) -> Optional["Repo"]:
+        """
+        Get the root of the fork tree associated with a repo.
+        """
+        obj = cls.get(conn, owner, repo)
+        while obj.parent_obj is not None:
+            obj = cls.get(conn, obj.parent_obj.owner, obj.parent_obj.repo)
+        return obj

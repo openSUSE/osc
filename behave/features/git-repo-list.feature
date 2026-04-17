@@ -11,6 +11,7 @@ Scenario: List repos owned by an organization
     Then the exit code is 0
      And stdout is
         """
+        pool/new_package
         pool/test-GitPkgA
         """
      And stderr is
@@ -22,7 +23,7 @@ Scenario: List repos owned by an organization
          * User: Admin
 
 
-        Total repos: 1
+        Total repos: 2
         """
 
 @destructive
@@ -54,8 +55,9 @@ Scenario: List repos owned by a user and an organization
     Then the exit code is 0
      And stdout is
         """
-        pool/test-GitPkgA
         Admin/test-GitPkgA
+        pool/new_package
+        pool/test-GitPkgA
         """
      And stderr is
         """
@@ -66,7 +68,7 @@ Scenario: List repos owned by a user and an organization
          * User: Admin
 
 
-        Total repos: 2
+        Total repos: 3
         """
 
 @destructive
@@ -75,6 +77,7 @@ Scenario: List repos owned by a user and an organization in json format
     When I execute git-obs with args "repo list --user=Admin --org=pool --export"
     Then the exit code is 0
      And stdout contains "\"owner\": \"pool\","
+     And stdout contains "\"repo\": \"new_package\","
      And stdout contains "\"repo\": \"test-GitPkgA\","
      And stdout contains "\"owner\": \"Admin\","
      And stdout contains "\"repo\": \"test-GitPkgA\","
@@ -87,5 +90,5 @@ Scenario: List repos owned by a user and an organization in json format
          * User: Admin
 
 
-        Total repos: 2
+        Total repos: 3
         """

@@ -69,6 +69,11 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             help="Target owner (default: parent of the source repo)",
         )
         self.add_argument(
+            "--target-repo",
+            metavar="REPO",
+            help="Target repo (default: repo in target owner that belongs to the same fork tree as the source repo)",
+        )
+        self.add_argument(
             "--target-branch",
             metavar="BRANCH",
             help="Target branch (default: derived from the current branch in local git repo)",
@@ -171,21 +176,41 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             target_repo = source_repo
         elif args.target_owner:
             target_owner = args.target_owner
-
-            target_repo = None
-            parents = gitea_api.Repo.get_parent_repos(self.gitea_conn, source_owner, source_repo)
-            for parent in parents:
-                if parent.owner.lower() == args.target_owner.lower():
-                    target_repo = parent.repo
-                    break
-            if not target_repo:
-                raise gitea_api.GitObsRuntimeError(f"Unable to create a pull request because owner '{target_owner}' has no matching parent repo for '{source_owner}/{source_repo}'")
-        elif source_repo_obj.parent_obj is None:
-            raise gitea_api.GitObsRuntimeError(f"Unable to create a pull request because repo '{source_owner}/{source_repo}' is not a fork")
+            if args.target_repo:
+                target_repo = args.target_repo
+            else:
+                target_repo = None
+                parents = gitea_api.Repo.get_parent_repos(self.gitea_conn, source_owner, source_repo)
+                for parent in parents:
+                    if parent.owner.lower() == args.target_owner.lower():
+                        target_repo = parent.repo
+                        break
         else:
             # remote git repo - target
             target_owner = source_repo_obj.parent_obj.owner
             target_repo = source_repo_obj.parent_obj.repo
+
+        source_fork_root = gitea_api.Repo.get_fork_tree_root(self.gitea_conn, source_owner, source_repo)
+        target_fork_root = None
+
+        if not target_repo:
+            # we try repo that matches the source repo, they need to have the same fork root
+            try:
+                target_fork_root = gitea_api.Repo.get_fork_tree_root(self.gitea_conn, target_owner, source_repo)
+                if target_fork_root == source_fork_root:
+                    target_repo = source_repo
+            except gitea_api.GiteaException as e:
+                if e.status != 404:
+                    raise
+
+        if not target_repo:
+            raise gitea_api.GitObsRuntimeError(f"Unable to detect target repo, please specify one via --target-repo")
+
+        if not target_fork_root:
+            target_fork_root = gitea_api.Repo.get_fork_tree_root(self.gitea_conn, target_owner, target_repo)
+
+        if source_fork_root != target_fork_root:
+            raise gitea_api.GitObsRuntimeError(f"Unable to create a pull request because repos '{source_owner}/{source_repo}' and '{target_owner}/{target_repo}' do not belong to the same fork tree")
 
         if args.target_branch:
             target_branch = args.target_branch
