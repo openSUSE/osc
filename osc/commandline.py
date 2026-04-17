@@ -1691,6 +1691,7 @@ class Osc(cmdln.Cmdln):
                 apiurl = store.apiurl
                 project = store.project
                 if len(args) < 1:
+                    store.assert_is_package()
                     package = store.package
                 else:
                     package = args[0]
