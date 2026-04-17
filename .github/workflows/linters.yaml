@@ -34,9 +34,10 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v6
+      - run: pip install ruff
       - uses: akaihola/darker@v3.0.0
         with:
-          options: "--check --diff --color --line-length=120"
+          options: "--check --diff --color --line-length=120 --formatter=ruff --lint ruff"
           src: "."
 
   pylint_errors:
