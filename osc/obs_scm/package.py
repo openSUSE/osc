@@ -291,7 +291,7 @@ class Package:
         from ..core import makeurl
 
         source_url = makeurl(self.apiurl, ['source', self.prjname, self.name])
-        r = info_templ % (self.prjname, self.name, self.absdir, self.apiurl, source_url, self.srcmd5, self.rev, self.linkinfo)
+        r = info_templ % (self.prjname, self.name, self.absdir, self.apiurl, source_url, self.srcmd5, self.rev, self.linkinfo, self.linkinfo and self.linkinfo.rev or None)
         return r
 
     @fail_if_git()

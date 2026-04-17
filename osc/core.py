@@ -238,6 +238,7 @@ Source URL: %s
 srcmd5: %s
 Revision: %s
 Link info: %s
+Link revision: %s
 """
 
 project_info_templ = """\
