@@ -34,8 +34,6 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
       - uses: actions/setup-python@v6
-      - name: 'Install dependencies'
-        run: pip install darker[ruff] graylint ruff
       - name: 'Check formatting (darker)'
         run: pipx run --spec "darker[ruff]>=3.0.0" darker --check --diff --line-length=120 --formatter ruff .
       - name: 'Run linter (graylint)'
