@@ -16,10 +16,10 @@ jobs:
   mypy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
-      - uses: actions/setup-python@v4
+      - uses: actions/setup-python@v6
       - run: pip config set global.break-system-packages 1
       - run: pip install mypy
       - run: pip install types-cryptography types-urllib3
@@ -29,15 +29,17 @@ jobs:
   darker:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-python@v4
-      - uses: akaihola/darker@1.6.1
-        with:
-          options: "--check --diff --color --line-length=120"
-          src: "."
+      - uses: actions/setup-python@v6
+      - name: 'Install dependencies'
+        run: pip install darker[ruff] graylint ruff
+      - name: 'Check formatting (darker)'
+        run: pipx run --spec "darker[ruff]>=3.0.0" darker --check --diff --line-length=120 --formatter ruff .
+      - name: 'Run linter (graylint)'
+        run: pipx run --spec "graylint>=2.0.0" graylint --lint "ruff check" .
 
   pylint_errors:
     name: 'Run pylint that reports only errors'
@@ -51,7 +53,7 @@ jobs:
             sudo pip3 config set global.break-system-packages 1
             sudo pip3 install pylint
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -82,18 +84,18 @@ jobs:
             sudo pip3 config set global.break-system-packages 1
             sudo pip3 install pylint
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           path: osc-pr
           persist-credentials: false
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: ${{ github.event.pull_request.base.sha }}
           path: osc-master
           persist-credentials: false
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           repository: ${{ matrix.plugin_repository }}
           path: plugin
@@ -134,3 +136,4 @@ jobs:
             echo
             echo ">>>>> diff <<<<<"
             diff -u pylint-osc-master.log pylint-osc-pr.log
+
