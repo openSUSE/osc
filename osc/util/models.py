@@ -506,8 +506,8 @@ class BaseModel(metaclass=ModelMeta):
         import json
 
         with open(path, "w", encoding="utf-8") as f:
-            # we prefer key ordering according to the fields in the model
-            json.dump(self.dict(), f, sort_keys=False, indent=4)
+            # we prefer fixed, well-defined key ordering
+            json.dump(self.dict(), f, sort_keys=True, indent=2)
 
     @classmethod
     def from_string(cls, text: str) -> "Self":
