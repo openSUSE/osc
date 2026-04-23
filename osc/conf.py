@@ -2145,20 +2145,18 @@ def identify_conf():
     if 'OSC_CONFIG' in os.environ:
         return os.environ.get('OSC_CONFIG')
 
-    conffile_home = "~/.oscrc"
-    conffile_home_expanded = os.path.expanduser(conffile_home)
-    conffile_xdg = os.path.join(xdg.XDG_CONFIG_HOME, "osc", "oscrc")
-    conffile_xdg_expanded = os.path.expanduser(conffile_xdg)
+    conffile = os.path.join(xdg.XDG_CONFIG_HOME, "osc", "oscrc")
 
-    # prefer config in XDG location, warn if there are configs in multiple locations
-    if os.path.exists(conffile_xdg_expanded):
-        # we need to use islink() because ~/.oscrc can be a dangling symlink and isfile() would return False in such case
-        if os.path.exists(conffile_home_expanded) or os.path.islink(conffile_home_expanded):
-            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Multiple config files detected. Ignoring '{conffile_home}', using '{conffile_xdg}'", file=sys.stderr)
-        return conffile_xdg
-    if os.path.exists(conffile_home_expanded):
-        return conffile_home
-    return conffile_xdg
+    if os.path.exists(os.path.expanduser("~/.oscrc")) or os.path.islink(os.path.expanduser("~/.oscrc")):
+        if "XDG_CONFIG_HOME" in os.environ:
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Ignoring XDG_CONFIG_HOME env, loading an existing config from '~/.oscrc' instead", file=sys.stderr)
+            print("         To fix this, move the existing '~/.oscrc' to XDG location such as '~/.config/osc/oscrc'", file=sys.stderr)
+        elif os.path.exists(os.path.expanduser(conffile)):
+            print(f"{tty.colorize('WARNING', 'yellow,bold')}: Ignoring config '{conffile}' in XDG location, loading an existing config from ~/.oscrc instead", file=sys.stderr)
+            print("         To fix this, remove '~/.oscrc'", file=sys.stderr)
+        return '~/.oscrc'
+
+    return conffile
 
 
 def interactive_config_setup(conffile, apiurl, initial=True):
