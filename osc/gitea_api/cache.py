@@ -18,6 +18,8 @@ def ignore_http_errors(func):
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs):
+        from urllib.error import HTTPError
+
         # HACK: NameResolutionError and MaxRetryError are not available in urllib3 v1, let's ignore all exceptions in this case
         try:
             from urllib3.exceptions import NameResolutionError
@@ -30,7 +32,12 @@ def ignore_http_errors(func):
             MaxRetryError = Exception
 
         try:
-            response = func(*args, **kwargs)
+            try:
+                response = func(*args, **kwargs)
+            except HTTPError as e:
+                if 400 <= e.status < 500:
+                    return []
+                raise
 
             if hasattr(response, "status") and 400 <= response.status < 500:
                 return []
