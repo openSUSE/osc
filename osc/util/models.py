@@ -522,13 +522,13 @@ class BaseModel(metaclass=ModelMeta):
         obj = cls(**data)
         return obj
 
-    def to_string(self) -> str:
+    def to_string(self, *, exclude_none: bool = False, sort_keys: bool = False, indent: int = 4) -> str:
         """
         Dump model to a json string.
         """
         import json
 
-        result = json.dumps(self.dict(), sort_keys=False, indent=4)
+        result = json.dumps(self.dict(exclude_none=exclude_none), sort_keys=sort_keys, indent=indent)
         return result
 
     def do_snapshot(self):
