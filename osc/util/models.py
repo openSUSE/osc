@@ -82,7 +82,7 @@ class NotSetClass:
 NotSet = NotSetClass()
 
 
-class FromParent(NotSetClass):
+class FromParent:
     def __init__(self, field_name, *, fallback=NotSet):
         self.field_name = field_name
         self.fallback = fallback
