@@ -31,7 +31,7 @@ class Test(unittest.TestCase):
             text: str | None = Field()
 
         m = TestModel()
-        self.assertEqual(m.dict(), {"text": None})
+        self.assertEqual(m.dict(), {})
 
         self.assertRaises(TypeError, setattr, m.text, 123)
 
@@ -45,7 +45,7 @@ class Test(unittest.TestCase):
             sub: Optional[List[TestSubmodel]] = Field(default=None)
 
         m = TestModel()
-        self.assertEqual(m.dict(), {"a": "default", "b": None, "sub": None})
+        self.assertEqual(m.dict(), {"a": "default"})
 
         m.b = "B"
         m.sub = [{"text": "one"}, {"text": "two"}]

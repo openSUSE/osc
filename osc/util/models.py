@@ -451,9 +451,9 @@ class BaseModel(metaclass=ModelMeta):
     def _get_cmp_data(self):
         result = []
         for name, field in self.__fields__.items():
-            if field.exclude:
-                continue
             value = getattr(self, name)
+            if value is None:
+                continue
             if isinstance(value, dict):
                 value = sorted(list(value.items()))
             result.append((name, value))
@@ -475,6 +475,8 @@ class BaseModel(metaclass=ModelMeta):
             if field.exclude:
                 continue
             value = getattr(self, name)
+            if value is None:
+                continue
             if value is not None and field.is_model:
                 result[name] = value.dict()
             elif value is not None and field.is_model_list:
