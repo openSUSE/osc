@@ -469,18 +469,20 @@ class BaseModel(metaclass=ModelMeta):
             return False
         return self._get_cmp_data() < other._get_cmp_data()
 
-    def dict(self):
+    def dict(self, *, exclude_none: bool = False):
         result = {}
         for name, field in self.__fields__.items():
             if field.exclude:
                 continue
             value = getattr(self, name)
+            if exclude_none and value is None:
+                continue
             if value is not None and field.is_model:
-                result[name] = value.dict()
+                result[name] = value.dict(exclude_none=exclude_none)
             elif value is not None and field.is_model_list:
-                result[name] = [i.dict() for i in value]
+                result[name] = [i.dict(exclude_none=exclude_none) for i in value]
             elif value is not None and field.is_model_dict:
-                result[name] = {k: v.dict() for k, v in value.items()}
+                result[name] = {k: v.dict(exclude_none=exclude_none) for k, v in value.items()}
             else:
                 result[name] = value
 
