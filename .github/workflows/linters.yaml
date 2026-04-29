@@ -36,8 +36,25 @@ jobs:
       - uses: actions/setup-python@v6
       - name: 'Check formatting (darker)'
         run: pipx run --spec "darker[ruff]>=3.0.0" darker --check --diff --line-length=120 --formatter ruff .
+
+  graylint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+      - name: 'Install dependencies'
+        run: |
+            echo 'workaroud for https://github.com/pypa/pipx/issues/1693'
+            sudo apt-get update
+            sudo apt-get install python3-pip
+            sudo pip3 config set global.break-system-packages 1
+            sudo pip3 install ruff
+
       - name: 'Run linter (graylint)'
-        run: pipx run --spec "graylint[ruff]>=2.0.0" graylint --lint "ruff check" .
+        run: pipx run --spec "graylint>=2.0.0" graylint --lint "ruff check" .
 
   pylint_errors:
     name: 'Run pylint that reports only errors'
