@@ -54,11 +54,13 @@ def fail_if_git(func=None, *, msg=None):
         @wraps(f)
         def wrapper(self, *args, **kwargs):
             if self.is_git_store:
-                if not msg:
-                    cls_name = f.__class__.__name__
+                if msg:
+                    error_msg = msg
+                else:
+                    cls_name = self.__class__.__name__
                     meth_name = f.__name__
-                    msg = f"Method {cls_name}.{meth_name} not supported with GitStore"
-                raise oscerr.OscBaseError(msg)
+                    error_msg = f"Method {cls_name}.{meth_name} not supported with GitStore"
+                raise oscerr.OscBaseError(error_msg)
             return f(self, *args, **kwargs)
         return wrapper
     if func is None:
