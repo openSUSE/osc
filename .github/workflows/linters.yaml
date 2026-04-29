@@ -37,7 +37,7 @@ jobs:
       - name: 'Check formatting (darker)'
         run: pipx run --spec "darker[ruff]>=3.0.0" darker --check --diff --line-length=120 --formatter ruff .
       - name: 'Run linter (graylint)'
-        run: pipx run --spec "graylint>=2.0.0" graylint --lint "ruff check" .
+        run: pipx run --spec "graylint[ruff]>=2.0.0" graylint --lint "ruff check" .
 
   pylint_errors:
     name: 'Run pylint that reports only errors'
