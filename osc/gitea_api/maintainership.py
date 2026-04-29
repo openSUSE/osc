@@ -19,7 +19,7 @@ class MaintainershipHeader(BaseModel):
     """
     A model representing the maintainership document header.
     """
-    document: MaintainershipDocumentType = Field()
+    document: MaintainershipDocumentType = Field(default="obs-maintainers")
     version: str = Field(default="1.0")
 
 
