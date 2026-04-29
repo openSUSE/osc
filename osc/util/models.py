@@ -123,7 +123,7 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
             # append information about the default value
             if isinstance(self.default, FromParent):
                 self.__doc__ += f"\n\nDefault: inherited from parent config's field ``{self.default.field_name}``"
-            elif self.default is not NotSet:
+            elif not isinstance(self.default, NotSetClass):
                 self.__doc__ += f"\n\nDefault: ``{self.default}``"
 
         # whether to exclude this field from export
@@ -308,13 +308,13 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
 
         if isinstance(self.default, FromParent):
             if obj._parent is None:
-                if self.default.fallback is not NotSet:
+                if not isinstance(self.default.fallback, NotSetClass):
                     return self.default.fallback
                 else:
                     raise RuntimeError(f"The field '{self.name}' has default {self.default} but the model has no parent set")
             return getattr(obj._parent, self.default.field_name or self.name)
 
-        if self.default is NotSet:
+        if isinstance(self.default, NotSetClass):
             raise RuntimeError(f"The field '{self.name}' has no default")
 
         # make a deepcopy to avoid problems with mutable defaults
@@ -397,7 +397,7 @@ class ModelMeta(type):
             field.get_copy.__func__.__annotations__ = {"return": field.type}
 
             # set 'None' as the default for optional fields
-            if field.default is NotSet and field.is_optional:
+            if isinstance(field.default, NotSetClass) and field.is_optional:
                 field.default = None
 
         return new_cls
@@ -424,7 +424,7 @@ class BaseModel(metaclass=ModelMeta):
 
         for name, field in self.__fields__.items():
             if name not in kwargs:
-                if field.default is NotSet:
+                if isinstance(field.default, NotSetClass):
                     uninitialized_fields.append(field.name)
                 continue
             value = kwargs.pop(name)
