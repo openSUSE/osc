@@ -7,8 +7,8 @@ class MaintainerInfo(BaseModel):
     """
     A model representing users and groups associated with a project or package.
     """
-    users: Optional[List[str]] = Field(default=None)
-    groups: Optional[List[str]] = Field(default=None)
+    users: Optional[List[str]] = Field()
+    groups: Optional[List[str]] = Field()
 
 
 class MaintainershipDocumentType(str, Enum):
