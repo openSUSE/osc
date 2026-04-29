@@ -424,7 +424,7 @@ class BaseModel(metaclass=ModelMeta):
 
         for name, field in self.__fields__.items():
             if name not in kwargs:
-                if isinstance(field.default, NotSetClass):
+                if isinstance(field.default, NotSetClass) and not field.is_optional:
                     uninitialized_fields.append(field.name)
                 continue
             value = kwargs.pop(name)
