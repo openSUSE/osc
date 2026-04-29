@@ -40,25 +40,27 @@ class Maintainership(BaseModel):
 
         data = json.loads(text)
 
+        def ug_to_dict(users, groups):
+            result = {}
+            if users:
+                result["users"] = users
+            if groups:
+                result["groups"] = groups
+            return result
+
         if data.get("header", None) is None:
             # format: legacy
             # entry with "" name holds project maintainers
             project_data = data.pop("", [])
             p_users = [i for i in project_data if not i.startswith("@")]
             p_groups = [i[1:] for i in project_data if i.startswith("@")]
-            project = {
-                "users": p_users if p_users else None,
-                "groups": p_groups if p_groups else None,
-            }
+            project = ug_to_dict(p_users, p_groups)
             packages = {}
             for package, package_data in data.items():
                 if isinstance(package_data, list):
                     pkg_users = [i for i in package_data if not i.startswith("@")]
                     pkg_groups = [i[1:] for i in package_data if i.startswith("@")]
-                    packages[package] = {
-                        "users": pkg_users if pkg_users else None,
-                        "groups": pkg_groups if pkg_groups else None,
-                    }
+                    packages[package] = ug_to_dict(pkg_users, pkg_groups)
             data = {
                 # version is the default (latest), because we do conversion to that format
                 "header": {"document": "obs-maintainers"},
