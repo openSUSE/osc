@@ -469,20 +469,20 @@ class BaseModel(metaclass=ModelMeta):
             return False
         return self._get_cmp_data() < other._get_cmp_data()
 
-    def dict(self, *, exclude_none: bool = False):
+    def dict(self):
         result = {}
         for name, field in self.__fields__.items():
             if field.exclude:
                 continue
             value = getattr(self, name)
-            if exclude_none and value is None:
+            if value is None:
                 continue
             if value is not None and field.is_model:
-                result[name] = value.dict(exclude_none=exclude_none)
+                result[name] = value.dict()
             elif value is not None and field.is_model_list:
-                result[name] = [i.dict(exclude_none=exclude_none) for i in value]
+                result[name] = [i.dict() for i in value]
             elif value is not None and field.is_model_dict:
-                result[name] = {k: v.dict(exclude_none=exclude_none) for k, v in value.items()}
+                result[name] = {k: v.dict() for k, v in value.items()}
             else:
                 result[name] = value
 
@@ -522,13 +522,13 @@ class BaseModel(metaclass=ModelMeta):
         obj = cls(**data)
         return obj
 
-    def to_string(self, *, exclude_none: bool = False, sort_keys: bool = False, indent: int = 4) -> str:
+    def to_string(self, *, sort_keys: bool = False, indent: int = 4) -> str:
         """
         Dump model to a json string.
         """
         import json
 
-        result = json.dumps(self.dict(exclude_none=exclude_none), sort_keys=sort_keys, indent=indent)
+        result = json.dumps(self.dict(), sort_keys=sort_keys, indent=indent)
         return result
 
     def do_snapshot(self):

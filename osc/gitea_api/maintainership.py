@@ -82,7 +82,7 @@ class Maintainership(BaseModel):
           - sort keys
           - indent by 2 spaces
         """
-        return super().to_string(exclude_none=True, sort_keys=True, indent=2)
+        return super().to_string(sort_keys=True, indent=2)
 
     def get_package_maintainers_users(self, package: str) -> List[str]:
         if package not in self.packages:
