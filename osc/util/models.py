@@ -508,8 +508,8 @@ class BaseModel(metaclass=ModelMeta):
         import json
 
         with open(path, "w", encoding="utf-8") as f:
-            # we prefer key ordering according to the fields in the model
-            json.dump(self.dict(), f, sort_keys=False, indent=4)
+            # we prefer fixed, well-defined key ordering
+            json.dump(self.dict(), f, sort_keys=True, indent=2)
 
     @classmethod
     def from_string(cls, text: str) -> "Self":
@@ -522,13 +522,18 @@ class BaseModel(metaclass=ModelMeta):
         obj = cls(**data)
         return obj
 
-    def to_string(self, *, sort_keys: bool = False, indent: int = 4) -> str:
+    def to_string(self) -> str:
         """
         Dump model to a json string.
+
+        We always:
+          - exclude entries that have empty (None) value
+          - sort keys
+          - indent by 2 spaces
         """
         import json
 
-        result = json.dumps(self.dict(), sort_keys=sort_keys, indent=indent)
+        result = json.dumps(self.dict(), sort_keys=True, indent=2)
         return result
 
     def do_snapshot(self):
