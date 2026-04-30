@@ -58,7 +58,6 @@ __all__ = (
     "BaseModel",
     "XmlModel",
     "Field",
-    "NotSet",
     "FromParent",
     "Enum",
     "Dict",
@@ -71,19 +70,8 @@ __all__ = (
 )
 
 
-class NotSetClass:
-    def __repr__(self):
-        return "NotSet"
-
-    def __bool__(self):
-        return False
-
-
-NotSet = NotSetClass()
-
-
 class FromParent:
-    def __init__(self, field_name, *, fallback=NotSet):
+    def __init__(self, field_name, *, fallback=None):
         self.field_name = field_name
         self.fallback = fallback
 
@@ -95,14 +83,13 @@ class FromParent:
 class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
     def __init__(
         self,
-        default: Any = NotSet,
+        default: Any = None,
         description: Optional[str] = None,
         exclude: bool = False,
         get_callback: Optional[Callable] = None,
         **extra,
     ):
         # the default value; it can be a factory function that is lazily evaluated on the first use
-        # model sets it to None if it equals to NotSet (for better usability)
         self.default = default
 
         # a flag indicating, whether the default is a callable with lazy evalution
@@ -123,7 +110,7 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
             # append information about the default value
             if isinstance(self.default, FromParent):
                 self.__doc__ += f"\n\nDefault: inherited from parent config's field ``{self.default.field_name}``"
-            elif not isinstance(self.default, NotSetClass):
+            elif self.default is not None:
                 self.__doc__ += f"\n\nDefault: ``{self.default}``"
 
         # whether to exclude this field from export
@@ -308,13 +295,13 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
 
         if isinstance(self.default, FromParent):
             if obj._parent is None:
-                if not isinstance(self.default.fallback, NotSetClass):
+                if self.default.fallback is not None or self.is_optional:
                     return self.default.fallback
                 else:
                     raise RuntimeError(f"The field '{self.name}' has default {self.default} but the model has no parent set")
             return getattr(obj._parent, self.default.field_name or self.name)
 
-        if isinstance(self.default, NotSetClass):
+        if self.default is None and not self.is_optional:
             raise RuntimeError(f"The field '{self.name}' has no default")
 
         # make a deepcopy to avoid problems with mutable defaults
@@ -396,10 +383,6 @@ class ModelMeta(type):
             # set annotation for the getter so it shows up in sphinx
             field.get_copy.__func__.__annotations__ = {"return": field.type}
 
-            # set 'None' as the default for optional fields
-            if isinstance(field.default, NotSetClass) and field.is_optional:
-                field.default = None
-
         return new_cls
 
 
@@ -424,7 +407,7 @@ class BaseModel(metaclass=ModelMeta):
 
         for name, field in self.__fields__.items():
             if name not in kwargs:
-                if isinstance(field.default, NotSetClass) and not field.is_optional:
+                if field.default is None and not field.is_optional:
                     uninitialized_fields.append(field.name)
                 continue
             value = kwargs.pop(name)

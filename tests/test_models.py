@@ -16,14 +16,6 @@ class TestTyping(unittest.TestCase):
         self.assertEqual(typ, list)
 
 
-class TestNotSet(unittest.TestCase):
-    def test_repr(self):
-        self.assertEqual(repr(NotSet), "NotSet")
-
-    def test_bool(self):
-        self.assertEqual(bool(NotSet), False)
-
-
 class Test(unittest.TestCase):
     @unittest.skipIf(sys.version_info[:2] < (3, 10), "added in python 3.10")
     def test_union_or(self):
