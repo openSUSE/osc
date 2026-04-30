@@ -58,7 +58,6 @@ __all__ = (
     "BaseModel",
     "XmlModel",
     "Field",
-    "NotSet",
     "FromParent",
     "Enum",
     "Dict",
@@ -71,19 +70,8 @@ __all__ = (
 )
 
 
-class NotSetClass:
-    def __repr__(self):
-        return "NotSet"
-
-    def __bool__(self):
-        return False
-
-
-NotSet = NotSetClass()
-
-
-class FromParent(NotSetClass):
-    def __init__(self, field_name, *, fallback=NotSet):
+class FromParent:
+    def __init__(self, field_name, *, fallback=None):
         self.field_name = field_name
         self.fallback = fallback
 
@@ -95,14 +83,13 @@ class FromParent(NotSetClass):
 class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
     def __init__(
         self,
-        default: Any = NotSet,
+        default: Any = None,
         description: Optional[str] = None,
         exclude: bool = False,
         get_callback: Optional[Callable] = None,
         **extra,
     ):
         # the default value; it can be a factory function that is lazily evaluated on the first use
-        # model sets it to None if it equals to NotSet (for better usability)
         self.default = default
 
         # a flag indicating, whether the default is a callable with lazy evalution
@@ -123,7 +110,7 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
             # append information about the default value
             if isinstance(self.default, FromParent):
                 self.__doc__ += f"\n\nDefault: inherited from parent config's field ``{self.default.field_name}``"
-            elif self.default is not NotSet:
+            elif self.default is not None:
                 self.__doc__ += f"\n\nDefault: ``{self.default}``"
 
         # whether to exclude this field from export
@@ -308,13 +295,13 @@ class Field(property, *([Any] if typing.TYPE_CHECKING else [])):
 
         if isinstance(self.default, FromParent):
             if obj._parent is None:
-                if self.default.fallback is not NotSet:
+                if self.default.fallback is not None or self.is_optional:
                     return self.default.fallback
                 else:
                     raise RuntimeError(f"The field '{self.name}' has default {self.default} but the model has no parent set")
             return getattr(obj._parent, self.default.field_name or self.name)
 
-        if self.default is NotSet:
+        if self.default is None and not self.is_optional:
             raise RuntimeError(f"The field '{self.name}' has no default")
 
         # make a deepcopy to avoid problems with mutable defaults
@@ -396,10 +383,6 @@ class ModelMeta(type):
             # set annotation for the getter so it shows up in sphinx
             field.get_copy.__func__.__annotations__ = {"return": field.type}
 
-            # set 'None' as the default for optional fields
-            if field.default is NotSet and field.is_optional:
-                field.default = None
-
         return new_cls
 
 
@@ -424,7 +407,7 @@ class BaseModel(metaclass=ModelMeta):
 
         for name, field in self.__fields__.items():
             if name not in kwargs:
-                if field.default is NotSet:
+                if field.default is None and not field.is_optional:
                     uninitialized_fields.append(field.name)
                 continue
             value = kwargs.pop(name)
@@ -469,20 +452,20 @@ class BaseModel(metaclass=ModelMeta):
             return False
         return self._get_cmp_data() < other._get_cmp_data()
 
-    def dict(self, *, exclude_none: bool = False):
+    def dict(self):
         result = {}
         for name, field in self.__fields__.items():
             if field.exclude:
                 continue
             value = getattr(self, name)
-            if exclude_none and value is None:
+            if value is None:
                 continue
             if value is not None and field.is_model:
-                result[name] = value.dict(exclude_none=exclude_none)
+                result[name] = value.dict()
             elif value is not None and field.is_model_list:
-                result[name] = [i.dict(exclude_none=exclude_none) for i in value]
+                result[name] = [i.dict() for i in value]
             elif value is not None and field.is_model_dict:
-                result[name] = {k: v.dict(exclude_none=exclude_none) for k, v in value.items()}
+                result[name] = {k: v.dict() for k, v in value.items()}
             else:
                 result[name] = value
 
@@ -508,8 +491,8 @@ class BaseModel(metaclass=ModelMeta):
         import json
 
         with open(path, "w", encoding="utf-8") as f:
-            # we prefer key ordering according to the fields in the model
-            json.dump(self.dict(), f, sort_keys=False, indent=4)
+            # we prefer fixed, well-defined key ordering
+            json.dump(self.dict(), f, sort_keys=True, indent=2)
 
     @classmethod
     def from_string(cls, text: str) -> "Self":
@@ -522,13 +505,18 @@ class BaseModel(metaclass=ModelMeta):
         obj = cls(**data)
         return obj
 
-    def to_string(self, *, exclude_none: bool = False, sort_keys: bool = False, indent: int = 4) -> str:
+    def to_string(self) -> str:
         """
         Dump model to a json string.
+
+        We always:
+          - exclude entries that have empty (None) value
+          - sort keys
+          - indent by 2 spaces
         """
         import json
 
-        result = json.dumps(self.dict(exclude_none=exclude_none), sort_keys=sort_keys, indent=indent)
+        result = json.dumps(self.dict(), sort_keys=True, indent=2)
         return result
 
     def do_snapshot(self):
