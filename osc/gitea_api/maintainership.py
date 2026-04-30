@@ -73,6 +73,17 @@ class Maintainership(BaseModel):
 
         return cls(**data)
 
+    def to_string(self):
+        """
+        Export _maintainership.json contents.
+
+        We always:
+          - exclude entries that have empty (None) value
+          - sort keys
+          - indent by 2 spaces
+        """
+        return super().to_string(exclude_none=True, sort_keys=True, indent=2)
+
     def get_package_maintainers_users(self, package: str) -> List[str]:
         if package not in self.packages:
             raise ValueError(f"Package '{package}' not found in maintainership data.")

@@ -50,7 +50,7 @@ class TestMaintainershipConverter(unittest.TestCase):
         self.assertEqual(result["packages"]["package1"]["groups"], ["pkg1-group"])
 
         self.assertEqual(result["packages"]["package2"]["users"], ["bob"])
-        self.assertIsNone(result["packages"]["package2"]["groups"])
+        self.assertNotIn("groups", result["packages"]["package2"])
 
     def test_v1_format_passthrough(self):
         """v1.0 format is printed unchanged."""
@@ -76,8 +76,8 @@ class TestMaintainershipConverter(unittest.TestCase):
         result = json.loads(output)
 
         self.assertEqual(result["header"]["document"], "obs-maintainers")
-        self.assertIsNone(result["project"]["users"])
-        self.assertIsNone(result["project"]["groups"])
+        self.assertNotIn("users", result["project"])
+        self.assertNotIn("groups", result["project"])
         self.assertEqual(result["packages"]["package1"]["users"], ["alice"])
 
     def test_legacy_groups_only(self):
@@ -86,9 +86,9 @@ class TestMaintainershipConverter(unittest.TestCase):
         output = self._run_converter(path)
         result = json.loads(output)
 
-        self.assertIsNone(result["project"]["users"])
+        self.assertNotIn("users", result["project"])
         self.assertEqual(result["project"]["groups"], ["admins", "maintainers"])
-        self.assertIsNone(result["packages"]["pkg"]["users"])
+        self.assertNotIn("users", result["packages"]["pkg"])
         self.assertEqual(result["packages"]["pkg"]["groups"], ["team"])
 
     def test_file_not_found(self):
