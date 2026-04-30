@@ -1,5 +1,4 @@
 import sys
-from urllib.error import HTTPError
 
 import osc.commandline
 
@@ -37,6 +36,8 @@ class RmkpacCommand(osc.commandline.OscCommand):
         )
 
     def run(self, args):
+        from urllib.error import HTTPError
+        from urllib.parse import urlparse
         from osc import obs_api
         from osc.output import tty
         from osc.store import get_store
@@ -57,6 +58,10 @@ class RmkpacCommand(osc.commandline.OscCommand):
         if not project:
             print(f"{tty.colorize('ERROR', 'red,bold')}: Project is empty")
             sys.exit(1)
+
+        if args.scmsync:
+            if not urlparse(args.scmsync).fragment:
+                self.parser.error("--scmsync must include a fragment with the branch name (e.g. https://example.com/user/repo#main)")
 
         # reject if the project meta has scmsync configured
         prj = obs_api.Project.from_api(args.apiurl, project)
