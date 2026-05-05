@@ -693,6 +693,33 @@ def ensure_no_remaining_args(args):
     raise oscerr.WrongArgs(f"Unexpected args: {args_str}")
 
 
+def supersede_requests_lenient(apiurl, request_ids, superseder_id, message_template="superseded by {sid}"):
+    """
+    Supersede each request in ``request_ids`` with ``superseder_id``.
+
+    HTTP 403 errors on individual requests (e.g. lack of permission to
+    modify someone else's request) are downgraded to warnings so that the
+    remaining requests are still superseded.  See openSUSE/osc#2130.
+    """
+    from .core import change_request_state
+    from .output import print_msg
+
+    for req in request_ids:
+        try:
+            change_request_state(
+                apiurl, str(req), 'superseded',
+                message_template.format(sid=superseder_id), superseder_id,
+            )
+        except HTTPError as e:
+            if e.code == 403:
+                print_msg(
+                    f"could not supersede request {req}: {e}",
+                    print_to="warning",
+                )
+                continue
+            raise
+
+
 class Osc(cmdln.Cmdln):
     """
     openSUSE commander is a command-line interface to the Open Build Service.
@@ -2142,9 +2169,7 @@ class Osc(cmdln.Cmdln):
                     myreqs += [value]
 
             if len(myreqs) > 0:
-                for req in myreqs:
-                    change_request_state(apiurl, str(req), 'superseded',
-                                         f'superseded by {sr_ids[0]}', sr_ids[0])
+                supersede_requests_lenient(apiurl, myreqs, sr_ids[0])
 
             sys.exit('Successfully finished')
 
@@ -2299,9 +2324,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             print(f"{obs_url}/request/show/{result}")
 
         if supersede_existing:
-            for req in reqs:
-                change_request_state(apiurl, req.reqid, 'superseded',
-                                     f'superseded by {result}', result)
+            supersede_requests_lenient(apiurl, [r.reqid for r in reqs], result)
 
         if opts.supersede:
             change_request_state(apiurl, opts.supersede, 'superseded',
@@ -2732,9 +2755,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         root = xml_parse(f).getroot()
         rid = root.get('id')
         print(f"Request {rid} created")
-        for srid in supersede:
-            change_request_state(apiurl, srid, 'superseded',
-                                 f'superseded by {rid}', rid)
+        supersede_requests_lenient(apiurl, supersede, rid)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')
