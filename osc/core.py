@@ -3170,7 +3170,7 @@ def make_dir(
     return pkg_path
 
 
-def run_obs_scm_bridge(url: str, target_dir: str):
+def run_obs_scm_bridge(url: str, target_dir: str, *, project_mode: bool = False):
     if not os.path.isfile(conf.config.obs_scm_bridge_cmd):
         raise oscerr.OscIOError(None, "Install the obs-scm-bridge package to work on packages managed in scm (git)!")
 
@@ -3189,7 +3189,14 @@ def run_obs_scm_bridge(url: str, target_dir: str):
 
     env = os.environ.copy()
     env["OSC_VERSION"] = get_osc_version()
-    if run_external([conf.config.obs_scm_bridge_cmd, "--outdir", target_dir, "--url", url], env=env) != 0:
+
+    cmd = [conf.config.obs_scm_bridge_cmd]
+    cmd += ["--outdir", target_dir]
+    cmd += ["--url", url]
+    if project_mode:
+        cmd += ["--projectmode", "1"]
+
+    if run_external(cmd, env=env) != 0:
         raise oscerr.OscIOError(None, "obs-scm-bridge failed")
 
 
