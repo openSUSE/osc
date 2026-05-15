@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import unittest
 import unittest.mock
+from urllib.error import HTTPError
 
 from osc.commandline import Command
 from osc.commandline import MainCommand
@@ -12,6 +13,7 @@ from osc.commandline import pop_project_package_from_args
 from osc.commandline import pop_project_package_repository_arch_from_args
 from osc.commandline import pop_project_package_targetproject_targetpackage_from_args
 from osc.commandline import pop_repository_arch_from_args
+from osc.commandline import supersede_requests_lenient
 from osc.oscerr import NoWorkingCopy, OscValueError
 from osc.store import Store
 
@@ -819,6 +821,58 @@ class TestPopProjectPackageTargetProjectTargetPackageFromArgs(unittest.TestCase)
             pop_project_package_targetproject_targetpackage_from_args,
             args,
         )
+
+
+class TestSupersedeLenient(unittest.TestCase):
+    """Regression tests for openSUSE/osc#2130."""
+
+    def _make_403(self, reqid):
+        return HTTPError(
+            url=f"https://example.com/request/{reqid}",
+            code=403,
+            msg="Forbidden",
+            hdrs=None,
+            fp=None,
+        )
+
+    def test_continues_on_403(self):
+        """A 403 on one request must not abort superseding of the others."""
+        calls = []
+
+        def fake_change(apiurl, reqid, *_a, **_kw):
+            calls.append(reqid)
+            if reqid == "815980":
+                raise self._make_403(reqid)
+            return "ok"
+
+        with unittest.mock.patch(
+            "osc.core.change_request_state", side_effect=fake_change,
+        ), unittest.mock.patch(
+            "osc.output.print_msg",
+        ) as warn:
+            supersede_requests_lenient(
+                "https://api", ["815980", "1206225"], "1350147",
+            )
+
+        # both requests were attempted
+        self.assertEqual(calls, ["815980", "1206225"])
+        # the 403 produced a warning rather than an exception
+        self.assertEqual(warn.call_count, 1)
+        self.assertEqual(warn.call_args.kwargs.get("print_to"), "warning")
+
+    def test_non_403_still_raises(self):
+        """Non-403 HTTPErrors must still propagate (no silent failures)."""
+        def fake_change(apiurl, reqid, *_a, **_kw):
+            raise HTTPError(
+                url="https://example.com/request/1",
+                code=500, msg="Server Error", hdrs=None, fp=None,
+            )
+
+        with unittest.mock.patch(
+            "osc.core.change_request_state", side_effect=fake_change,
+        ):
+            with self.assertRaises(HTTPError):
+                supersede_requests_lenient("https://api", ["1"], "2")
 
 
 if __name__ == "__main__":
