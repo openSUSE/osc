@@ -24,4 +24,4 @@ class Issue(GiteaModel):
 
     def add_labels(self, conn, owner, repo, labels):
         url = conn.makeurl("repos", owner, repo, "issues", str(self.number), "labels")
-        conn.request("POST", url, json={"labels": labels})
+        conn.request("POST", url, json_data={"labels": labels})
