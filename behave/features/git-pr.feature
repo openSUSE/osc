@@ -12,6 +12,20 @@ Background:
      And I execute "git commit -m 'v1.2' -a"
      And I execute "git push"
      And I execute git-obs with args "pr create --title 'Change version' --description='some text'"
+     And stdout matches
+        """
+        ID          : pool/test-GitPkgA#1
+        URL         : http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1
+        Title       : Change version
+        State       : open
+        Draft       : no
+        Merged      : no
+        Allow edit  : yes
+        Author      : Admin \(admin@example.com\)
+        Source      : Admin/test-GitPkgA, branch: factory, commit: .*
+        Target      : pool/test-GitPkgA, branch: factory, commit: .*
+        Description : some text
+        """
 
 @destructive
 Scenario: List pull requests in json
@@ -20,6 +34,7 @@ Scenario: List pull requests in json
      And stdout contains "\"owner\": \"pool\","
      And stdout contains "\"repo\": \"test-GitPkgA\","
      And stdout contains "\"url\": \"http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/pulls/1\""
+
 
 @destructive
 Scenario: List pull requests
@@ -33,7 +48,7 @@ Scenario: List pull requests
         State       : open
         Draft       : no
         Merged      : no
-        Allow edit  : no
+        Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
         Target      : pool/test-GitPkgA, branch: factory, commit: .*
@@ -95,7 +110,7 @@ Scenario: Get a pull request
         State       : open
         Draft       : no
         Merged      : no
-        Allow edit  : no
+        Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
         Target      : pool/test-GitPkgA, branch: factory, commit: .*
@@ -129,7 +144,7 @@ Scenario: Get a pull request with labels
         Labels      : bug feature
         Draft       : no
         Merged      : no
-        Allow edit  : no
+        Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
         Target      : pool/test-GitPkgA, branch: factory, commit: .*
@@ -305,7 +320,7 @@ Scenario: Rebase a pull request checkout to non fast-forwardable changes
 #         State       : closed
 #         Draft       : no
 #         Merged      : yes
-#         Allow edit  : no
+#         Allow edit  : yes
 #         Author      : Admin \(admin@example.com\)
 #         Source      : Admin/test-GitPkgA, branch: factory, commit: ........................................
 #         Target      : pool/test-GitPkgA, branch: new-branch, commit: ........................................

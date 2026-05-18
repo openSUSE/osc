@@ -357,6 +357,7 @@ class PullRequest(GiteaModel):
         title: str,
         description: Optional[str] = None,
         labels: Optional[List[str]] = None,
+        allow_maintainer_edit: bool = True,
     ) -> "PullRequest":
         """
         Create a pull request to ``owner``/``repo`` to the ``base`` branch.
@@ -371,6 +372,7 @@ class PullRequest(GiteaModel):
         :param title: Pull request title.
         :param description: Pull request description.
         :param labels: List of labels to be associated with the pull request.
+        :param allow_maintainer_edit: Whether users with write access to the base branch can also push to the pull request's head branch.
         """
         url = conn.makeurl("repos", target_owner, target_repo, "pulls")
         if labels:
@@ -382,9 +384,15 @@ class PullRequest(GiteaModel):
             "title": title,
             "body": description,
             "labels": labels,
+            # TODO: use after we migrate to sufficiently new Gitea that supports it
+            # "allow_maintainer_edit": allow_maintainer_edit,
         }
         response = conn.request("POST", url, json_data=data)
         obj = cls(response.json(), response=response, conn=conn)
+
+        # FIXME: older Gitea versions can't set the maintainer edits on PR create
+        obj = cls.set(conn, obj.base_owner, obj.base_repo, obj.number, allow_maintainer_edit=allow_maintainer_edit)
+
         return obj
 
     @classmethod

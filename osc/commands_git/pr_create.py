@@ -98,6 +98,12 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Allow creating a pull request even if there are no changes",
         )
+        self.add_argument(
+            "--allow-maintainer-edit",
+            choices=["0", "1", "yes", "no"],
+            default="yes",
+            help="Whether users with write access to the base branch can also push to the pull request's head branch (default: yes)",
+        )
 
     def run(self, args):
         if args.separate_requests:
@@ -315,6 +321,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             source_branch=source_branch,
             title=title,
             description=description,
+            allow_maintainer_edit=args.allow_maintainer_edit in ("1", "yes"),
         )
 
         print("", file=sys.stderr)
