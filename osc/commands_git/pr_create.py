@@ -239,7 +239,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         print(f" * Target: {target_owner}/{target_repo}, branch: {target_branch_obj.name}, commit: {target_branch_obj.commit}", file=sys.stderr)
 
         if use_local_git and local_commit != source_branch_obj.commit:
-            msg = "Local commit doesn't correspond with the latest commit in the remote source branch"
+            msg = "Local commit doesn't correspond with the latest commit in the remote source branch. Did you forget to push your changes with 'git push'?"
             if ignore_identical:
                 raise gitea_api.GitObsRuntimeError(msg)
             print(f"{tty.colorize('ERROR', 'red,bold')}: {msg}")
