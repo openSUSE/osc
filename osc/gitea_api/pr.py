@@ -179,6 +179,12 @@ class PullRequest(GiteaModel):
         return self._data["merged"]
 
     @property
+    def merged_at(self) -> Optional[bool]:
+        if not self.is_pull_request:
+            return None
+        return self._data["merged_at"]
+
+    @property
     def allow_maintainer_edit(self) -> Optional[bool]:
         if not self.is_pull_request:
             return None
