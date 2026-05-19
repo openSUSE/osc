@@ -85,8 +85,9 @@ class Connection:
             504,  # Gateway Timeout
         )
 
-        if hasattr(self.conn, "set_cert"):
+        if urllib3.__version__.startswith("1.") and hasattr(self.conn, "set_cert"):
             # needed to avoid: AttributeError: 'HTTPSConnection' object has no attribute 'assert_hostname'. Did you mean: 'server_hostname'?
+            # urllib3 2.x triggers a FutureWarning, the method will be removed in v3
             self.conn.set_cert()
 
     def makeurl(self, *path: str, query: Optional[dict] = None):
