@@ -26,8 +26,8 @@ Scenario: Fork a git repo to Alice and Bob, then create a PR from Alice's fork t
     Then the exit code is 0
 
     # Create PR from Alice to Bob
-    # We specify --target-owner Bob to target Bob's fork instead of the default upstream (pool)
-    When I execute git-obs with args "-G alice pr create --title 'Alice to Bob PR' --description 'Please merge my changes' --target-owner Bob --target-branch=factory"
+    # We specify --target Bob:factory to target Bob's fork instead of the default upstream (pool)
+    When I execute git-obs with args "-G alice pr create --title 'Alice to Bob PR' --description 'Please merge my changes' --target Bob:factory"
     Then the exit code is 0
 
     # Verify PR exists on Bob's repo

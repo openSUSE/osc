@@ -17,7 +17,7 @@ Background:
      And I execute "git checkout -b feature/1"
      And I execute "git commit --allow-empty -m 'feature/1'"
      And I execute "git push origin feature/1"
-     And I execute git-obs with args "-G alice pr create --title 'feature/1' --description='PR: foo/bar!1' --target-branch factory"
+     And I execute git-obs with args "-G alice pr create --title 'feature/1' --description='PR: foo/bar!1' --target :factory"
      And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/issues/1/labels --data='{{"labels": ["staging/Backlog"]}}'"
 
      # Alice makes a new branch feature/2, no changes on top, and makes a pull request with "PR: foo/bar!2" description
@@ -25,7 +25,7 @@ Background:
      And I execute "git checkout -b feature/2"
      And I execute "git commit --allow-empty -m 'feature/2'"
      And I execute "git push origin feature/2"
-     And I execute git-obs with args "-G alice pr create --title 'feature/2' --description='PR: foo/bar!2' --target-branch factory"
+     And I execute git-obs with args "-G alice pr create --title 'feature/2' --description='PR: foo/bar!2' --target :factory"
      And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/issues/2/labels --data='{{"labels": ["staging/Backlog"]}}'"
 
 @destructive

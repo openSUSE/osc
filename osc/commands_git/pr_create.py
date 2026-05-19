@@ -48,36 +48,53 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             metavar="TEXT",
             help="Pull request description (body)",
         )
-        self.add_argument(
+        self.add_argument_owner_repo_branch(
+            "--source",
+            dest="source",
+            metavar="BRANCH_ID",
+            help="Source owner, repo and branch",
+        )
+        self.add_argument_owner_repo_branch(
+            "--target",
+            dest="target",
+            metavar="BRANCH_ID",
+            owner_optional=True,
+            repo_optional=True,
+            help="Target owner, repo and branch",
+        )
+
+        deprecated_group = self.parser.add_argument_group("deprecated options")
+        deprecated_group.add_argument(
             "--source-owner",
             metavar="OWNER",
-            help="Owner of the source repo (default: derived from remote URL in local git repo)",
+            help="Owner of the source repo (deprecated, use --source instead)",
         )
-        self.add_argument(
+        deprecated_group.add_argument(
             "--source-repo",
             metavar="REPO",
-            help="Name of the source repo (default: derived from remote URL in local git repo)",
+            help="Name of the source repo (deprecated, use --source instead)",
         )
-        self.add_argument(
+        deprecated_group.add_argument(
             "--source-branch",
             metavar="BRANCH",
-            help="Source branch (default: the current branch in local git repo)",
+            help="Source branch (deprecated, use --source instead)",
         )
-        self.add_argument(
+        deprecated_group.add_argument(
             "--target-owner",
             metavar="OWNER",
-            help="Target owner (default: parent of the source repo)",
+            help="Target owner (deprecated, use --target instead)",
         )
-        self.add_argument(
+        deprecated_group.add_argument(
             "--target-repo",
             metavar="REPO",
-            help="Target repo (default: repo in target owner that belongs to the same fork tree as the source repo)",
+            help="Target repo (deprecated, use --target instead)",
         )
-        self.add_argument(
+        deprecated_group.add_argument(
             "--target-branch",
             metavar="BRANCH",
-            help="Target branch (default: derived from the current branch in local git repo)",
+            help="Target branch (deprecated, use --target instead)",
         )
+
         self.add_argument(
             "--self",
             action="store_true",
@@ -100,13 +117,43 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         )
 
     def run(self, args):
+        # check for deprecated options
+        deprecated_used = []
+        if args.source_owner:
+            deprecated_used.append("--source-owner")
+        if args.source_repo:
+            deprecated_used.append("--source-repo")
+        if args.source_branch:
+            deprecated_used.append("--source-branch")
+        if args.target_owner:
+            deprecated_used.append("--target-owner")
+        if args.target_repo:
+            deprecated_used.append("--target-repo")
+        if args.target_branch:
+            deprecated_used.append("--target-branch")
+
+        if deprecated_used:
+            from osc.output import print_msg
+
+            if args.source:
+                self.parser.error(f"Options {', '.join(deprecated_used)} cannot be used together with --source")
+            if args.target:
+                self.parser.error(f"Options {', '.join(deprecated_used)} cannot be used together with --target")
+
+            print_msg(
+                f"Options {', '.join(deprecated_used)} are deprecated, please use --source and --target instead",
+                print_to="warning",
+            )
+
         if args.separate_requests:
             return self._run_separate_requests(args)
 
         # the source args are optional, but if one of them is used, the others must be used too
         source_args = (args.source_owner, args.source_repo, args.source_branch)
         if sum((int(i is not None) for i in source_args)) not in (0, len(source_args)):
-            self.parser.error("All of the following options must be used together: --source-owner, --source-repo, --source-branch")
+            self.parser.error(
+                "All of the following options must be used together: --source-owner, --source-repo, --source-branch"
+            )
 
         self.print_gitea_settings()
         self._create_pr(args, allow_empty=args.allow_empty)
@@ -142,56 +189,65 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         from osc import gitea_api
         from osc.output import tty
 
-        use_local_git = args.source_owner is None
+        use_local_git = args.source_owner is None and args.source is None
         local_commit = None
 
         if use_local_git:
             # local git repo
             git = gitea_api.Git(git_dir)
+            git.fetch()
             local_owner, local_repo = git.get_owner_repo()
             local_branch = git.current_branch
 
             if not local_branch:
-                raise gitea_api.GitObsRuntimeError(f"Unable to determine current branch in {git_dir}. Are you in 'detached HEAD' state?")
+                msg = f"Unable to determine current branch in {git_dir}. Are you in 'detached HEAD' state?"
+                raise gitea_api.GitObsRuntimeError(msg)
 
             local_commit = git.get_branch_head(local_branch)
 
-        if args.self and not use_local_git:
-            self.parser.error("--self can only be used together with local git repository (i.e. without --source-owner, --source-repo, --source-branch)")
-
-        # remote git repo - source
+        # determine the source
         if use_local_git:
             source_owner = local_owner
             source_repo = local_repo
             source_branch = local_branch
+        elif args.source:
+            source_owner, source_repo, source_branch = args.source
         else:
             source_owner = args.source_owner
             source_repo = args.source_repo
             source_branch = args.source_branch
+
+        # load source repo and branch, this verifies that they exist
         source_repo_obj = gitea_api.Repo.get(self.gitea_conn, source_owner, source_repo)
         source_branch_obj = gitea_api.Branch.get(self.gitea_conn, source_owner, source_repo, source_branch)
 
+        # determine the target
         if args.self:
             target_owner = source_owner
             target_repo = source_repo
-        elif args.target_owner:
-            target_owner = args.target_owner
-            if args.target_repo:
-                target_repo = args.target_repo
-            else:
-                target_repo = None
-                parents = gitea_api.Repo.get_parent_repos(self.gitea_conn, source_owner, source_repo)
-                for parent in parents:
-                    if parent.owner.lower() == args.target_owner.lower():
-                        target_repo = parent.repo
-                        break
+            target_branch = args.target[2] if args.target else args.target_branch
+        elif args.target:
+            target_owner, target_repo, target_branch = args.target
         else:
+            target_owner = args.target_owner
+            target_repo = args.target_repo
+            target_branch = args.target_branch
+
+        # determine the target repo from the parent chain
+        if target_owner and not target_repo:
+            parents = gitea_api.Repo.get_parent_repos(self.gitea_conn, source_owner, source_repo)
+            for parent in parents:
+                if parent.owner.lower() == target_owner.lower():
+                    target_repo = parent.repo
+                    break
+
+        if not target_owner:
             if source_repo_obj.parent_obj:
                 # we're creating the PR in source repo's parent
                 target_owner = source_repo_obj.parent_obj.owner
                 target_repo = source_repo_obj.parent_obj.repo
             else:
-                # there's no parent, we're creating PR directly in the source repo
+                # fallback: there's no parent, we're creating PR directly in the source repo
                 target_owner = source_owner
                 target_repo = source_repo
 
@@ -209,7 +265,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
                     raise
 
         if not target_repo:
-            raise gitea_api.GitObsRuntimeError(f"Unable to detect target repo, please specify one via --target-repo")
+            raise gitea_api.GitObsRuntimeError(f"Unable to detect target repo, please specify one via --target")
 
         if not target_fork_root:
             target_fork_root = gitea_api.Repo.get_fork_tree_root(self.gitea_conn, target_owner, target_repo)
@@ -217,14 +273,15 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         if source_fork_root != target_fork_root:
             raise gitea_api.GitObsRuntimeError(f"Unable to create a pull request because repos '{source_owner}/{source_repo}' and '{target_owner}/{target_repo}' do not belong to the same fork tree")
 
-        if args.target_branch:
-            target_branch = args.target_branch
-        elif source_branch.startswith("for/"):
-            # source branch name format: for/<target-branch>/<what-the-branch-name-would-normally-be>
-            target_branch = source_branch.split("/")[1]
-        else:
-            target_branch = source_branch
+        # if target branch is not set, derive it from the source branch
+        if not target_branch:
+            if source_branch.startswith("for/"):
+                # source branch name format: for/<target-branch>/<what-the-branch-name-would-normally-be>
+                target_branch = source_branch.split("/")[1]
+            else:
+                target_branch = source_branch
 
+        # load target branch, this verifies that both repo and branch exist
         target_branch_obj = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch)
 
         # Check difference: Local vs Target (specific for separate-requests/package iteration)
