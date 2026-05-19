@@ -375,10 +375,10 @@ class Repo(GiteaModel):
         """
         result = {}
         url = conn.makeurl("repos", owner, repo, "labels")
-        response = conn.request("GET", url)
-        labels = response.json()
-        for label in labels:
-            result[label["name"]] = label["id"]
+        for response in conn.request_all_pages("GET", url):
+            labels = response.json()
+            for label in labels:
+                result[label["name"]] = label["id"]
         return result
 
     @classmethod
