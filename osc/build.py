@@ -225,7 +225,7 @@ BUILD_TYPES: List[BuildType] = [
         recipes=["*.spec"],
         package_suffix="rpm",
         binary_packages_paths=["RPMS/**/*.rpm"],
-        source_packages_paths=["SRPMS/**/*.src.rpm"],
+        source_packages_paths=["SRPMS/**/*.src.rpm", "SRPMS/**/*.nosrc.rpm"],
         prefer_packages_paths=["**/*.rpm"],
         prefer_packages_exclude_paths=["*.src.rpm", "*.nosrc.rpm", "*.patch.rpm", "*.delta.rpm"],
     ),
@@ -1697,6 +1697,72 @@ def main(apiurl, store, opts, argv):
 
     try:
         rc = run_external(cmd[0], *cmd[1:])
+        # 11: rpmbuild (via the build script) encountered unsatisfied dynamic requirements
+        # 9: same as 11 + cannot re-initialize the environment itself (which is the case when osc manages the package list)
+        if build_type == "spec" and binary_type == "rpm" and rc in (9, 11):
+            phase = getattr(opts, "_build_phase", 1)
+            if phase >= 10:
+                print(f"Error: Maximum number of build phases ({phase}) reached.", file=sys.stderr)
+                sys.exit(rc)
+
+            print(f"Dynamic build requirements detected (exit code {rc}). Restarting build phase (phase {phase + 1})...")
+            # find the .buildreqs.nosrc.rpm
+            # it can be in /usr/src/packages/SRPMS/ or /home/abuild/rpmbuild/SRPMS/
+            buildreq_rpms = []
+            bt = get_build_type(build_type, binary_type=binary_type)
+            for topdir in ("usr/src/packages", "home/abuild/rpmbuild"):
+                sources = bt.get_sources(os.path.join(build_root, topdir))
+                buildreq_rpms.extend([s for s in sources if s.endswith(".buildreqs.nosrc.rpm")])
+
+            if not buildreq_rpms:
+                print("Error: rpmbuild exited but no .buildreqs.nosrc.rpm found.", file=sys.stderr)
+                sys.exit(rc)
+
+            from .util.rpmquery import RpmQuery
+
+            new_reqs = []
+            for rpm_path in buildreq_rpms:
+                try:
+                    rpmq = RpmQuery.query(rpm_path)
+                    for req in rpmq.requires():
+                        if isinstance(req, bytes):
+                            req = req.decode("utf-8", errors="replace")
+                        # format is "name >= version" or similar, we just need the string.
+                        # However, for boolean (rich) dependencies, they start with '(' and
+                        # can contain spaces.
+                        if req.startswith("("):
+                            req_name = req
+                        else:
+                            req_name = req.split()[0]
+
+                        if not req_name.startswith("rpmlib("):
+                            new_reqs.append(req_name)
+                except Exception as e:
+                    print(f"Error querying {rpm_path}: {e}", file=sys.stderr)
+                    sys.exit(rc)
+
+            if not new_reqs:
+                print("Error: Could not extract new requirements from .buildreqs.nosrc.rpm.", file=sys.stderr)
+                sys.exit(rc)
+
+            print(f"New requirements found: {', '.join(new_reqs)}")
+
+            # close open files
+            if bi_file:
+                bi_file.close()
+            if bc_file:
+                bc_file.close()
+            rpmlist_file.close()
+
+            opts._build_phase = phase + 1
+            opts.clean = False
+            opts.wipe = False
+            if not opts.extra_pkgs or opts.extra_pkgs == [""]:
+                opts.extra_pkgs = []
+            opts.extra_pkgs.extend(new_reqs)
+
+            return main(apiurl, store, opts, argv)
+
         if rc:
             print()
             print(f"Build failed with exit code {rc}")
