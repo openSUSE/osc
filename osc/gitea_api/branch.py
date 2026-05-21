@@ -66,8 +66,14 @@ class Branch(GiteaModel):
         :param repo: Name of the repo.
         :param branch: Name of the branch.
         """
+        from .exceptions import BranchDoesNotExist
+
+        exception_map = {
+            404: BranchDoesNotExist,
+        }
+
         url = conn.makeurl("repos", owner, repo, "branches", branch)
-        response = conn.request("GET", url, context={"owner": owner, "repo": repo})
+        response = conn.request("GET", url, context={"owner": owner, "repo": repo, "branch": branch}, exception_map=exception_map)
         obj = cls(response.json(), response=response)
         return obj
 
