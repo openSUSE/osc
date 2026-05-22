@@ -3,6 +3,8 @@ Feature: `osc fork` command
 
 Background:
     Given I set working directory to "{context.osc.temp}"
+      # Set GIT_SSH_COMMAND to skip host key verification for all git commands
+      And I set env "GIT_SSH_COMMAND" to "ssh -o IdentitiesOnly=yes -o IdentityFile={context.fixtures}/ssh-keys/admin -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o LogLevel=ERROR"
 
 
 @destructive
