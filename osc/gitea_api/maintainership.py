@@ -7,8 +7,8 @@ class MaintainerInfo(BaseModel):
     """
     A model representing users and groups associated with a project or package.
     """
-    users: Optional[List[str]] = Field(default=None)
-    groups: Optional[List[str]] = Field(default=None)
+    users: Optional[List[str]] = Field()
+    groups: Optional[List[str]] = Field()
 
 
 class MaintainershipDocumentType(str, Enum):
@@ -19,7 +19,7 @@ class MaintainershipHeader(BaseModel):
     """
     A model representing the maintainership document header.
     """
-    document: MaintainershipDocumentType = Field()
+    document: MaintainershipDocumentType = Field(default="obs-maintainers")
     version: str = Field(default="1.0")
 
 
@@ -72,17 +72,6 @@ class Maintainership(BaseModel):
             raise ValueError(f"Unknown maintainership.json version: {data['header']['version']}")
 
         return cls(**data)
-
-    def to_string(self):
-        """
-        Export _maintainership.json contents.
-
-        We always:
-          - exclude entries that have empty (None) value
-          - sort keys
-          - indent by 2 spaces
-        """
-        return super().to_string(exclude_none=True, sort_keys=True, indent=2)
 
     def get_package_maintainers_users(self, package: str) -> List[str]:
         if package not in self.packages:
