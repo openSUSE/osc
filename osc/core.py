@@ -2287,7 +2287,7 @@ def change_review_state(
     return root.get('code')
 
 
-def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None, force=False, keep_packages_locked=False):
+def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None, force=False, keep_packages_locked=False, can_fail: bool = False):
     query = {"cmd": "changestate", "newstate": newstate}
     if supersed:
         query['superseded_by'] = supersed
@@ -2297,7 +2297,14 @@ def change_request_state(apiurl: str, reqid, newstate, message="", supersed=None
         query['keep_packages_locked'] = "1"
     u = makeurl(apiurl,
                 ['request', reqid], query=query)
-    f = http_POST(u, data=message)
+    try:
+        f = http_POST(u, data=message)
+    except HTTPError as e:
+        if can_fail:
+            from .output import print_msg
+            print_msg(f"could not change state of request {reqid}: {e}", print_to="warning")
+            return None
+        raise
 
     root = xml_parse(f).getroot()
     return root.get('code', 'unknown')
