@@ -119,6 +119,30 @@ class Manifest:
 
         return result
 
+    def get_package_paths_bare_git(self, project_path: str, *, directories: List):
+        """
+        Return relative paths to the existing package directories in a project in a bare git repository.
+
+        :param directories: List of relative directory paths in the git repo.
+        """
+        result = []
+        directories = set(directories)
+
+        for path in self.packages:
+            if path not in directories:
+                continue
+            result.append(path)
+
+        for path in self.package_directories:
+            for i in directories:
+                if os.path.basename(i).startswith("."):
+                    continue
+                if os.path.dirname(i) != path:
+                    continue
+                result.append(i)
+
+        return result
+
 
 class Subdirs(Manifest):
     """

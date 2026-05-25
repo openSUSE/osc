@@ -38,7 +38,6 @@ class StagingPullRequestWrapper:
             commit=self.pr_obj.head_commit,
             directory=path,
             cache_directory=self._cache_directory,
-            depth=1,
             ssh_private_key_path=self.conn.login.ssh_key,
         )
         self.git = Git(path)
@@ -65,7 +64,6 @@ class StagingPullRequestWrapper:
             commit=self.pr_obj.base_commit,
             directory=path,
             cache_directory=self._cache_directory,
-            depth=1,
             ssh_private_key_path=self.conn.login.ssh_key,
         )
         self.base_git = Git(path)

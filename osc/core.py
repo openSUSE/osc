@@ -3209,6 +3209,7 @@ def checkout_package(
     size_limit=None,
     meta=False,
     outdir=None,
+    linkrev=None,
 ):
     try:
         # the project we're in might be deleted.
@@ -3297,7 +3298,7 @@ def checkout_package(
         # if it is a link we use the xsrcmd5 as the revision to be
         # checked out
         try:
-            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, include_service_files=server_service_files)
+            x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, linkrev=linkrev, meta=meta, include_service_files=server_service_files)
         except:
             x = show_upstream_xsrcmd5(apiurl, project, package, revision=revision, meta=meta, linkrev='base', include_service_files=server_service_files)
             if x:

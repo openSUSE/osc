@@ -325,7 +325,7 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
                     elif is_project:
                         base_value = base_submodules[i].get(key, None)
                         head_value = head_submodules[i].get(key, None)
-                        assert base_value == head_value, f"Submodule metadata has changed: key='{key}', base_value='{base_value}', head_value='{head_value}'"
+                        assert base_value == head_value, f"Submodule metadata has changed: submodule='{i}', key='{key}', base_value='{base_value}', head_value='{head_value}'"
 
                 base_commit = base_submodules[i].get("commit","")
                 head_commit = head_submodules[i].get("commit","")

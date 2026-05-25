@@ -5439,6 +5439,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='checkout the specified revision. '
                              'NOTE: if you checkout the complete project '
                              'this option is ignored!')
+    @cmdln.option(
+        "--linkrev",
+        metavar="REV",
+        help=(
+            "Revision of the link target that is used during link expansion.\n"
+            "Use --linkrev=base to checkout the exact revision of a package with _link."
+        ),
+    )
     @cmdln.option('-e', '--expand-link', action='store_true',
                         help='if a package is a link, check out the expanded '
                              'sources (no-op, since this became the default)')
@@ -5586,7 +5594,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                  prj_dir=project_dir, service_files=opts.source_service_files,
                                  server_service_files=opts.server_side_source_service_files,
                                  progress_obj=self.download_progress, size_limit=opts.limit_size,
-                                 meta=opts.meta, outdir=opts.output_dir, native_obs_package=opts.native_obs_package)
+                                 meta=opts.meta, outdir=opts.output_dir, native_obs_package=opts.native_obs_package,
+                                 linkrev=opts.linkrev)
                 if os.isatty(sys.stdout.fileno()):
                     print_request_list(apiurl, project, package)
 
@@ -5636,7 +5645,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                      prj_dir=prj_dir, service_files=opts.source_service_files,
                                      server_service_files=opts.server_side_source_service_files,
                                      progress_obj=self.download_progress, size_limit=opts.limit_size,
-                                     meta=opts.meta, native_obs_package=opts.native_obs_package)
+                                     meta=opts.meta, native_obs_package=opts.native_obs_package,
+                                     linkrev=opts.linkrev)
                 except oscerr.LinkExpandError as e:
                     print('Link cannot be expanded:\n', e, file=sys.stderr)
                     print('Use "osc repairlink" for fixing merge conflicts:\n', file=sys.stderr)
@@ -6054,7 +6064,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='update to specified revision (this option will be ignored '
                              'if you are going to update the complete project or more than '
                              'one package)')
-    @cmdln.option('', '--linkrev', metavar='REV',
+    @cmdln.option('--linkrev', metavar='REV',
                   help='revision of the link target that is used during link expansion')
     @cmdln.option('-u', '--unexpand-link', action='store_true',
                         help='if a package is an expanded link, update to the raw _link file')
