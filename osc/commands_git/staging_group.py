@@ -250,7 +250,7 @@ class StagingGroupCommand(osc.commandline_git.GitObsCommand):
                         ssh_strict_host_key_checking=not(args.no_ssh_strict_host_key_checking),
                     )
                     clone_git = gitea_api.Git(clone_dir)
-                    clone_git._run_git(["fetch", "origin", f"{target_branch}:{fork_branch}", "--force", "--update-head-ok", "--depth=1"])
+                    clone_git._run_git(["fetch", "origin", f"{target_branch}:{fork_branch}", "--force", "--update-head-ok"])
                     clone_git.switch(fork_branch)
                     clone_git.add_remote("fork", fork_repo_obj.ssh_url)
                     clone_git.push(remote="fork", branch=fork_branch, set_upstream=True, force=args.force)

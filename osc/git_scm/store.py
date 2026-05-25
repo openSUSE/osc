@@ -110,7 +110,7 @@ class LocalGitStore:
             return False
         return store.is_package
 
-    def __init__(self, path: str, *, check: bool = True):
+    def __init__(self, path: str, *, check: bool = True, ref: str = ""):
         from ..gitea_api import Git
         from ..obs_scm import Store
         from .manifest import Manifest
@@ -118,6 +118,7 @@ class LocalGitStore:
 
         self._git = Git(path)
         self._check = check
+        self._ref = ref
 
         if not os.path.isdir(self.abspath) or not self._git.topdir:
             msg = f"Directory '{path}' is not a Git SCM working copy"
@@ -135,11 +136,34 @@ class LocalGitStore:
         self._type = "package"
         self._topdir = self._git.topdir
 
+        self.project_store = None
         self.manifest = None
 
         # we detect projects by looking for certain file names next to .git
-        files = ["_manifest", "_config", "_pbuild", "_subdirs"]
-        for fn in files:
+        project_files = ["_manifest", "_config", "_pbuild", "_subdirs"]
+
+        if self._git.is_bare:
+            # bare git repos require special handling:
+            # - they don't have subdirectories, checking if we're in a package subdir makes no sense
+            # - it makes no sense to expect .osc available on disk
+            ref = self._ref or "HEAD"
+            files = self._git._run_git(["ls-tree", "--name-only", "-r", ref]).splitlines()
+            common_files = set(project_files) & set(files)
+            if common_files:
+                self._type = "project"
+
+                if "_manifest" in common_files:
+                    manifest_str = self._git._run_git(["cat-file", "blob", f"{ref}:_manifest"])
+                    self.manifest = Manifest.from_string(manifest_str)
+                elif "_subdirs" in common_files:
+                    manifest_str = self._git._run_git(["cat-file", "blob", f"{ref}:_subdirs"])
+                    self.manifest = Manifest.from_string(manifest_str)
+                else:
+                    self.manifest = Manifest({})
+
+            return
+
+        for fn in project_files:
             path = os.path.join(self._git.topdir, fn)
             if os.path.exists(path):
                 self._type = "project"
@@ -164,7 +188,6 @@ class LocalGitStore:
                     self._topdir = package_topdir
                     self.manifest = None
 
-        self.project_store = None
         if self.type == "package":
             # load either .osc or .git project store from the directory above topdir
             if not self.project_store:
@@ -531,8 +554,8 @@ class GitStore(LocalGitStore):
     A class for managing OBS metadata in .git that also reads the values from additional locations
     such as the parent project's metadata or the _manifest file.
     """
-    def __init__(self, path: str, check: bool = True, *, cached: bool = True):
-        super().__init__(path, check=check)
+    def __init__(self, path: str, check: bool = True, *, cached: bool = True, ref: str = ""):
+        super().__init__(path, check=check, ref=ref)
         self.cached = cached
         self._cache = {}
 
@@ -685,6 +708,10 @@ class GitStore(LocalGitStore):
             need_commit = False
         else:
             git.init(initial_branch=initial_branch)
+
+        # NOTE: init() should be a classmethod
+        # we need to initialize Git() after initializing the repo again to set topdir and git_dir properly
+        git = gitea_api.Git(dest)
 
         # merge .gitattributes
         fn = ".gitattributes"

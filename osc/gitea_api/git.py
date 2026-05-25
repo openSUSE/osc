@@ -1,6 +1,7 @@
 import os
 import re
 import subprocess
+import sys
 import urllib
 from typing import Dict
 from typing import Iterator
@@ -72,8 +73,72 @@ class Git:
 
         return new_url
 
+    @staticmethod
+    def parse_githook_stdin() -> Iterator[Tuple[str, str, str]]:
+        """
+        Returns [(old_rev, new_rev, ref_name)] from stdin.
+        Standard for pre-receive and post-receive hooks.
+        """
+        result = []
+        for line in sys.stdin:
+            parts = line.split()
+            if len(parts) != 3:
+                raise RuntimeError(f"Unexpected line in githook stdin: {line}")
+            result.append(parts)
+        return result
+
+    @staticmethod
+    def is_null_rev(rev: str) -> bool:
+        """Check if a revision is the null revision (all zeros)."""
+        return not rev or rev.strip("0") == ""
+
+    @classmethod
+    def detect_git(cls, path: str) -> Optional[Tuple[bool, str, str]]:
+        """
+        Detect git repo based on given ``path``.
+        Return (is_bare, git_dir, top_dir).
+        """
+
+        if not os.path.isdir(path):
+            # subprocess.run() would fail with FileNotFoundError or NotADirectoryError
+            return None
+
+        cmd = ["git", "rev-parse", "--is-bare-repository", "--is-inside-git-dir", "--absolute-git-dir", "--show-cdup"]
+        proc = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, encoding="utf-8", check=False, cwd=path)
+
+        if proc.returncode != 0:
+            return None
+
+        lines = proc.stdout.splitlines()
+        if len(lines) < 3:
+            return None
+
+        is_bare = lines[0] == "true"
+        is_inside_git_dir = lines[1] == "true"
+        git_dir = lines[2]
+
+        if is_bare:
+            # in bare repo, top dir and git dir are the same
+            top_dir = git_dir
+        else:
+            if is_inside_git_dir:
+                top_dir = os.path.dirname(git_dir)
+            else:
+                # in non-bare repo, the 4th line is the relative path to root
+                cdup = lines[3] if len(lines) > 3 else ""
+                top_dir = os.path.abspath(os.path.join(path, cdup))
+
+        return is_bare, git_dir, top_dir
+
     def __init__(self, workdir):
         self.abspath = os.path.abspath(workdir)
+        self.is_bare = None
+        self.git_dir = None
+        self.topdir = None
+
+        values = self.detect_git(self.abspath)
+        if values:
+            self.is_bare, self.git_dir, self.topdir = values
 
     def _run_git(self, args: List[str], use_topdir: bool = False, mute_stderr: bool = False) -> str:
         cwd = self.topdir if use_topdir else self.abspath
@@ -81,31 +146,6 @@ class Git:
         if mute_stderr:
             return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=cwd, stderr=subprocess.DEVNULL).strip()
         return subprocess.check_output(["git"] + args, encoding="utf-8", cwd=cwd).strip()
-
-    @property
-    def topdir(self) -> Optional[str]:
-        """
-        A custom implementation to `git rev-parse --show-toplevel` to avoid executing git which is sometimes unnecessary expensive.
-        """
-        path = self.abspath
-        while path:
-            if os.path.exists(os.path.join(path, ".git")):
-                break
-
-            path, dirname = os.path.split(path)
-
-            if (path, dirname) == ("/", ""):
-                # no git repo found
-                return None
-
-        return path
-
-    @property
-    def git_dir(self) -> Optional[str]:
-        try:
-            return self._run_git(["rev-parse", "--git-dir"])
-        except subprocess.CalledProcessError:
-            return None
 
     def init(self, *, initial_branch: Optional[str] = None, quiet: bool = True, mute_stderr: bool = False):
         cmd = ["init", "--object-format=sha256"]
@@ -437,6 +477,40 @@ class Git:
                 cmd += [branch]
         self._run_git(cmd)
 
+    def ls_tree(self, ref: str = "HEAD") -> List[Dict]:
+        regex = re.compile(r"^(?P<mode>[0-9]+) (?P<object_type>[a-z]+) (?P<commit>[a-f0-9]+) +(?P<size>[\d-]+)\t+(?P<path>.+)$")
+        lines = self._run_git(["ls-tree", "-r", "--long", ref]).splitlines()
+
+        # map mode to a human readable file type
+        file_types = {
+            "040000": "directory",
+            "100644": "file",
+            "100755": "file",
+            "120000": "symlink",
+            "160000": "submodule",
+        }
+
+        result = []
+        for line in lines:
+            match = regex.match(line)
+            if not match:
+                continue
+
+            data = match.groupdict()
+
+            # add human readable file type
+            data["file_type"] = file_types.get(data["mode"], None)
+
+            # convert size to int
+            if data["size"] == "-":
+                data["size"] = None
+            else:
+                data["size"] = int(data["size"])
+
+            result.append(data)
+
+        return result
+
     def ls_files(self, ref: str = "HEAD", suffixes: Optional[List[str]] = None) -> Dict[str, str]:
         out = self._run_git(["ls-tree", "-r", "--format=%(objectname) %(path)", ref])
         regex = re.compile(r"^(?P<checksum>[0-9a-f]+) (?P<path>.*)$")
@@ -503,14 +577,14 @@ class Git:
 
     # SUBMODULES
 
-    def get_submodules(self) -> dict:
+    def get_submodules(self, ref: str = "") -> dict:
         SUBMODULE_RE = re.compile(r"^submodule\.(?P<submodule>[^=]*)\.(?P<key>[^\.=]*)=(?P<value>.*)$")
-        STATUS_RE = re.compile(r"^(?P<status>.)(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+).*$")
 
+        ref = ref or "HEAD"
         result = {}
 
         try:
-            lines = self._run_git(["config", "--blob", "HEAD:.gitmodules", "--list"], mute_stderr=True).splitlines()
+            lines = self._run_git(["config", "--blob", f"{ref}:.gitmodules", "--list"], mute_stderr=True).splitlines()
         except subprocess.CalledProcessError:
             # .gitmodules file is missing
             return {}
@@ -527,22 +601,35 @@ class Git:
             submodule_entry = result.setdefault(submodule, {})
             submodule_entry[key] = value
 
-        lines = self._run_git(["submodule", "status"], use_topdir=True).splitlines()
+        if self.is_bare or ref:
+            # querying a bare git repo or a specified ref
+            submodules = self.ls_tree(ref)
+            submodules = [i for i in submodules if i["file_type"] == "submodule"]
+            for i in submodules:
+                if i["file_type"] != "submodule":
+                    continue
+                submodule = i["path"]
+                result[submodule]["commit"] = i["commit"]
+                result[submodule]["status"] = " "
 
-        for line in lines:
-            match = STATUS_RE.match(line)
-            if not match:
-                continue
-            submodule = match.groupdict()["submodule"]
-            commit = match.groupdict()["commit"]
-            status = match.groupdict()["status"]
-            result[submodule]["commit"] = commit
-            result[submodule]["status"] = status
+        else:
+            # querying working tree
+            STATUS_RE = re.compile(r"^(?P<status>.)(?P<commit>[a-f0-9]+) (?P<submodule>[^ ]+)\s*(\((?P<description>.*)\))?$")
+            lines = self._run_git(["submodule", "status"], use_topdir=True).splitlines()
+            for line in lines:
+                match = STATUS_RE.match(line)
+                if not match:
+                    continue
+                submodule = match.groupdict()["submodule"]
+                commit = match.groupdict()["commit"]
+                status = match.groupdict()["status"]
+                result[submodule]["commit"] = commit
+                result[submodule]["status"] = status
 
         remote_url = self.get_remote_url()
         for submodule_entry in result.values():
             url = submodule_entry["url"]
-            if not url.startswith("../../"):
+            if not url.startswith("../"):
                 submodule_entry["clone_url"] = url
                 continue
  
@@ -553,3 +640,28 @@ class Git:
             submodule_entry["repo"] = repo
 
         return result
+
+    # COMMITS
+    def get_commit_range(self, old_rev: str, new_rev: str, *, not_all: bool = False) -> List[str]:
+        """
+        Returns a list of commit SHAs in old_rev..new_rev range.
+        This is frequently used in git hooks.
+
+        :param not_all: Add --not --all parameters to skip all commits that are part of any other branch.
+        """
+        if self.is_null_rev(new_rev):
+            # branch deletion
+            return []
+
+        if self.is_null_rev(old_rev):
+            # new branch
+            args = ["rev-list", new_rev]
+        else:
+            # branch update
+            args = ["rev-list", f"{old_rev}..{new_rev}"]
+
+        if not_all:
+            args += ["--not", "--all"]
+
+        output = self._run_git(args)
+        return output.splitlines() if output else []

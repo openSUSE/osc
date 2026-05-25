@@ -53,7 +53,7 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
             refs = [(owner.lower(), repo.lower(), number) for owner, repo, number in refs]
             missing_refs = []
             for owner, repo, number in args.pr_list:
-                if (owner, repo, number) not in refs:
+                if (owner.lower(), repo.lower(), number) not in refs:
                     missing_refs.append(f"{owner}/{repo}#{number}")
             if missing_refs:
                 msg = f"The following pull requests are not referenced in the project pull request: {', '.join(missing_refs)}"
@@ -75,7 +75,12 @@ class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
                 target.remove(pr)
 
             # push to git repo associated with the target pull request
-            target.git.push(remote="fork", branch=f"pull/{target.pr_obj.number}:{target.pr_obj.head_branch}")
+            remote = "origin"
+            if (target.pr_obj.base_owner, target.pr_obj.base_repo) != (target.pr_obj.head_owner, target.pr_obj.head_repo):
+                remote = "head"
+                target.git.add_remote(remote, target.pr_obj._data["head"]["repo"]["ssh_url"])
+            target.git.push(remote=remote, branch=f"pull/{target.pr_obj.number}:{target.pr_obj.head_branch}")
+
             # update target pull request
             target.pr_obj.set(self.gitea_conn, target_owner, target_repo, target_number, description=target.pr_obj.body)
 

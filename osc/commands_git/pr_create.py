@@ -98,6 +98,12 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             action="store_true",
             help="Allow creating a pull request even if there are no changes",
         )
+        self.add_argument(
+            "--allow-maintainer-edit",
+            choices=["0", "1", "yes", "no"],
+            default="yes",
+            help="Whether users with write access to the base branch can also push to the pull request's head branch (default: yes)",
+        )
 
     def run(self, args):
         if args.separate_requests:
@@ -186,9 +192,14 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
                         target_repo = parent.repo
                         break
         else:
-            # remote git repo - target
-            target_owner = source_repo_obj.parent_obj.owner
-            target_repo = source_repo_obj.parent_obj.repo
+            if source_repo_obj.parent_obj:
+                # we're creating the PR in source repo's parent
+                target_owner = source_repo_obj.parent_obj.owner
+                target_repo = source_repo_obj.parent_obj.repo
+            else:
+                # there's no parent, we're creating PR directly in the source repo
+                target_owner = source_owner
+                target_repo = source_repo
 
         source_fork_root = gitea_api.Repo.get_fork_tree_root(self.gitea_conn, source_owner, source_repo)
         target_fork_root = None
@@ -234,7 +245,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         print(f" * Target: {target_owner}/{target_repo}, branch: {target_branch_obj.name}, commit: {target_branch_obj.commit}", file=sys.stderr)
 
         if use_local_git and local_commit != source_branch_obj.commit:
-            msg = "Local commit doesn't correspond with the latest commit in the remote source branch"
+            msg = "Local commit doesn't correspond with the latest commit in the remote source branch. Did you forget to push your changes with 'git push'?"
             if ignore_identical:
                 raise gitea_api.GitObsRuntimeError(msg)
             print(f"{tty.colorize('ERROR', 'red,bold')}: {msg}")
@@ -310,6 +321,7 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
             source_branch=source_branch,
             title=title,
             description=description,
+            allow_maintainer_edit=args.allow_maintainer_edit in ("1", "yes"),
         )
 
         print("", file=sys.stderr)
