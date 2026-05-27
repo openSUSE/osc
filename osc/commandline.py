@@ -6164,20 +6164,22 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 directory = xml_fromstring(meta)
                 li_node = directory.find('linkinfo')
                 if li_node is None:
-                    print(f'Revision \'{rev}\' is no link', file=sys.stderr)
-                    sys.exit(1)
-                li = Linkinfo()
-                li.read(li_node)
-                if li.haserror() and opts.expand_link:
-                    raise oscerr.LinkExpandError(pacs[0].prjname, pacs[0].name,
-                                                 li.error)
-                rev = li.lsrcmd5
-                if opts.expand_link:
-                    rev = li.xsrcmd5
-                if rev is None:
-                    # 2 cases: a) unexpand and passed rev has linkerror
-                    #          b) expand and passed rev is already expanded
-                    rev = directory.get('srcmd5')
+                    # not a link: --expand-link/--unexpand-link are no-ops,
+                    # fall back to the plain revision instead of failing
+                    rev = directory.get('srcmd5') or rev
+                else:
+                    li = Linkinfo()
+                    li.read(li_node)
+                    if li.haserror() and opts.expand_link:
+                        raise oscerr.LinkExpandError(pacs[0].prjname, pacs[0].name,
+                                                     li.error)
+                    rev = li.lsrcmd5
+                    if opts.expand_link:
+                        rev = li.xsrcmd5
+                    if rev is None:
+                        # 2 cases: a) unexpand and passed rev has linkerror
+                        #          b) expand and passed rev is already expanded
+                        rev = directory.get('srcmd5')
         else:
             rev = None
 
