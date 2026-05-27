@@ -1,3 +1,4 @@
+import os
 import re
 import sys
 import urllib.parse
@@ -9,7 +10,12 @@ import osc.commandline_git
 
 class ForkCommand(osc.commandline.OscCommand):
     """
-    Fork a project or a package with sources managed in Gitea
+    Fork a scmsync project or a package with sources managed in Gitea
+
+    Make a local checkout to be reviewed and pushed to the target branch because:
+    * The target branch may or may not exist.
+    * If the target branch exists, it may contain outdated or unrelated contents.
+    * The branch may be used in scmsync packages or linked to git projects as a submodule, changing the branch impacts them all.
     """
 
     name = "fork"
@@ -163,10 +169,7 @@ class ForkCommand(osc.commandline.OscCommand):
         if not branch:
             repo_obj = gitea_api.Repo.get(gitea_conn, owner, repo)
             branch = repo_obj.default_branch
-        fork_branch = branch
-
-        # check if the scmsync branch exists in the source repo
-        parent_branch_obj = gitea_api.Branch.get(gitea_conn, owner, repo, fork_branch)
+        fork_branch = args.git_branch or branch
 
         try:
             repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name, target_org=args.gitea_fork_org)
@@ -183,18 +186,33 @@ class ForkCommand(osc.commandline.OscCommand):
             print(f" * You may also want to delete '{e.owner}/{e.repo}' and retry")
             sys.exit(1)
 
-        # Crete the new branch if specified
-        if args.git_branch:
-            old_ref_name = fork_branch
-            fork_branch = args.git_branch
-            try:
-                parent_branch_obj = gitea_api.Branch.create(
-                    gitea_conn, fork_owner, fork_repo, old_ref_name=old_ref_name, new_branch_name=fork_branch
-                )
-            except gitea_api.BranchExists:
-                print(f" * Branch already exists: {fork_branch}")
+        clone_path = os.path.join(os.getcwd(), f"{fork_owner}-{fork_repo}-{fork_branch}")
 
-        # XXX: implicit branch name should be forbidden; assumptions are bad
+        if os.path.exists(clone_path):
+            print(f"{tty.colorize('ERROR', 'red,bold')}: Directory '{clone_path}' already exists. Cannot prepare local changes.")
+            sys.exit(1)
+
+        print(f" * Cloning Gitea fork {fork_owner}/{fork_repo} into '{clone_path}' ...")
+        gitea_api.Repo.clone(
+            self.gitea_conn,
+            fork_owner,
+            fork_repo,
+            directory=clone_path,
+            add_remotes=True,  # this adds 'parent' remote pointing to source
+            use_http=self.gitea_login.git_uses_http,
+            ssh_private_key_path=self.gitea_login.ssh_key,
+        )
+
+        git = gitea_api.Git(clone_path)
+        print(f" * Fetching parent branch {owner}/{repo}:{branch} ...")
+        git._run_git(["fetch", "parent", branch])
+
+        print(f" * Preparing branch '{fork_branch}' from 'parent/{branch}' ...")
+        # Use checkout -B to create or reset the branch to match parent
+        git._run_git(["checkout", "-B", fork_branch, f"parent/{branch}"])
+        git.set_config(f"branch.{branch}.remote", "origin")
+
+        # OBS fork
         fork_scmsync = urllib.parse.urlunparse(
             (parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, f"{fork_owner}/{fork_repo}", "", parsed_scmsync_url.query, fork_branch)
         )
@@ -225,15 +243,28 @@ class ForkCommand(osc.commandline.OscCommand):
             print(f" * Fork created: {target_project}")
         print(f" * scmsync URL: {fork_scmsync}")
 
-        # check if the scmsync branch exists in the forked repo
-        fork_branch_obj = gitea_api.Branch.get(gitea_conn, fork_owner, fork_repo, fork_branch)
+        # initialize .osc directory
+        if is_package:
+            p = osc_core.Package.init_package(
+                args.apiurl,
+                target_project,
+                target_package,
+                clone_path,
+                scm_url=fork_scmsync
+            )
 
-        parent_commit = parent_branch_obj.commit
-        fork_commit = fork_branch_obj.commit
-        if parent_commit != fork_commit:
-            print()
-            print(f"{tty.colorize('ERROR', 'red,bold')}: The branch in the forked repo is out of sync with the parent")
-            print(f" * Fork: {fork_owner}/{fork_repo}#{fork_branch}, commit: {fork_commit}")
-            print(f" * Parent: {owner}/{repo}#{fork_branch}, commit: {parent_commit}")
-            print(" * If this is not intentional, please clone the fork and fix the branch manually")
-            sys.exit(1)
+            # we have forked the package, we expect that it exists, hence not catching any exceptions
+            p.update_local_pacmeta()
+        else:
+            osc_core.Project.init_project(
+                args.apiurl,
+                clone_path,
+                target_project,
+                scm_url=fork_scmsync
+            )
+
+        print(f"\n * {tty.colorize('SUCCESS', 'green,bold')}: Fork completed.")
+        print(f"   Please review the changes and push manually to Gitea:")
+        print(f"     cd {clone_path}")
+        print(f"     git diff origin/{fork_branch}  # applicable only if modifying an existing branch")
+        print(f"     git push origin {fork_branch}")
