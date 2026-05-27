@@ -345,3 +345,38 @@ Scenario: Rebase a pull request checkout to non fast-forwardable changes
 #             \| http://localhost:{context.podman.container.ports[gitea_http]}/pool/test-GitPkgA/commit/........................................
 #             \| Merge pull request 'NEW TITLE' \(#1\) from Admin/test-GitPkgA:factory into new-branch
 #          """
+
+@destructive
+Scenario: Create a pull request using --source and --target
+    When I execute "git checkout -b new-branch-1"
+     And I execute "git push origin new-branch-1"
+     And I execute git-obs with args "pr create --source Admin/test-GitPkgA:new-branch-1 --target pool/test-GitPkgA:factory --title 'New PR' --description 'desc' --allow-empty"
+    Then the exit code is 0
+     And stderr contains "Source: Admin/test-GitPkgA, branch: new-branch-1"
+     And stderr contains "Target: pool/test-GitPkgA, branch: factory"
+     And stderr contains "Pull request created:"
+
+@destructive
+Scenario: Create a pull request using --target with :branch format
+    When I execute "git checkout -b new-branch-2"
+     And I execute "git push origin new-branch-2"
+     And I execute git-obs with args "pr create --target :factory --title 'New PR' --description 'desc' --allow-empty"
+    Then the exit code is 0
+     And stderr contains "Source: Admin/test-GitPkgA, branch: new-branch-2"
+     And stderr contains "Target: pool/test-GitPkgA, branch: factory"
+     And stderr contains "Pull request created:"
+
+@destructive
+Scenario: Create a pull request using deprecated options and check for warning
+    When I execute "git checkout -b new-branch-3"
+     And I execute "git push origin new-branch-3"
+     And I execute git-obs with args "pr create --target-branch factory --title 'New PR' --description 'desc' --allow-empty"
+    Then the exit code is 0
+     And stderr contains "WARNING: Options --target-branch are deprecated, please use --source and --target instead"
+     And stderr contains "Pull request created:"
+
+@destructive
+Scenario: Fail to create a pull request when mixing new and deprecated options
+    When I execute git-obs with args "pr create --target :factory --target-owner pool --title 'New PR' --description 'desc' --allow-empty"
+    Then the exit code is 2
+     And stderr contains "error: Options --target-owner cannot be used together with --target"

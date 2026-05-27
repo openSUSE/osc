@@ -40,6 +40,33 @@ class OwnerRepoPullAction(argparse.Action):
         setattr(namespace, self.dest, namespace_value)
 
 
+class OwnerRepoBranchAction(argparse.Action):
+    def __init__(self, *args, **kwargs):
+        self.owner_optional = kwargs.pop("owner_optional", False)
+        self.repo_optional = kwargs.pop("repo_optional", False)
+        super().__init__(*args, **kwargs)
+
+    def __call__(self, parser, namespace, value, option_string=None):
+        from . import gitea_api
+
+        try:
+            if isinstance(value, list):
+                namespace_value = [
+                    gitea_api.Branch.split_id(
+                        i, owner_optional=self.owner_optional, repo_optional=self.repo_optional
+                    )
+                    for i in value
+                ]
+            else:
+                namespace_value = gitea_api.Branch.split_id(
+                    value, owner_optional=self.owner_optional, repo_optional=self.repo_optional
+                )
+        except ValueError as e:
+            raise argparse.ArgumentError(self, str(e))
+
+        setattr(namespace, self.dest, namespace_value)
+
+
 class BooleanAction(argparse.Action):
     def __call__(self, parser, namespace, value, option_string=None):
         if value is None:
@@ -114,6 +141,30 @@ class GitObsCommand(osc.commandline_common.Command):
             help=help,
             **kwargs,
         )
+
+    def add_argument_owner_repo_branch(self, *args, **kwargs):
+        owner_optional = kwargs.pop("owner_optional", False)
+        repo_optional = kwargs.pop("repo_optional", False)
+        dest = kwargs.pop("dest", "owner_repo_branch")
+        help = kwargs.pop("help", "Owner, repo and branch")
+
+        help_fmt = "<owner>/<repo>:<branch>"
+        if owner_optional and repo_optional:
+            help_fmt = "<owner>/<repo>:<branch>, <owner>:<branch>, :<branch>"
+        elif repo_optional:
+            help_fmt = "<owner>/<repo>:<branch>, <owner>:<branch>"
+        help += f" (format: {help_fmt})"
+
+        arg = self.add_argument(
+            *args,
+            dest=dest,
+            action=OwnerRepoBranchAction,
+            help=help,
+            owner_optional=owner_optional,
+            repo_optional=repo_optional,
+            **kwargs,
+        )
+        return arg
 
     def add_argument_new_repo_name(self):
         return self.add_argument(

@@ -15,6 +15,7 @@ from .conf import Login
 from .fork import Fork
 from .git import Git
 from .git_diff_generator import GitDiffGenerator
+from .issue import Issue
 from .issue_timeline_entry import IssueTimelineEntry
 from .json import json_dumps
 from .maintainership import Maintainership
