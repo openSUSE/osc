@@ -846,7 +846,9 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
 
         self.assertIsNone(result)
         self.assertEqual(warn.call_count, 1)
-        self.assertEqual(warn.call_args.kwargs.get("print_to"), "warning")
+        # call_args is (args, kwargs); .kwargs attr exists on Python >= 3.8
+        call_kwargs = warn.call_args[1] if warn.call_args else {}
+        self.assertEqual(call_kwargs.get("print_to"), "warning")
 
     def test_without_can_fail_raises(self):
         """Without can_fail, HTTPErrors still propagate."""
