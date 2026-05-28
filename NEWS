@@ -1,3 +1,49 @@
+- 1.27.0
+  - Command-line:
+    - Change 'osc fork' to work through a local checkout that need to be reviewed and pushed by a user
+    - Change 'git-obs pr create' to use '--source' and '--target' options instead of separate options for owner, repo, and branch
+    - Change 'osc rmkpac' to require fragment with branch name in --scmsync url
+    - Add 'git-obs pr new-package-request' command
+    - Add '--allow-maintainer-edit' option to 'git-obs pr create' and enable it by default
+    - Add '--linkrev' option to 'osc co' command, now we can run 'osc co prj/pac --linkrev=base to get to the exact sources for a revision
+    - Add link revision to the 'osc info' output for a package
+    - Add 'git-obs file maintainership migrate' command
+    - Make 'osc up --expand-link' a no-op on non-linked packages
+    - Suggest running 'git push' in 'git-obs pr create' when the local checkout differs from the server
+    - Avoid making shallow clones in 'git-obs staging' commands, they cannot be pushed to different remotes
+    - Fix 'git-obs pr create' to allow creating pull requests between repos in the same fork tree
+    - Fix 'git-obs staging remove' to push changes to the correct remote matching with the PR head
+    - Fix 'git-obs pr create' when creating a PR in a repo with no parent
+    - Fix 'git-obs staging group' by fetching the whole branch instead of --depth=1
+    - Fix crash in 'git-obs pr dump' by adding '-c core.commitGraph=false' to 'git clone --dissociate'
+    - Fix crash in 'osc buildlog' when repo and arch are not specified
+    - Fix crash in 'git-obs pr dump' when timeline contains a null entry
+    - Fix crash when running 'osc meta pkg' in a project checkout
+    - Clarify error message in 'git-obs pr dump' by providing submodule name
+    - Remove a misleading error message when a package doesn't exist during 'osc rq show --diff'
+  - Library:
+    - Introduce branch_id: add Branch.parse_id(), add GitObsCommand.add_argument_owner_repo_branch()
+    - Improve gitea_api.Git to properly detect bare git repos
+    - Add gitea_api.PullRequest.merged_at property
+    - Add gitea_api.Git.ls_tree() method
+    - Add gitea_api.Git methods for working with githooks
+    - Add Manifest.get_package_paths_bare_git() that can resolve existing packages in a project in bare git repo
+    - Add 'exclude_none' option to skip dictionary entries without a value to BaseModel.dict()
+    - Change BaseModel.to_string() to take optional arguments: exclude_none, sort_keys, indent
+    - Improve LocalGitStore to handle bare git repos and also specified git refs
+    - Enable querying bare git repos and specified refs in gitea_api.Git.get_submodules()
+    - Use the correct exception class for 404 in gitea_api.Branch.get()
+    - Fix creating 'parent' and 'fork' remotes in Repo.clone()
+    - Fix FutureWarning caused by calling urllib3 HTTPSConnection.set_cert() in v2+
+    - Accept extra kwargs in OscArgumentParser._get_formatter for Python 3.15 argparse change
+    - Fix Repo.get_label_ids() to use pagination to retrieve all results
+    - Fix Repo.clone_or_update() by passing 'branch' argument to the underlying clone()
+    - Fix comparison operators in gitea_api.Repo
+    - Fix crash in Package.info() when working with a git package, raise an exception as expected
+    - Fix @ignore_http_errors decorator by properly handling HTTPError exception
+    - Change 'Repo.clone()' to use existing GIT_SSH_COMMAND env if provided, only append new args.
+    - Do case insensitive PR ID match in PullRequest.remove_pr_references()
+
 - 1.26.0
   - Command-line:
     - Add 'git-obs repo init' command

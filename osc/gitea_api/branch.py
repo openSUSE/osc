@@ -1,5 +1,7 @@
+import re
 from typing import List
 from typing import Optional
+from typing import Tuple
 
 from .common import GiteaModel
 from .connection import Connection
@@ -17,6 +19,38 @@ class Branch(GiteaModel):
         return self._data["name"]
 
     @classmethod
+    def split_id(
+        cls, repo_branch_id: str, *, owner_optional: bool = False, repo_optional: bool = False
+    ) -> Tuple[Optional[str], Optional[str], str]:
+        """
+        Split <owner>/<repo>:<branch> into individual components and return them in a tuple.
+        Allowed formats: <owner>/<repo>:<branch>, <owner>:<branch>, :<branch>
+        """
+        # <owner>/<repo>:<branch>
+        match = re.match(r"^([^/]+)/([^/]+):(.+)$", repo_branch_id)
+        if match:
+            owner, repo, branch = match.group(1), match.group(2), match.group(3)
+        else:
+            # <owner>:<branch>
+            match = re.match(r"^([^/:]+):(.+)$", repo_branch_id)
+            if match:
+                owner, repo, branch = match.group(1), None, match.group(2)
+            else:
+                # :<branch>
+                match = re.match(r"^:(.+)$", repo_branch_id)
+                if match:
+                    owner, repo, branch = None, None, match.group(1)
+                else:
+                    raise ValueError(f"Invalid repo branch id: {repo_branch_id}")
+
+        if owner is None and not owner_optional:
+            raise ValueError(f"owner is required in '{repo_branch_id}'")
+        if repo is None and not repo_optional:
+            raise ValueError(f"repo is required in '{repo_branch_id}'")
+
+        return owner, repo, branch
+
+    @classmethod
     def get(
         cls,
         conn: Connection,
@@ -32,8 +66,14 @@ class Branch(GiteaModel):
         :param repo: Name of the repo.
         :param branch: Name of the branch.
         """
+        from .exceptions import BranchDoesNotExist
+
+        exception_map = {
+            404: BranchDoesNotExist,
+        }
+
         url = conn.makeurl("repos", owner, repo, "branches", branch)
-        response = conn.request("GET", url, context={"owner": owner, "repo": repo})
+        response = conn.request("GET", url, context={"owner": owner, "repo": repo, "branch": branch}, exception_map=exception_map)
         obj = cls(response.json(), response=response)
         return obj
 

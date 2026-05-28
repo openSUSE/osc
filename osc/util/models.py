@@ -528,7 +528,7 @@ class BaseModel(metaclass=ModelMeta):
         """
         import json
 
-        result = json.dumps(self.dict(exclude_none=exclude_none), sort_keys=sort_keys, indent=indent)
+        result = json.dumps(self.dict(exclude_none=exclude_none), sort_keys=sort_keys, indent=indent) + '\n'
         return result
 
     def do_snapshot(self):

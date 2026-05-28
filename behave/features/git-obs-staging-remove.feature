@@ -41,7 +41,7 @@ Background:
      And I execute "git rev-parse HEAD"
      And I search '(?P<commit>[0-9a-f]{40})' in stdout and store named groups in 'package_feature_commit'
      And I execute "git push origin feature/1"
-     And I execute git-obs with args "-G alice pr create --title 'feature/1' --description='some text' --target-branch factory"
+     And I execute git-obs with args "-G alice pr create --title 'feature/1' --description='some text' --target :factory"
      And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/labels --data='{{"name": "staging/Backlog", "color": "#ffffff"}}'"
      And I execute git-obs with args "api -X POST /repos/pool/test-GitPkgA/issues/1/labels --data='{{"labels": ["staging/Backlog"]}}'"
 
@@ -61,7 +61,7 @@ Background:
      And I execute "git push origin staging-1"
 
      # Alice creates the staging PR in _ObsPrj referencing test-GitPkgA#1
-     And I execute git-obs with args "-G alice pr create --title 'Staging PR' --description='PR: pool/test-GitPkgA!1' --target-branch factory"
+     And I execute git-obs with args "-G alice pr create --title 'Staging PR' --description='PR: pool/test-GitPkgA!1' --target :factory"
      And I search 'ID          : (?P<id>pool/_ObsPrj#(?P<number>[0-9]+))' in stdout and store named groups in 'staging_pr'
 
 

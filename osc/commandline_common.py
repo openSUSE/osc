@@ -17,8 +17,10 @@ IN_VENV = getattr(sys, "real_prefix", sys.base_prefix) != sys.prefix
 
 
 class OscArgumentParser(argparse.ArgumentParser):
-    def _get_formatter(self):
-        # cache formatter to speed things a little bit up
+    def _get_formatter(self, *args, **kwargs):
+        # Accept extra parameters (like `file` in Python 3.15) while
+        # keeping the original behaviour: cache and return a formatter
+        # instance created with the parser program name.
         if not hasattr(self, "_formatter"):
             self._formatter = self.formatter_class(prog=self.prog)
         return self._formatter

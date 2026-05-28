@@ -142,21 +142,20 @@ class Repo(GiteaModel):
 
         remotes = {}
         if add_remotes:
-            user_obj = User.get(conn)
-            if repo_obj.owner == user_obj.login:
-                # we're cloning our own repo, setting remote to the parent (if exists)
-                if repo_obj.parent_obj:
-                    remotes["parent"] = repo_obj.parent_obj.clone_url if use_http else repo_obj.parent_obj.ssh_url
-            else:
-                # we're cloning someone else's repo, setting remote to our fork (if exists)
-                from . import Fork
+            from . import Fork
 
-                fork_obj_list = Fork.list(conn, owner, repo)
-                fork_obj_list = [fork_obj for fork_obj in fork_obj_list if fork_obj.owner == user_obj.login]
-                if fork_obj_list:
-                    assert len(fork_obj_list) == 1
-                    fork_obj = fork_obj_list[0]
-                    remotes["fork"] = fork_obj.clone_url if use_http else fork_obj.ssh_url
+            # add "parent" remote if applicable
+            if repo_obj.parent_obj:
+                remotes["parent"] = repo_obj.parent_obj.clone_url if use_http else repo_obj.parent_obj.ssh_url
+
+            # add "fork" remote if applicable
+            user_obj = User.get(conn)
+            fork_obj_list = Fork.list(conn, owner, repo)
+            fork_obj_list = [fork_obj for fork_obj in fork_obj_list if fork_obj.owner == user_obj.login]
+            if fork_obj_list:
+                assert len(fork_obj_list) == 1
+                fork_obj = fork_obj_list[0]
+                remotes["fork"] = fork_obj.clone_url if use_http else fork_obj.ssh_url
 
         ssh_args = []
         env = os.environ.copy()
@@ -375,10 +374,10 @@ class Repo(GiteaModel):
         """
         result = {}
         url = conn.makeurl("repos", owner, repo, "labels")
-        response = conn.request("GET", url)
-        labels = response.json()
-        for label in labels:
-            result[label["name"]] = label["id"]
+        for response in conn.request_all_pages("GET", url):
+            labels = response.json()
+            for label in labels:
+                result[label["name"]] = label["id"]
         return result
 
     @classmethod
