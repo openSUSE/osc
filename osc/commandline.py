@@ -9997,8 +9997,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             else:
                 # fallback to project lookup for old servers
                 if prj and not searchresult:
-                    m = show_project_meta(apiurl, prj)
-                    metaroot = xml_fromstring(b''.join(m))
+                    try:
+                        m = show_project_meta(apiurl, prj)
+                        metaroot = xml_fromstring(b''.join(m))
+                    except HTTPError:
+                        metaroot = None
 
             # extract the maintainers
             projects = []
