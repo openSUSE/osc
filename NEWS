@@ -1,3 +1,9 @@
+- 1.27.1
+  - Command-line:
+    - Fix 'osc maintaner' not to error out before it prints maintainers in git
+  - Library:
+    - Fix a regression in Gitea 1.26 where we need to send '{}' instead of an empty body in POST requests
+
 - 1.27.0
   - Command-line:
     - Change 'osc fork' to work through a local checkout that need to be reviewed and pushed by a user
