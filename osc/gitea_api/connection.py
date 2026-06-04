@@ -143,7 +143,13 @@ class Connection:
         if json_data and isinstance(json_data, dict):
             json_data = dict(((key, value) for key, value in json_data.items() if value is not None))
 
-        body = json.dumps(json_data) if json_data else None
+        if method.upper() in ("GET", "HEAD"):
+            body = None
+        else:
+            if json_data is None:
+                # gitea 1.26 changed behavior and empty body is no longer a valid input
+                json_data = {}
+            body = json.dumps(json_data)
 
         for retry in range(1 + self.retry_count):
             # 1 regular request + ``self.retry_count`` retries
