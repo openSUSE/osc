@@ -20,6 +20,7 @@ Background:
         State       : open
         Draft       : no
         Merged      : no
+        Mergeable   : (yes|no)
         Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
@@ -48,6 +49,7 @@ Scenario: List pull requests
         State       : open
         Draft       : no
         Merged      : no
+        Mergeable   : (yes|no)
         Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
@@ -110,6 +112,7 @@ Scenario: Get a pull request
         State       : open
         Draft       : no
         Merged      : no
+        Mergeable   : (yes|no)
         Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
@@ -144,6 +147,7 @@ Scenario: Get a pull request with labels
         Labels      : bug feature
         Draft       : no
         Merged      : no
+        Mergeable   : (yes|no)
         Allow edit  : yes
         Author      : Admin \(admin@example.com\)
         Source      : Admin/test-GitPkgA, branch: factory, commit: .*
@@ -320,6 +324,7 @@ Scenario: Rebase a pull request checkout to non fast-forwardable changes
 #         State       : closed
 #         Draft       : no
 #         Merged      : yes
+#         Mergeable   : (yes|no)
 #         Allow edit  : yes
 #         Author      : Admin \(admin@example.com\)
 #         Source      : Admin/test-GitPkgA, branch: factory, commit: ........................................

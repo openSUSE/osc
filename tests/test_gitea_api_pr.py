@@ -19,6 +19,7 @@ class TestGiteaApiPullRequest(unittest.TestCase):
             "allow_maintainer_edit": False,
             "draft": False,
             "merged": False,
+            "mergeable": True,
             "base": {
                 "ref": "base-branch",
                 "sha": "base-commit",
@@ -54,6 +55,7 @@ class TestGiteaApiPullRequest(unittest.TestCase):
         self.assertEqual(obj.user_obj.login, "alice")
         self.assertEqual(obj.draft, False)
         self.assertEqual(obj.merged, False)
+        self.assertEqual(obj.mergeable, True)
         self.assertEqual(obj.allow_maintainer_edit, False)
 
         self.assertEqual(obj.base_owner, "base-owner")
@@ -97,6 +99,7 @@ class TestGiteaApiPullRequest(unittest.TestCase):
         self.assertEqual(obj.user_obj.login, "alice")
         self.assertEqual(obj.draft, None)
         self.assertEqual(obj.merged, None)
+        self.assertEqual(obj.mergeable, None)
         self.assertEqual(obj.allow_maintainer_edit, None)
 
         self.assertEqual(obj.base_owner, "base-owner")

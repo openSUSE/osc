@@ -185,6 +185,12 @@ class PullRequest(GiteaModel):
         return self._data["merged_at"]
 
     @property
+    def mergeable(self) -> Optional[bool]:
+        if not self.is_pull_request:
+            return None
+        return self._data.get("mergeable")
+
+    @property
     def allow_maintainer_edit(self) -> Optional[bool]:
         if not self.is_pull_request:
             return None
@@ -302,6 +308,7 @@ class PullRequest(GiteaModel):
         if self.is_pull_request:
             table.add("Draft", yes_no(self.draft))
             table.add("Merged", yes_no(self.merged))
+            table.add("Mergeable", yes_no(self.mergeable))
             table.add("Allow edit", yes_no(self.allow_maintainer_edit))
         table.add("Author", f"{self.user_obj.login_full_name_email}")
         if self.is_pull_request:
