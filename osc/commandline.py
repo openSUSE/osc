@@ -693,6 +693,8 @@ def ensure_no_remaining_args(args):
     raise oscerr.WrongArgs(f"Unexpected args: {args_str}")
 
 
+
+
 class Osc(cmdln.Cmdln):
     """
     openSUSE commander is a command-line interface to the Open Build Service.
@@ -2143,8 +2145,7 @@ class Osc(cmdln.Cmdln):
 
             if len(myreqs) > 0:
                 for req in myreqs:
-                    change_request_state(apiurl, str(req), 'superseded',
-                                         f'superseded by {sr_ids[0]}', sr_ids[0])
+                    change_request_state(apiurl, str(req), 'superseded', f'superseded by {sr_ids[0]}', sr_ids[0], can_fail=True)
 
             sys.exit('Successfully finished')
 
@@ -2300,8 +2301,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if supersede_existing:
             for req in reqs:
-                change_request_state(apiurl, req.reqid, 'superseded',
-                                     f'superseded by {result}', result)
+                change_request_state(apiurl, req.reqid, 'superseded', f'superseded by {result}', result, can_fail=True)
 
         if opts.supersede:
             change_request_state(apiurl, opts.supersede, 'superseded',
@@ -2733,8 +2733,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rid = root.get('id')
         print(f"Request {rid} created")
         for srid in supersede:
-            change_request_state(apiurl, srid, 'superseded',
-                                 f'superseded by {rid}', rid)
+            change_request_state(apiurl, srid, 'superseded', f'superseded by {rid}', rid, can_fail=True)
 
     @cmdln.option('-m', '--message', metavar='TEXT',
                   help='specify message TEXT')

@@ -4,6 +4,7 @@ import shutil
 import tempfile
 import unittest
 import unittest.mock
+from urllib.error import HTTPError
 
 from osc.commandline import Command
 from osc.commandline import MainCommand
@@ -12,6 +13,7 @@ from osc.commandline import pop_project_package_from_args
 from osc.commandline import pop_project_package_repository_arch_from_args
 from osc.commandline import pop_project_package_targetproject_targetpackage_from_args
 from osc.commandline import pop_repository_arch_from_args
+from osc.core import change_request_state
 from osc.oscerr import NoWorkingCopy, OscValueError
 from osc.store import Store
 
@@ -819,6 +821,42 @@ class TestPopProjectPackageTargetProjectTargetPackageFromArgs(unittest.TestCase)
             pop_project_package_targetproject_targetpackage_from_args,
             args,
         )
+
+
+class TestChangeRequestStateCanFail(unittest.TestCase):
+    """Regression tests for openSUSE/osc#2130: can_fail kwarg."""
+
+    def _make_http_error(self, code, reqid="1"):
+        return HTTPError(
+            url=f"https://example.com/request/{reqid}",
+            code=code,
+            msg="Error",
+            hdrs=None,
+            fp=None,
+        )
+
+    def test_can_fail_suppresses_any_http_error(self):
+        """can_fail=True returns None and warns instead of raising."""
+        with unittest.mock.patch(
+            "osc.core.http_POST", side_effect=self._make_http_error(403),
+        ), unittest.mock.patch(
+            "osc.output.print_msg",
+        ) as warn:
+            result = change_request_state("https://api", "815980", "superseded", can_fail=True)
+
+        self.assertIsNone(result)
+        self.assertEqual(warn.call_count, 1)
+        # call_args is (args, kwargs); .kwargs attr exists on Python >= 3.8
+        call_kwargs = warn.call_args[1] if warn.call_args else {}
+        self.assertEqual(call_kwargs.get("print_to"), "warning")
+
+    def test_without_can_fail_raises(self):
+        """Without can_fail, HTTPErrors still propagate."""
+        with unittest.mock.patch(
+            "osc.core.http_POST", side_effect=self._make_http_error(403),
+        ):
+            with self.assertRaises(HTTPError):
+                change_request_state("https://api", "1", "superseded")
 
 
 if __name__ == "__main__":
