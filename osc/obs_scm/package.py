@@ -638,8 +638,7 @@ class Package:
         tdir = None
         try:
             tdir = os.path.join(self.storedir, '_in_commit')
-            if os.path.isdir(tdir):
-                shutil.rmtree(tdir)
+            shutil.rmtree(tdir, ignore_errors=True)
             os.mkdir(tdir)
             while send and tries:
                 for filename in send[:]:
@@ -660,8 +659,8 @@ class Package:
             # update store with the committed files
             self.__commit_update_store(tdir)
         finally:
-            if tdir is not None and os.path.isdir(tdir):
-                shutil.rmtree(tdir)
+            if tdir is not None:
+                shutil.rmtree(tdir, ignore_errors=True)
         self.rev = sfilelist.get('rev')
         print()
         print(f'Committed revision {self.rev}.')
@@ -752,7 +751,10 @@ class Package:
         if mtime:
             utime(filename, (-1, mtime))
         if origfile is not None:
-            os.unlink(origfile)
+            try:
+                os.unlink(origfile)
+            except FileNotFoundError:
+                pass
 
     @fail_if_git()
     def mergefile(self, n, revision, mtime=None):
@@ -778,7 +780,10 @@ class Package:
             # don't try merging
             shutil.copyfile(upfilename, filename)
             shutil.copyfile(upfilename, storefilename)
-            os.unlink(origfile)
+            try:
+                os.unlink(origfile)
+            except FileNotFoundError:
+                pass
             self.in_conflict.append(n)
             self.write_conflictlist()
             return 'C'
@@ -795,14 +800,26 @@ class Package:
             if ret == 0:
                 # merge was successful... clean up
                 shutil.copyfile(upfilename, storefilename)
-                os.unlink(upfilename)
-                os.unlink(myfilename)
-                os.unlink(origfile)
+                try:
+                    os.unlink(upfilename)
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.unlink(myfilename)
+                except FileNotFoundError:
+                    pass
+                try:
+                    os.unlink(origfile)
+                except FileNotFoundError:
+                    pass
                 return 'G'
             elif ret == 1:
                 # unsuccessful merge
                 shutil.copyfile(upfilename, storefilename)
-                os.unlink(origfile)
+                try:
+                    os.unlink(origfile)
+                except FileNotFoundError:
+                    pass
                 self.in_conflict.append(n)
                 self.write_conflictlist()
                 return 'C'
@@ -1501,7 +1518,10 @@ rev: %s
                 if origfile.endswith('.copy'):
                     # ok it seems we aborted at some point during the copy process
                     # (copy process == copy wcfile to the _in_update dir). remove file+continue
-                    os.unlink(origfile)
+                    try:
+                        os.unlink(origfile)
+                    except FileNotFoundError:
+                        pass
                 elif self.findfilebyname(broken_file[0]) is None:
                     # should we remove this file from _in_update? if we don't
                     # the user has no chance to continue without removing the file manually
@@ -1520,7 +1540,10 @@ rev: %s
                     os.rename(origfile, wcfile)
                 else:
                     # everything seems to be ok
-                    os.unlink(origfile)
+                    try:
+                        os.unlink(origfile)
+                    except FileNotFoundError:
+                        pass
             elif len(broken_file) > 1:
                 raise oscerr.PackageInternalError(self.prjname, self.name, 'too many files in \'_in_update\' dir')
             tmp = rfiles[:]
@@ -1537,8 +1560,14 @@ rev: %s
             if not service_files:
                 services = []
             self.__update(kept, added, deleted, services, ET.tostring(root, encoding=ET_ENCODING), root.get('rev'))
-            os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
-            os.rmdir(os.path.join(self.storedir, '_in_update'))
+            try:
+                os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
+            except FileNotFoundError:
+                pass
+            try:
+                os.rmdir(os.path.join(self.storedir, '_in_update'))
+            except FileNotFoundError:
+                pass
         # ok everything is ok (hopefully)...
         fm = self.get_files_meta(revision=rev)
         root = xml_fromstring(fm)
@@ -1548,9 +1577,15 @@ rev: %s
         if not service_files:
             services = []
         self.__update(kept, added, deleted, services, fm, root.get('rev'))
-        os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
+        try:
+            os.unlink(os.path.join(self.storedir, '_in_update', '_files'))
+        except FileNotFoundError:
+            pass
         if os.path.isdir(os.path.join(self.storedir, '_in_update')):
-            os.rmdir(os.path.join(self.storedir, '_in_update'))
+            try:
+                os.rmdir(os.path.join(self.storedir, '_in_update'))
+            except FileNotFoundError:
+                pass
         self.size_limit = old_size_limit
 
     @fail_if_git()

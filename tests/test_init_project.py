@@ -67,6 +67,34 @@ class TestInitProject(OscTestCase):
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
         self.assertFalse(os.path.exists(os.path.join(storedir, '_packages')))
 
+    def test_delete_dir_robustness(self):
+        """delete_dir successfully ignores FileNotFoundError during recursive deletion"""
+        import tempfile
+        import shutil
+        from osc.core import delete_dir
+
+        temp_dir = tempfile.mkdtemp(dir=self.tmpdir)
+        try:
+            # create a file inside temp_dir
+            file_path = os.path.join(temp_dir, "somefile")
+            with open(file_path, "w") as f:
+                f.write("content")
+
+            # mock os.unlink to raise FileNotFoundError on call to simulate concurrent deletion
+            original_unlink = os.unlink
+            def mocked_unlink(path):
+                if os.path.exists(path):
+                    original_unlink(path)
+                # This call will raise FileNotFoundError
+                original_unlink(path)
+
+            from unittest.mock import patch
+            with patch("os.unlink", mocked_unlink):
+                # this should not raise FileNotFoundError because delete_dir handles it gracefully
+                delete_dir(temp_dir)
+        finally:
+            shutil.rmtree(temp_dir, ignore_errors=True)
+
 
 if __name__ == '__main__':
     unittest.main()
