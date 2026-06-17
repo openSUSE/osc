@@ -4411,6 +4411,17 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 for d in r.findall('devel'):
                     line += f" using sources from {d.get('project')}/{d.get('package')}"
                 print(line)
+
+            if subcmd == "maintained":
+                # print maintained branches in git
+                from .gitea_api.cache import gitea_cache_maintained
+
+                org_branches = gitea_cache_maintained(package=package)
+                for org, branches in sorted(org_branches.items()):
+                    branches.sort()
+                    for branch in branches:
+                        print(f"[git] {org}/{package}:{branch}")
+
             return
 
         apiopt = ''
