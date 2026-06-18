@@ -397,14 +397,10 @@ class PullRequest(GiteaModel):
             "title": title,
             "body": description,
             "labels": labels,
-            # TODO: use after we migrate to sufficiently new Gitea that supports it
-            # "allow_maintainer_edit": allow_maintainer_edit,
+            "allow_maintainer_edit": allow_maintainer_edit,
         }
         response = conn.request("POST", url, json_data=data)
         obj = cls(response.json(), response=response, conn=conn)
-
-        # FIXME: older Gitea versions can't set the maintainer edits on PR create
-        obj = cls.set(conn, obj.base_owner, obj.base_repo, obj.number, allow_maintainer_edit=allow_maintainer_edit)
 
         return obj
 
