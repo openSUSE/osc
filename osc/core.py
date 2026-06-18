@@ -5352,12 +5352,24 @@ def delete_dir(dir):
     elif os.path.abspath(dir) == '/':
         raise oscerr.OscIOError(None, 'cannot remove \'/\'')
 
+    if not os.path.exists(dir):
+        return
+
     for dirpath, dirnames, filenames in os.walk(dir, topdown=False):
         for filename in filenames:
-            os.unlink(os.path.join(dirpath, filename))
+            try:
+                os.unlink(os.path.join(dirpath, filename))
+            except FileNotFoundError:
+                pass
         for dirname in dirnames:
-            os.rmdir(os.path.join(dirpath, dirname))
-    os.rmdir(dir)
+            try:
+                os.rmdir(os.path.join(dirpath, dirname))
+            except FileNotFoundError:
+                pass
+    try:
+        os.rmdir(dir)
+    except FileNotFoundError:
+        pass
 
 
 def unpack_srcrpm(srpm, dir, *files):

@@ -301,6 +301,30 @@ class TestUpdate(OscTestCase):
         self.assertFalse(os.path.exists(os.path.join('.osc', 'sources', 'added')))
         self._check_digests('testUpdateResumeDeletedFile_files')
 
+    @GET("http://localhost/source/osctest/simple?rev=latest", file="testUpdateNoChanges_files")
+    @GET("http://localhost/source/osctest/simple/_meta", file="meta.xml")
+    def testUpdateMissingInUpdateFiles(self):
+        """update handles missing _in_update/_files or _in_update dir at cleanup gracefully"""
+        from unittest.mock import patch
+        import shutil
+
+        self._change_to_pkg("simple")
+        p = osc.core.Package(".")
+
+        original_update = osc.core.Package._Package__update
+
+        def mocked_update(self_obj, *args, **kwargs):
+            res = original_update(self_obj, *args, **kwargs)
+            # simulate parallel cleanup by another concurrent osc process
+            shutil.rmtree(os.path.join(self_obj.storedir, "_in_update"), ignore_errors=True)
+            return res
+
+        with patch.object(osc.core.Package, "_Package__update", mocked_update):
+            # this should succeed without raising FileNotFoundError
+            p.update()
+
+        self.assertEqual(sys.stdout.getvalue(), "At revision 1.\n")
+
 
 if __name__ == '__main__':
     unittest.main()
