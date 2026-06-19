@@ -137,7 +137,7 @@ class Manifest:
             for i in directories:
                 if os.path.basename(i).startswith("."):
                     continue
-                if os.path.dirname(i) != path:
+                if os.path.normpath(os.path.dirname(i)) != os.path.normpath(path):
                     continue
                 result.append(i)
 
