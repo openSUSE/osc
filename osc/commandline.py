@@ -7753,6 +7753,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                   help='Do not use preinstall images for creating the build root.')
     @cmdln.option("--just-print-buildroot", action="store_true",
                   help="Print build root path and exit.")
+    @cmdln.option("--buildinfo", action="store_true",
+                  help="Print buildinfo and exit.")
+    @cmdln.option("--buildinfo-debug", action="store_true",
+                  help="Print buildinfo in debug mode and exit.")
     @cmdln.option('--no-timestamps', '-s', '--strip-time', action='store_true',
                   help='Hide the time prefix in output.')
     @cmdln.alias('chroot')
@@ -7839,6 +7843,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         if opts.debuginfo and opts.disable_debuginfo:
             raise oscerr.WrongOptions('osc: --debuginfo and --disable-debuginfo are mutual exclusive')
+
+        if (opts.buildinfo or opts.buildinfo_debug) and (opts.offline or opts.noinit):
+            raise oscerr.WrongOptions('osc: --buildinfo(-debug) is mutually exclusive with --offline and --no-init')
 
         if subcmd == 'wipe':
             opts.wipe = True
