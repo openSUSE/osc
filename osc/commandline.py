@@ -5610,7 +5610,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
             scm_url = show_scmsync(apiurl, project)
             if scm_url is not None and not opts.native_obs_package:
-                run_obs_scm_bridge(url=scm_url, target_dir=str(prj_dir))
+                run_obs_scm_bridge(url=scm_url, target_dir=str(prj_dir), project_mode=True)
 
             Project.init_project(apiurl, prj_dir, project, conf.config['do_package_tracking'], scm_url=scm_url)
             print(statfrmt('A', prj_dir))
