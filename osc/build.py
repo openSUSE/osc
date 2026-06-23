@@ -299,6 +299,7 @@ class Buildinfo:
             if error.startswith('unresolvable: '):
                 sys.stderr.write('unresolvable: ')
                 sys.stderr.write('\n     '.join(error[14:].split(',')))
+                sys.stderr.write('\nHint: use osc build with --buildinfo-debug for more info')
             else:
                 sys.stderr.write(error)
             sys.stderr.write('\n')
@@ -1150,7 +1151,11 @@ def main(apiurl, store, opts, argv):
                                               repo,
                                               arch,
                                               specfile=build_descr_data,
-                                              addlist=extra_pkgs))
+                                              addlist=extra_pkgs,
+                                              debug=opts.buildinfo_debug))
+            if opts.buildinfo or opts.buildinfo_debug:
+                print(bi_text)
+                sys.exit(0)
             if not bi_file:
                 bi_file = open(bi_filename, 'w')
             # maybe we should check for errors before saving the file
