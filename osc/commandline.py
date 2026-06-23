@@ -7165,14 +7165,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         project = package = repository = arch = build_descr = None
         if len(args) <= 3:
-            if not is_package_dir('.'):
-                raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
             if opts.alternative_project:
                 project = opts.alternative_project
                 package = '_repository'
-            else:
+            elif is_package_dir('.'):
                 project = store_read_project('.')
                 package = store_read_package('.')
+            else:
+                raise oscerr.WrongArgs('Incorrect number of arguments (Note: \'.\' is no package wc)')
             repository, arch, build_descr = self.parse_repoarchdescr(args, alternative_project=opts.alternative_project, ignore_descr=True, multibuild_package=opts.multibuild_package)
         elif len(args) == 4 or len(args) == 5:
             project = self._process_project_name(args[0])
