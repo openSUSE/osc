@@ -248,5 +248,20 @@ class PullRequestDoesNotExist(GiteaException):
         return result
 
 
+class UnauthorizedTokenRequired(GiteaException):
+    RESPONSE_STATUS = 401
+    RESPONSE_MESSAGE_RE = [
+        re.compile(r"token is required"),
+    ]
+
+    def __str__(self):
+        result = (
+            "A token hasn't been provided.\n"
+            " - Set token in the config file via `git-obs login update --new-token=- <login-name>`.\n"
+            " - Alternatively set the `GIT_OBS_LOGIN_<LOGIN-NAME>_TOKEN` env variable."
+        )
+        return result
+
+
 # gather all exceptions from this module that inherit from GiteaException
 EXCEPTION_CLASSES = [i for i in globals().values() if hasattr(i, "RESPONSE_MESSAGE_RE") and inspect.isclass(i) and issubclass(i, GiteaException)]
