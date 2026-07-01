@@ -1,3 +1,16 @@
+- 1.27.2
+  - Command-line:
+    - Extend 'osc maintained' to also display maintained branches in git
+    - Add 'mergeable' field to the output of 'git-obs pr get' and other places using the same output format
+    - Add 'osc build' --buildinfo and --buildinfo-debug options
+    - Fix 'osc buildinfo --alternative-project' in git checkouts
+    - Fix superseding in 'osc submitrequest' command to be resilient to 403 HTTP errors
+    - Display a descriptive error message when token is not specified in git-obs
+  - Library:
+    - Fix Manifest.get_package_paths_bare_git() by using normpath() in path comparison
+    - Enable allow_maintainer_edit setting, src.opensuse.org is now on gitea 1.26.2
+    - Make 'osc up' and possibly other operations more robust by ignoring FileNotFoundError exception during deletions
+
 - 1.27.1
   - Command-line:
     - Fix 'osc maintaner' not to error out before it prints maintainers in git
