@@ -87,7 +87,7 @@ class MovedPermanently(GiteaException):
         re.compile(r"(?P<message>.*)"),
     ]
 
-    def __init__(self, response: GiteaHTTPResponse, message: str):
+    def __init__(self, response: GiteaHTTPResponse, message: str, **_kwargs):
         super().__init__(response)
         self.message = message
 
