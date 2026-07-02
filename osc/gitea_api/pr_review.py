@@ -105,7 +105,7 @@ class PullRequestReview(GiteaModel):
         :param number: Number of the pull request in owner/repo.
         :param review_id: ID of the review.
         """
-        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews", review_id)
+        url = conn.makeurl("repos", owner, repo, "pulls", str(number), "reviews", str(review_id))
         response = conn.request("GET", url, context={"owner": owner, "repo": repo, "number": number})
         obj = cls(response.json(), response=response, conn=conn)
         return obj
