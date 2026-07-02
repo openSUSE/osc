@@ -6842,28 +6842,33 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 self.do_repositories(None, None, *args)
         raise exc_class(exc_msg)
 
-    def _find_last_repo_arch(self, repo=None, fatal=True):
+    def _find_last_repo_arch(self, repo=None, arch=None, *, fatal=True, store=None):
         from .core import ET
-        from .core import store
+        from .store import get_store
 
-        files = \
-            glob.glob(os.path.join(Path.cwd(), store, "_buildinfo-*")) + \
-            glob.glob(os.path.join(Path.cwd(), "_buildinfo-*"))
-        if repo is not None:
-            files = [f for f in files
-                     if os.path.basename(f).replace('_buildinfo-', '').startswith(repo + '-')]
-        if not files:
+        if repo and arch:
+            # we know both repo and arch, no need to look for any values
+            return repo, arch
+
+        if not store:
+            store = get_store(".", check=False)
+
+        br_repo = None
+        br_arch = None
+        if store.last_buildroot:
+            br_repo, br_arch, _ = store.last_buildroot
+
+        if not repo:
+            repo = br_repo
+
+        if not arch:
+            arch = br_arch
+
+        if not repo and not arch:
             if not fatal:
                 return None, None
             self.print_repos()
-        cfg = files[0]
-        # find newest file
-        for f in files[1:]:
-            if os.stat(f).st_atime > os.stat(cfg).st_atime:
-                cfg = f
-        root = xml_parse(cfg).getroot()
-        repo = root.get("repository")
-        arch = root.findtext("arch")
+
         return repo, arch
 
     @cmdln.alias('lbl')
@@ -6884,31 +6889,35 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from . import conf
         from .core import BUFSIZE
         from .core import buildlog_strip_time
-        from .core import is_package_dir
-        from .core import store_read_package
-        from .core import store_read_project
+        from .store import get_store
 
         if conf.config['build-type']:
             # FIXME: raise Exception instead
             print('Not implemented for VMs', file=sys.stderr)
             sys.exit(1)
 
-        if len(args) == 0 or len(args) == 1:
-            project = store_read_project('.')
-            package = store_read_package('.')
+        store = get_store(".", check=False)
+        project = store.project
+        package = store.package
+
+        if len(args) == 0:
             repo = None
-            if args:
-                repo = args[0]
-            repo, arch = self._find_last_repo_arch(repo)
+            arch = None
+        elif len(args) == 1:
+            repo = args[0]
+            arch = None
         elif len(args) == 2:
-            project = store_read_project('.')
-            package = store_read_package('.')
             repo = args[0]
             arch = args[1]
         else:
-            if is_package_dir(Path.cwd()):
+            if store.is_package:
                 self.print_repos()
             raise oscerr.WrongArgs('Wrong number of arguments.')
+
+        repo, arch = self._find_last_repo_arch(repo=repo, arch=arch, store=store)
+
+        if not repo and not arch:
+            self.print_repos()
 
         # TODO: refactor/unify buildroot calculation and move it to core.py
         apihost = urlsplit(self.get_api_url())[1]
