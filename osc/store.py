@@ -23,24 +23,27 @@ def get_store(path, check=True, print_warnings=False):
     # if there are '.osc' and '.git' directories next to each other, '.osc' takes preference
     store = None
 
-    try:
-        store = Store(path, check)
-    except oscerr.NoWorkingCopy:
-        pass
-
-    if not store:
+    if os.path.exists(os.path.join(path, Store.STORE_DIR)):
         try:
-            store = git_scm.GitStore(path, check)
-            if print_warnings:
-                git_scm.warn_experimental()
+            store = Store(path, check=check)
         except oscerr.NoWorkingCopy:
-            if not os.path.exists(os.path.join(path, ".osc")):
-                raise
             pass
 
     if not store:
-        msg = f"Directory '{path}' is not a working copy"
-        raise oscerr.NoWorkingCopy(msg)
+        try:
+            store = git_scm.GitStore(path, check=check)
+            if print_warnings:
+                git_scm.warn_experimental()
+        except oscerr.NoWorkingCopy:
+            pass
+
+    if not store:
+        if check:
+            msg = f"Directory '{path}' is not a working copy"
+            raise oscerr.NoWorkingCopy(msg)
+        else:
+            # return an empty Store for compatibility even if there's no '.osc' available
+            store = Store(path, check=False)
 
     return store
 
