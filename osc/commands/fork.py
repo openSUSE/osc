@@ -70,6 +70,11 @@ class ForkCommand(osc.commandline.OscCommand):
         )
 
         self.add_argument(
+            "--scmsync",
+            help="Specify a custom scmsync URL to use directly without performing a Gitea fork",
+        )
+
+        self.add_argument(
             "--no-devel-project",
             action="store_true",
             help="Fork the specified package instead the package from the devel project (which is the place where the package is developed)",
@@ -163,7 +168,10 @@ class ForkCommand(osc.commandline.OscCommand):
         self.gitea_conn = gitea_conn
 
         self.print_gitea_settings()
-        print(f"Forking git repo {owner}/{repo} ...", file=sys.stderr)
+        if args.scmsync:
+            print(f"Using scmsync URL directly: {args.scmsync}", file=sys.stderr)
+        else:
+            print(f"Forking git repo {owner}/{repo} ...", file=sys.stderr)
 
         # the branch was not specified, fetch the default branch from the repo
         if not branch:
@@ -171,20 +179,39 @@ class ForkCommand(osc.commandline.OscCommand):
             branch = repo_obj.default_branch
         fork_branch = args.git_branch or branch
 
-        try:
-            repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name, target_org=args.gitea_fork_org)
-            fork_owner = repo_obj.owner
-            fork_repo = repo_obj.repo
-            print(f" * Fork created: {fork_owner}/{fork_repo}")
-        except gitea_api.ForkExists as e:
-            fork_owner = e.fork_owner
-            fork_repo = e.fork_repo
-            print(f" * Fork already exists: {fork_owner}/{fork_repo}")
-        except gitea_api.RepoExists as e:
-            print(f"{tty.colorize('ERROR', 'red,bold')}: Repo already exists '{e.owner}/{e.repo}' and is not a fork of '{owner}/{repo}'")
-            print(" * Consider forking with an alternative repo name")
-            print(f" * You may also want to delete '{e.owner}/{e.repo}' and retry")
-            sys.exit(1)
+        if args.scmsync:
+            fork_scmsync = args.scmsync
+            parsed_fork_url = urllib.parse.urlparse(fork_scmsync, scheme="https")
+            path_parts = parsed_fork_url.path.strip("/").split("/")
+            if len(path_parts) >= 2:
+                fork_owner, fork_repo = path_parts[-2], path_parts[-1]
+            else:
+                fork_owner, fork_repo = "custom", "repo"
+            if fork_repo.endswith(".git"):
+                fork_repo = fork_repo[:-4]
+
+            # extract branch if specified in target URL
+            temp_branch = parsed_fork_url.fragment or None
+            parsed_fork_query = urllib.parse.parse_qs(parsed_fork_url.query)
+            if "trackingbranch" in parsed_fork_query:
+                temp_branch = parsed_fork_query["trackingbranch"][0]
+            if temp_branch:
+                fork_branch = temp_branch
+        else:
+            try:
+                repo_obj = gitea_api.Fork.create(gitea_conn, owner, repo, new_repo_name=args.new_repo_name, target_org=args.gitea_fork_org)
+                fork_owner = repo_obj.owner
+                fork_repo = repo_obj.repo
+                print(f" * Fork created: {fork_owner}/{fork_repo}")
+            except gitea_api.ForkExists as e:
+                fork_owner = e.fork_owner
+                fork_repo = e.fork_repo
+                print(f" * Fork already exists: {fork_owner}/{fork_repo}")
+            except gitea_api.RepoExists as e:
+                print(f"{tty.colorize('ERROR', 'red,bold')}: Repo already exists '{e.owner}/{e.repo}' and is not a fork of '{owner}/{repo}'")
+                print(" * Consider forking with an alternative repo name")
+                print(f" * You may also want to delete '{e.owner}/{e.repo}' and retry")
+                sys.exit(1)
 
         clone_path = os.path.join(os.getcwd(), f"{fork_owner}-{fork_repo}-{fork_branch}")
 
@@ -204,18 +231,47 @@ class ForkCommand(osc.commandline.OscCommand):
         )
 
         git = gitea_api.Git(clone_path)
-        print(f" * Fetching parent branch {owner}/{repo}:{branch} ...")
-        git._run_git(["fetch", "parent", branch])
 
-        print(f" * Preparing branch '{fork_branch}' from 'parent/{branch}' ...")
-        # Use checkout -B to create or reset the branch to match parent
-        git._run_git(["checkout", "-B", fork_branch, f"parent/{branch}"])
+        # Ensure parent remote is configured if possible
+        has_parent_remote = False
+        try:
+            git.get_remote_url("parent")
+            has_parent_remote = True
+        except Exception:
+            pass
+
+        if not has_parent_remote:
+            parsed_parent_scmsync = urllib.parse.urlparse(url_scmsync)
+            parent_remote_url = urllib.parse.urlunparse(
+                (parsed_parent_scmsync.scheme, parsed_parent_scmsync.netloc, parsed_parent_scmsync.path, "", "", "")
+            )
+            git.add_remote("parent", parent_remote_url)
+
+        if args.scmsync:
+            print(f" * Preparing branch '{fork_branch}' ...")
+            try:
+                # Try to checkout the branch from origin if it exists
+                git._run_git(["checkout", fork_branch])
+            except Exception:
+                # If it doesn't exist locally/remotely, create it from parent
+                print(f" * Branch '{fork_branch}' not found. Initializing from 'parent/{branch}' ...")
+                git._run_git(["fetch", "parent", branch])
+                git._run_git(["checkout", "-B", fork_branch, f"parent/{branch}"])
+        else:
+            print(f" * Fetching parent branch {owner}/{repo}:{branch} ...")
+            git._run_git(["fetch", "parent", branch])
+
+            print(f" * Preparing branch '{fork_branch}' from 'parent/{branch}' ...")
+            # Use checkout -B to create or reset the branch to match parent
+            git._run_git(["checkout", "-B", fork_branch, f"parent/{branch}"])
+
         git.set_config(f"branch.{branch}.remote", "origin")
 
-        # OBS fork
-        fork_scmsync = urllib.parse.urlunparse(
-            (parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, f"{fork_owner}/{fork_repo}", "", parsed_scmsync_url.query, fork_branch)
-        )
+        if not args.scmsync:
+            # OBS fork
+            fork_scmsync = urllib.parse.urlunparse(
+                (parsed_scmsync_url.scheme, parsed_scmsync_url.netloc, f"{fork_owner}/{fork_repo}", "", parsed_scmsync_url.query, fork_branch)
+            )
 
         print()
         if is_package:
