@@ -168,7 +168,14 @@ class ForkCommand(osc.commandline.OscCommand):
         # the branch was not specified, fetch the default branch from the repo
         if not branch:
             repo_obj = gitea_api.Repo.get(gitea_conn, owner, repo)
-            branch = repo_obj.default_branch
+            if args.git_branch:
+                try:
+                    gitea_api.Branch.get(gitea_conn, owner, repo, args.git_branch)
+                    branch = args.git_branch
+                except gitea_api.BranchDoesNotExist:
+                    branch = repo_obj.default_branch
+            else:
+                branch = repo_obj.default_branch
         fork_branch = args.git_branch or branch
 
         try:
