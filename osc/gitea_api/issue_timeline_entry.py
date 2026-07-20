@@ -273,5 +273,9 @@ class IssueTimelineEntry(GiteaModel):
         url = conn.makeurl("repos", owner, repo, "issues", str(number), "timeline", query=q)
         obj_list = []
         for response in conn.request_all_pages("GET", url):
-            obj_list.extend([cls(i, response=response, conn=conn) for i in response.json() or []])
+            obj_list.extend([
+                cls(i, response=response, conn=conn)
+                for i in response.json() or []
+                if isinstance(i, dict)
+            ])
         return obj_list
