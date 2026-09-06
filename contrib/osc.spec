@@ -229,7 +229,6 @@ sphinx-build -b man doc .
 %{use_python} -mpip install \
   --verbose --progress-bar off --disable-pip-version-check \
   --root %{buildroot} \
-  --no-compile \
   --ignore-installed --no-deps \
   --no-index --find-links ./build osc
 
