@@ -1362,11 +1362,12 @@ class Osc(cmdln.Cmdln):
 
     @cmdln.alias('da')
     def do_downloadassets(self, subcmd, opts, *args):
-        from .core import download_assets
-
         """
         Download all assets referenced in the build descriptions
         """
+
+        from .core import download_assets
+
         download_assets(".")
 
     @cmdln.alias('sdp')
