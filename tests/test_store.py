@@ -19,10 +19,7 @@ class TestStore(unittest.TestCase):
         self.store.package = "package name"
 
     def tearDown(self):
-        try:
-            shutil.rmtree(self.tmpdir)
-        except:
-            pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def fileEquals(self, fn, expected_value):
         path = os.path.join(self.tmpdir, ".osc", fn)
@@ -260,10 +257,7 @@ class TestGetStore(unittest.TestCase):
 
     def tearDown(self):
         import shutil
-        try:
-            shutil.rmtree(self.tmpdir)
-        except OSError:
-            pass
+        shutil.rmtree(self.tmpdir, ignore_errors=True)
 
     def _git_init(self, path, *, branch="master"):
         import subprocess
