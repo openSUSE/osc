@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import tempfile
 import unittest
@@ -250,6 +251,62 @@ class TestStore(unittest.TestCase):
 
         Store(self.tmpdir, check=True)
         self.assertTrue(os.path.exists(os.path.join(self.tmpdir, ".osc", "sources", "sources")))
+
+
+class TestGetStore(unittest.TestCase):
+    def setUp(self):
+        import shutil
+        self.tmpdir = tempfile.mkdtemp(prefix='osc_test')
+
+    def tearDown(self):
+        import shutil
+        try:
+            shutil.rmtree(self.tmpdir)
+        except OSError:
+            pass
+
+    def _git_init(self, path, *, branch="master"):
+        import subprocess
+        os.makedirs(path, exist_ok=True)
+        cmd = ["git", "init"]
+        if branch:
+            cmd += ["-b", branch]
+        subprocess.check_call(cmd, cwd=path)
+        subprocess.check_call(["git", "config", "user.name", "Test User"], cwd=path)
+        subprocess.check_call(["git", "config", "user.email", "test@example.com"], cwd=path)
+
+    def test_get_store_generic_dir(self):
+        from osc.store import get_store
+        from osc import oscerr
+        with self.assertRaises(oscerr.NoWorkingCopy) as ctx:
+            get_store(self.tmpdir, check=True)
+        self.assertIn("is not a working copy", str(ctx.exception))
+
+    def test_get_store_git_branch(self):
+        from osc.store import get_store
+        from osc import oscerr
+        self._git_init(self.tmpdir, branch="master")
+        with self.assertRaises(oscerr.NoWorkingCopy) as ctx:
+            get_store(self.tmpdir, check=True)
+        # Should raise detailed metadata error because it's inside a git repo
+        self.assertIn("Git SCM package working copy doesn't have the following metadata set", str(ctx.exception))
+
+    def test_get_store_git_detached_head(self):
+        from osc.store import get_store
+        from osc import oscerr
+        import subprocess
+        self._git_init(self.tmpdir, branch="master")
+        # Create an initial commit to allow checkout
+        with open(os.path.join(self.tmpdir, "file.txt"), "w") as f:
+            f.write("test")
+        subprocess.check_call(["git", "add", "file.txt"], cwd=self.tmpdir)
+        subprocess.check_call(["git", "commit", "-m", "initial"], cwd=self.tmpdir)
+        # Detach HEAD
+        subprocess.check_call(["git", "checkout", "HEAD~0"], cwd=self.tmpdir)
+
+        with self.assertRaises(oscerr.NoWorkingCopy) as ctx:
+            get_store(self.tmpdir, check=True)
+        self.assertIn("detached HEAD state", str(ctx.exception))
 
 
 if __name__ == "__main__":
