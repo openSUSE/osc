@@ -1,5 +1,5 @@
 %if %{defined primary_python}
-%define use_python     %(echo %{primary_python} | sed -e 's|python3|python3.|g')
+%define use_python     python%{expand:%%%{primary_python}_bin_suffix}
 %define use_python_pkg %{primary_python}
 %else
 %define use_python python3
@@ -62,7 +62,7 @@
 %if 0%{?suse_version} < 1600
 # ruamel.yaml is not available on SLE 15, use PyYAML instead
 %define use_pyyaml 1
-%define yaml_pkg %{use_python_pkg}-PyYAML
+%define yaml_pkg %{use_python_pkg}-PyYAML > 3.13
 %endif
 
 Name:           osc
@@ -187,11 +187,24 @@ for a general introduction.
     sed -i 's/ruamel\.yaml/PyYAML/g' setup.cfg
 %endif
 
-%{use_python} -mpip wheel \
+if %{use_python} -mpip wheel \
   --verbose --progress-bar off --disable-pip-version-check \
   --use-pep517 --no-build-isolation \
   --no-deps \
   --wheel-dir ./build .
+then
+  : good with latest knobs
+elif %{use_python} -mpip wheel \
+  --verbose --progress-bar off --disable-pip-version-check \
+  --no-build-isolation \
+  --no-deps \
+  --wheel-dir ./build .
+then
+  : good without --use-pep517
+else
+  : stale python environment
+  exit 123
+fi
 
 # write rpm macros
 cat << EOF > macros.osc
