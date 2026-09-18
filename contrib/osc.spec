@@ -62,7 +62,7 @@
 %if 0%{?suse_version} < 1600
 # ruamel.yaml is not available on SLE 15, use PyYAML instead
 %define use_pyyaml 1
-%define yaml_pkg %{use_python_pkg}-PyYAML
+%define yaml_pkg %{use_python_pkg}-PyYAML > 3.13
 %endif
 
 Name:           osc
