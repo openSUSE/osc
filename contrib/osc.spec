@@ -187,11 +187,24 @@ for a general introduction.
     sed -i 's/ruamel\.yaml/PyYAML/g' setup.cfg
 %endif
 
-%{use_python} -mpip wheel \
+if %{use_python} -mpip wheel \
   --verbose --progress-bar off --disable-pip-version-check \
   --use-pep517 --no-build-isolation \
   --no-deps \
   --wheel-dir ./build .
+then
+  : good with latest knobs
+elif %{use_python} -mpip wheel \
+  --verbose --progress-bar off --disable-pip-version-check \
+  --no-build-isolation \
+  --no-deps \
+  --wheel-dir ./build .
+then
+  : good without --use-pep517
+else
+  : stale python environment
+  exit 123
+fi
 
 # write rpm macros
 cat << EOF > macros.osc
