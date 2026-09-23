@@ -1593,7 +1593,8 @@ class Osc(cmdln.Cmdln):
         will be the pattern file to view or edit.
 
         With the --edit switch, the metadata can be edited. Per default, osc
-        opens the program specified by the environmental variable EDITOR with a
+        opens the program specified by the VISUAL environment variable,
+        or if not set the EDITOR environment variable, with a
         temporary file. Alternatively, content to be saved can be supplied via
         the --file switch. If the argument is '-', input is taken from stdin:
         osc meta prjconf home:user | sed ... | osc meta prjconf home:user -F -
@@ -5917,15 +5918,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc ci file1 file2 ...
         """
 
-        from .core import get_default_editor
+        from .core import _editor_command
 
         try:
             self._commit(subcmd, opts, args)
         except oscerr.ExtRuntimeError as e:
             pattern = re.compile("No such file")
             if "No such file" in e.msg:
-                editor = os.getenv('EDITOR', default=get_default_editor())
-                print(f"Editor {editor} not found")
+                editor = _editor_command()
+                print(f"Editor {editor[0]} not found")
                 return 1
             print("ERROR: service run failed", e, file=sys.stderr)
             return 1
@@ -10820,8 +10821,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         or can be specified via mailaddr environment variable.
 
-        By default, osc vc opens the program specified by the EDITOR
-        environment variable (and it uses Vim if that variable is not set) with
+        By default, osc vc opens the program specified by the VISUAL environment variable
+        or if not set the EDITOR environment variable
+        (and it uses Vim if that variable is not set), with
         a temporary file that should replace the *.changes file when saved by
         the editor, or discarded otherwise.
         """
