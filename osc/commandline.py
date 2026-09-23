@@ -1446,7 +1446,11 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('-d', '--delete', metavar='TOKENID',
                         help='Delete a token')
     @cmdln.option('-o', '--operation', metavar='OPERATION',
-                        help="Operation associated with the token. Choices: runservice, branch, release, rebuild, workflow")
+                        help="Operation associated with the token. Choices: runservice, branch, release, rebuild, workflow, apitoken")
+    @cmdln.option('', '--description', metavar='DESCRIPTION',
+                        help='Description of the new token (only with --operation=apitoken)')
+    @cmdln.option('', '--expires', metavar='DATETIME',
+                        help='Expiry of the new token in ISO 8601 format, e.g. 2027-01-01T00:00:00Z (only with --operation=apitoken)')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     @cmdln.option('', '--scm-token', metavar='SCM_TOKEN',
@@ -1468,9 +1472,15 @@ class Osc(cmdln.Cmdln):
         Authentication token can be used to run specific commands without
         sending credentials.
 
+        A token with operation "apitoken" is a general API token that
+        replaces the password: authenticate with it via the
+        "Authorization: Bearer" header, the OSC_TOKEN environment variable
+        or the "token" oscrc option.
+
         usage:
             osc token
             osc token --create --operation <OPERATION> [<PROJECT> <PACKAGE>]
+            osc token --create --operation apitoken [--description <DESCRIPTION>] [--expires <DATETIME>]
             osc token --delete <TOKENID>
             osc token --trigger <TOKENSTRING> [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
         """
@@ -1500,6 +1510,29 @@ class Osc(cmdln.Cmdln):
             if not opts.operation:
                 self.argparser.error("Please specify --operation")
 
+            if opts.operation == 'apitoken':
+                if project or package:
+                    raise oscerr.WrongOptions("The --operation=apitoken token cannot be bound to a project or package")
+                if opts.scm_token:
+                    raise oscerr.WrongOptions("The --scm-token option cannot be combined with --operation=apitoken")
+
+                token_id, secret = obs_api.Token.cmd_create_api_token(
+                    apiurl,
+                    user,
+                    description=opts.description,
+                    expires_at=opts.expires,
+                )
+                print(f"Created a new API token with ID {token_id}")
+                print()
+                print("Token (it is shown only once and cannot be retrieved again):")
+                print(secret)
+                print()
+                print("Store it in the oscrc 'token' option of the [%s] section or export it as OSC_TOKEN." % apiurl)
+                return
+
+            if opts.description or opts.expires:
+                raise oscerr.WrongOptions("The --description and --expires options require --operation=apitoken")
+
             if opts.operation == 'workflow' and not opts.scm_token:
                 msg = 'The --operation=workflow option requires a --scm-token=<token> option'
                 raise oscerr.WrongOptions(msg)
@@ -1520,6 +1553,8 @@ class Osc(cmdln.Cmdln):
             status = obs_api.Token.do_delete(apiurl, user, token=opts.delete)
             print(status.to_string())
         elif opts.trigger:
+            if opts.operation == 'apitoken':
+                raise oscerr.WrongOptions("API tokens cannot be triggered, use the token itself for Bearer authentication")
             print("Trigger token")
             status = obs_api.Token.do_trigger(
                 apiurl,

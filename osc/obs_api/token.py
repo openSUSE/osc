@@ -78,6 +78,7 @@ class Token(XmlModel):
         RUNSERVICE = "runservice"
         WIPE = "wipe"
         WORKFLOW = "workflow"
+        APITOKEN = "apitoken"
 
     kind: Kind = Field(
         xml_attribute=True,
@@ -90,6 +91,7 @@ class Token(XmlModel):
             - runservice: run a service via the POST /trigger/runservice route
             - wipe: trigger wipe of binary artifacts
             - workflow: trigger SCM/CI workflows, see https://openbuildservice.org/help/manuals/obs-user-guide/cha.obs.scm_ci_workflow_integration.html
+            - apitoken: general API token for Bearer authentication, replaces the password
             """
         ),
     )
@@ -111,7 +113,12 @@ class Token(XmlModel):
 
         table = KeyValueTable()
         table.add("ID", str(self.id))
-        table.add("String", self.string, color="bold")
+        if self.kind == self.Kind.APITOKEN:
+            # only the hash of the secret is stored server-side; the plaintext
+            # was shown once at creation time and cannot be retrieved again
+            table.add("String", "(secret hash, not retrievable)", color="bold")
+        else:
+            table.add("String", self.string, color="bold")
         table.add("Operation", self.kind)
         table.add("Description", self.description)
         # defaults to "true", because all tokens were enabled before introducing the "enabled" field
@@ -161,7 +168,62 @@ class Token(XmlModel):
         return Status.from_file(response, apiurl=apiurl)
 
     @classmethod
-    def do_delete(cls, apiurl: str, user: str, token: str):
+    def cmd_create_api_token(
+        cls,
+        apiurl: str,
+        user: str,
+        *,
+        description: Optional[str] = None,
+        expires_at: Optional[str] = None,
+    ):
+        """
+        Create a general API token (Bearer authentication).
+
+        Returns a ``(token_id, secret)`` tuple. The secret is only ever
+        returned by this call; it cannot be retrieved afterwards.
+        """
+        url_path = ["person", user, "token"]
+        url_query = {
+            "operation": "apitoken",
+            "description": description,
+        }
+        response = cls.xml_request("POST", apiurl, url_path, url_query)
+        status = Status.from_file(response, apiurl=apiurl)
+        token_id = status.data.get("id")
+        secret = status.data.get("token")
+        if not token_id or not secret:
+            raise ValueError("Server did not return the new API token")
+
+        if expires_at:
+            cls.do_set_attributes(apiurl, user, token_id, expires_at=expires_at)
+
+        return token_id, secret
+
+    @classmethod
+    def do_set_attributes(
+        cls,
+        apiurl: str,
+        user: str,
+        token: str,
+        *,
+        expires_at: Optional[str] = None,
+        description: Optional[str] = None,
+        enabled: Optional[bool] = None,
+    ):
+        from xml.sax.saxutils import quoteattr
+
+        url_path = ["person", user, "token", token]
+        url_query = {}
+        attributes = ""
+        if expires_at is not None:
+            attributes += f" expires_at={quoteattr(expires_at)}"
+        if description is not None:
+            attributes += f" description={quoteattr(description)}"
+        if enabled is not None:
+            attributes += f" enabled={quoteattr('true' if enabled else 'false')}"
+        data = f"<token{attributes} />"
+        response = cls.xml_request("PUT", apiurl, url_path, url_query, data=data)
+        return Status.from_file(response, apiurl=apiurl)
         url_path = ["person", user, "token", token]
         url_query = {}
         response = cls.xml_request("DELETE", apiurl, url_path, url_query)
