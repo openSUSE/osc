@@ -1450,7 +1450,9 @@ class Osc(cmdln.Cmdln):
     @cmdln.option('', '--description', metavar='DESCRIPTION',
                         help='Description of the new token (only with --operation=apitoken)')
     @cmdln.option('', '--expires', metavar='DATETIME',
-                        help='Expiry of the new token in ISO 8601 format, e.g. 2027-01-01T00:00:00Z (only with --operation=apitoken)')
+                        help='Expiry of the new token in ISO 8601 format, e.g. 2027-01-01T00:00:00Z, '
+                             'or "never" for a token that never expires (not recommended). '
+                             'Default: 90 days from now (only with --operation=apitoken)')
     @cmdln.option('-t', '--trigger', metavar='TOKENSTRING',
                         help='Trigger the action of a token')
     @cmdln.option('', '--scm-token', metavar='SCM_TOKEN',
@@ -1480,7 +1482,7 @@ class Osc(cmdln.Cmdln):
         usage:
             osc token
             osc token --create --operation <OPERATION> [<PROJECT> <PACKAGE>]
-            osc token --create --operation apitoken [--description <DESCRIPTION>] [--expires <DATETIME>]
+            osc token --create --operation apitoken [--description <DESCRIPTION>] [--expires <DATETIME|never>]
             osc token --delete <TOKENID>
             osc token --trigger <TOKENSTRING> [--operation <OPERATION>] [<PROJECT> <PACKAGE>]
         """
@@ -1516,13 +1518,27 @@ class Osc(cmdln.Cmdln):
                 if opts.scm_token:
                     raise oscerr.WrongOptions("The --scm-token option cannot be combined with --operation=apitoken")
 
+                expires_at = opts.expires
+                if expires_at is None:
+                    expires_at = obs_api.Token.default_expiry()
+                elif expires_at.lower() == "never":
+                    print(
+                        "Warning: creating a token that never expires. If it leaks, it grants "
+                        "permanent access to your account; prefer a bounded expiry instead.",
+                        file=sys.stderr,
+                    )
+                    expires_at = None
+
                 token_id, secret = obs_api.Token.cmd_create_api_token(
                     apiurl,
                     user,
                     description=opts.description,
-                    expires_at=opts.expires,
+                    expires_at=expires_at,
                 )
-                print(f"Created a new API token with ID {token_id}")
+                if expires_at:
+                    print(f"Created a new API token with ID {token_id} (expires {expires_at})")
+                else:
+                    print(f"Created a new API token with ID {token_id} (never expires)")
                 print()
                 print("Token (it is shown only once and cannot be retrieved again):")
                 print(secret)

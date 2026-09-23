@@ -1,14 +1,19 @@
 import argparse
+import contextlib
+import io
 import os
 import shutil
 import tempfile
 import unittest
 import unittest.mock
+from datetime import datetime, timedelta, timezone
 from urllib.error import HTTPError
 
 from osc.commandline import Command
 from osc.commandline import MainCommand
+from osc.commandline import Osc
 from osc.commandline import OscMainCommand
+from osc.obs_api.token import Token as ObsApiToken
 from osc.commandline import pop_project_package_from_args
 from osc.commandline import pop_project_package_repository_arch_from_args
 from osc.commandline import pop_project_package_targetproject_targetpackage_from_args
@@ -857,6 +862,65 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
         ):
             with self.assertRaises(HTTPError):
                 change_request_state("https://api", "1", "superseded")
+
+
+
+class TestTokenApitokenCreate(unittest.TestCase):
+    """`osc token --create --operation apitoken` expiry handling."""
+
+    def _do_token(self, expires):
+        from osc import obs_api
+
+        cmd = Osc.__new__(Osc)
+        cmd.options = argparse.Namespace(apiurl="https://api.example.com")
+        opts = argparse.Namespace(
+            create=True,
+            delete=None,
+            operation="apitoken",
+            description=None,
+            expires=expires,
+            trigger=None,
+            scm_token=None,
+        )
+        with unittest.mock.patch(
+            "osc.conf.get_apiurl_usr", return_value="user"
+        ), unittest.mock.patch.object(
+            obs_api.Token,
+            "cmd_create_api_token",
+            return_value=("42", "obs_pat_testsecret"),
+        ) as mock_create:
+            out, err = io.StringIO(), io.StringIO()
+            with contextlib.redirect_stdout(out), contextlib.redirect_stderr(err):
+                cmd.do_token("token", opts)
+        return mock_create, out.getvalue(), err.getvalue()
+
+    def _parse_expiry(self, value):
+        return datetime.strptime(value, "%Y-%m-%dT%H:%M:%SZ").replace(tzinfo=timezone.utc)
+
+    def test_no_expires_defaults_to_90_days(self):
+        mock_create, out, err = self._do_token(None)
+        expires_at = mock_create.call_args.kwargs["expires_at"]
+        delta = self._parse_expiry(expires_at) - datetime.now(timezone.utc)
+        self.assertLess(abs(delta - timedelta(days=90)), timedelta(minutes=5))
+        self.assertIn("expires", out)
+        self.assertNotIn("Warning", err)
+
+    def test_explicit_expires_passed_through(self):
+        mock_create, out, err = self._do_token("2027-01-01T00:00:00Z")
+        self.assertEqual(mock_create.call_args.kwargs["expires_at"], "2027-01-01T00:00:00Z")
+        self.assertIn("2027-01-01T00:00:00Z", out)
+        self.assertNotIn("Warning", err)
+
+    def test_never_warns_and_skips_expiry(self):
+        mock_create, out, err = self._do_token("never")
+        self.assertIsNone(mock_create.call_args.kwargs["expires_at"])
+        self.assertIn("Warning", err)
+        self.assertIn("never expires", err)
+        self.assertIn("never expires", out)
+
+    def test_default_expiry_format(self):
+        delta = self._parse_expiry(ObsApiToken.default_expiry()) - datetime.now(timezone.utc)
+        self.assertLess(abs(delta - timedelta(days=90)), timedelta(minutes=5))
 
 
 if __name__ == "__main__":

@@ -1,4 +1,5 @@
 import textwrap
+from datetime import datetime, timedelta, timezone
 
 from ..util.models import *  # pylint: disable=wildcard-import,unused-wildcard-import
 from .status import Status
@@ -166,6 +167,20 @@ class Token(XmlModel):
         }
         response = cls.xml_request("POST", apiurl, url_path, url_query)
         return Status.from_file(response, apiurl=apiurl)
+
+    #: Default lifetime of a newly created API token when no explicit
+    #: expiry is requested.
+    API_TOKEN_DEFAULT_EXPIRY_DAYS = 90
+
+    @classmethod
+    def default_expiry(cls) -> str:
+        """
+        ISO 8601 expiry timestamp for an API token created right now with
+        the default lifetime.
+        """
+        return (datetime.now(timezone.utc) + timedelta(days=cls.API_TOKEN_DEFAULT_EXPIRY_DAYS)).strftime(
+            "%Y-%m-%dT%H:%M:%SZ"
+        )
 
     @classmethod
     def cmd_create_api_token(
