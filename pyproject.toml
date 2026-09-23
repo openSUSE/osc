@@ -1,3 +1,10 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+# osc supports Python 3.6+ (setup.cfg); keep pyupgrade rules from suggesting
+# syntax that needs newer interpreters (X | None, list[...]). py37 is the
+# oldest target ruff knows; it still silences those rules.
+target-version = "py37"
+line-length = 120
