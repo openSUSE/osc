@@ -34,7 +34,12 @@ def get_store(path, check=True, print_warnings=False):
             store = git_scm.GitStore(path, check=check)
             if print_warnings:
                 git_scm.warn_experimental()
-        except oscerr.NoWorkingCopy:
+        except oscerr.NoWorkingCopy as e:
+            # GitStore raises "is not a Git SCM working copy" if the path is not a git repo.
+            # Any other NoWorkingCopy error indicates a valid git repo with a specific issue
+            # (e.g. detached HEAD, missing metadata), which we want to propagate to the user.
+            if "is not a Git SCM working copy" not in str(e):
+                raise
             pass
 
     if not store:
