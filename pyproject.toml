@@ -7,7 +7,7 @@ name = "osc"
 dynamic = ["version"]
 description = "Command-line client for the Open Build Service"
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.11"
 license = "GPL-2.0-or-later"
 keywords = ["openSUSE", "SUSE", "RPM", "build", "buildservice", "command-line"]
 authors = [
@@ -25,11 +25,6 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.6",
-    "Programming Language :: Python :: 3.7",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
-    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -43,13 +38,12 @@ dependencies = [
     "rpm",
     "ruamel.yaml",
     "urllib3",
-    "typing_extensions; python_version < \"3.8\"",
 ]
 
 [project.optional-dependencies]
 lint = [
-    "darker==1.5.1",
     "mypy",
+    "ruff",
 ]
 
 [project.scripts]
@@ -61,6 +55,10 @@ osc = "osc.babysitter:main"
 Homepage = "https://github.com/openSUSE/osc"
 Repository = "https://github.com/openSUSE/osc.git"
 Issues = "https://github.com/openSUSE/osc/issues"
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
 
 [tool.setuptools]
 packages = [
