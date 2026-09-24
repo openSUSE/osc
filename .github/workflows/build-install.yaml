@@ -73,9 +73,9 @@ jobs:
             zypper -n --gpg-auto-import-keys refresh
             zypper -n lr --details
             zypper -n dist-upgrade
-            # git-lfs may not be in the SLE 16 repos yet; fall back to the Leap 15.6 package
+            # git-lfs may not be in the SLE 16 repos yet; fall back to the Leap 16.0 package
             zypper -n install rpm-build
-            zypper -n install git-lfs || zypper -n --no-gpg-checks install https://download.opensuse.org/distribution/leap/15.6/repo/oss/x86_64/git-lfs-3.4.0-bp156.1.14.x86_64.rpm
+            zypper -n install git-lfs || zypper -n --no-gpg-checks install https://download.opensuse.org/distribution/leap/16.0/repo/oss/x86_64/git-lfs-3.7.1-bp160.1.1.x86_64.rpm
 
       - name: 'Install packages (Fedora/CentOS)'
         if: ${{ contains(matrix.container, '/fedora:') || contains(matrix.container, '/centos:') }}
