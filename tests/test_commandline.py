@@ -899,7 +899,7 @@ class TestTokenApitokenCreate(unittest.TestCase):
 
     def test_no_expires_defaults_to_90_days(self):
         mock_create, out, err = self._do_token(None)
-        expires_at = mock_create.call_args.kwargs["expires_at"]
+        expires_at = mock_create.call_args[1]["expires_at"]
         delta = self._parse_expiry(expires_at) - datetime.now(timezone.utc)
         self.assertLess(abs(delta - timedelta(days=90)), timedelta(minutes=5))
         self.assertIn("expires", out)
@@ -907,13 +907,13 @@ class TestTokenApitokenCreate(unittest.TestCase):
 
     def test_explicit_expires_passed_through(self):
         mock_create, out, err = self._do_token("2027-01-01T00:00:00Z")
-        self.assertEqual(mock_create.call_args.kwargs["expires_at"], "2027-01-01T00:00:00Z")
+        self.assertEqual(mock_create.call_args[1]["expires_at"], "2027-01-01T00:00:00Z")
         self.assertIn("2027-01-01T00:00:00Z", out)
         self.assertNotIn("Warning", err)
 
     def test_never_warns_and_skips_expiry(self):
         mock_create, out, err = self._do_token("never")
-        self.assertIsNone(mock_create.call_args.kwargs["expires_at"])
+        self.assertIsNone(mock_create.call_args[1]["expires_at"])
         self.assertIn("Warning", err)
         self.assertIn("never expires", err)
         self.assertIn("never expires", out)

@@ -239,6 +239,9 @@ class Token(XmlModel):
         data = f"<token{attributes} />"
         response = cls.xml_request("PUT", apiurl, url_path, url_query, data=data)
         return Status.from_file(response, apiurl=apiurl)
+
+    @classmethod
+    def do_delete(cls, apiurl: str, user: str, token: str):
         url_path = ["person", user, "token", token]
         url_query = {}
         response = cls.xml_request("DELETE", apiurl, url_path, url_query)
