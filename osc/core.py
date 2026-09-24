@@ -5919,7 +5919,7 @@ def print_request_list(apiurl, project, package=None, states=("new", "review"), 
 
 
 def request_interactive_review(apiurl, request, initial_cmd='', group=None,
-                               ignore_reviews=False, source_buildstatus=False):
+                               ignore_reviews=False, source_buildstatus=False, message=None):
     """review the request interactively"""
     tmpfile = None
 
@@ -6145,6 +6145,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
                         % (request.state.name, state)
                     msg_template = change_request_state_template(request, state)
+                if state == 'accepted' and message is not None:
+                    msg_template = message
                 if tmpfile is None:
                     footer += str(request)
                 if tmpfile is not None:

@@ -36,12 +36,42 @@ class TestRequestInteractiveReview(unittest.TestCase):
             patcher.start()
             self.addCleanup(patcher.stop)
 
-    def review(self, replies):
+    def review(self, replies, **kwargs):
         output = io.StringIO()
         with patch.object(core, 'raw_input', side_effect=replies), \
                 redirect_stdout(output), redirect_stderr(io.StringIO()):
-            core.request_interactive_review(self.apiurl, self.request)
+            core.request_interactive_review(self.apiurl, self.request, **kwargs)
         return output.getvalue()
+
+    def test_accept_message_template(self):
+        self.request.state = core.RequestState(core.xml_fromstring('<state name="new"/>'))
+        for message, expected in [('ok', 'ok'), (None, 'configured approval'), ('', '')]:
+            with self.subTest(message=message), \
+                    patch.object(core, 'change_request_state_template', return_value='configured approval'), \
+                    patch.object(core, 'edit_message', return_value='edited approval') as editor, \
+                    patch.object(core, 'change_request_state', return_value=True) as change_state, \
+                    patch('osc._private.forward_request'):
+                self.review(['a'], message=message)
+                self.assertEqual(editor.call_args.kwargs['template'], expected)
+                self.assertEqual(change_state.call_args.args,
+                                 (self.apiurl, '123', 'accepted', 'edited approval'))
+
+    def test_inline_accept_message_overrides_default(self):
+        with patch.object(core, 'edit_message') as editor, \
+                patch.object(core, 'change_request_state', return_value=True) as change_state, \
+                patch('osc._private.forward_request'):
+            self.review(['a -m explicit approval'], message='ok')
+        editor.assert_not_called()
+        self.assertEqual(change_state.call_args.args,
+                         (self.apiurl, '123', 'accepted', 'explicit approval'))
+
+    def test_accept_message_does_not_override_decline_template(self):
+        self.request.state = core.RequestState(core.xml_fromstring('<state name="new"/>'))
+        with patch.object(core, 'change_request_state_template', return_value='decline reason'), \
+                patch.object(core, 'edit_message', return_value='edited reason') as editor, \
+                patch.object(core, 'change_request_state', return_value=True):
+            self.review(['d'], message='ok')
+        self.assertEqual(editor.call_args.kwargs['template'], 'decline reason')
 
     def test_buildlog_flavor(self):
         with patch.object(core, 'get_package_results', return_value=iter([self.results])) as results, \
