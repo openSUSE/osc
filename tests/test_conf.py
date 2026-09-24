@@ -678,5 +678,78 @@ class TestHostOptionsFromEnv(unittest.TestCase):
         self.assertEqual(host_options.email, "user@example.com")
 
 
+class TestApiTokenConfig(unittest.TestCase):
+    def setUp(self):
+        self.tmpdir = tempfile.mkdtemp(prefix="osc_test_token_")
+        self.oscrc = os.path.join(self.tmpdir, "oscrc")
+
+    def tearDown(self):
+        shutil.rmtree(self.tmpdir)
+
+    def write_oscrc(self, body):
+        with open(self.oscrc, "w", encoding="utf-8") as f:
+            f.write(body)
+        os.chmod(self.oscrc, 0o600)
+
+    def host_options(self):
+        return osc.conf.config["api_host_options"]["https://api.example.com"]
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_token_from_config(self):
+        self.write_oscrc(
+            "[general]\n"
+            "apiurl = https://api.example.com\n"
+            "\n"
+            "[https://api.example.com]\n"
+            "user = testuser\n"
+            "token = config-token\n"
+        )
+        osc.conf.get_config(override_conffile=self.oscrc)
+        opts = self.host_options()
+        self.assertEqual(opts.token, "config-token")
+        # no password is required when a token is configured
+        self.assertIsNone(opts.password)
+
+    @patch.dict(os.environ, {"OSC_TOKEN": "env-token"}, clear=True)
+    def test_token_from_env_overrides_config(self):
+        self.write_oscrc(
+            "[general]\n"
+            "apiurl = https://api.example.com\n"
+            "\n"
+            "[https://api.example.com]\n"
+            "user = testuser\n"
+            "token = config-token\n"
+        )
+        osc.conf.get_config(override_conffile=self.oscrc)
+        self.assertEqual(self.host_options().token, "env-token")
+
+    @patch.dict(os.environ, {"OSC_TOKEN": "env-token"}, clear=True)
+    def test_token_from_env_without_config_token(self):
+        self.write_oscrc(
+            "[general]\n"
+            "apiurl = https://api.example.com\n"
+            "\n"
+            "[https://api.example.com]\n"
+            "user = testuser\n"
+        )
+        osc.conf.get_config(override_conffile=self.oscrc)
+        self.assertEqual(self.host_options().token, "env-token")
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_password_still_required_without_token(self):
+        self.write_oscrc(
+            "[general]\n"
+            "apiurl = https://api.example.com\n"
+            "\n"
+            "[https://api.example.com]\n"
+            "user = testuser\n"
+        )
+        self.assertRaises(
+            osc.oscerr.ConfigMissingCredentialsError,
+            osc.conf.get_config,
+            override_conffile=self.oscrc,
+        )
+
+
 if __name__ == "__main__":
     unittest.main()

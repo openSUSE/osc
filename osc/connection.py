@@ -328,6 +328,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         CONNECTION_POOLS[apiurl] = pool
 
     auth_handlers = [
+        BearerAuthHandler(apiurl, options["token"]),
         CookieJarAuthHandler(apiurl, os.path.expanduser(conf.config["cookiejar"])),
         SignatureAuthHandler(apiurl, options["user"], options["sshkey"], options["pass"]),
         BasicAuthHandler(apiurl, options["user"], options["pass"]),
@@ -616,6 +617,33 @@ class BasicAuthHandler(AuthHandlerBase):
         request_headers["Authorization"] = f"Basic {basic_auth:s}"
 
         return True
+
+    def process_response(self, url, request_headers, response):
+        pass
+
+
+class BearerAuthHandler(AuthHandlerBase):
+    def __init__(self, apiurl, token):
+        super().__init__(apiurl)
+        self.token = token
+
+    def set_request_headers(self, url, request_headers):
+        if not self.token:
+            return False
+        request_headers["Authorization"] = f"Bearer {self.token}"
+        return True
+
+    def set_request_headers_after_401(self, url, request_headers, response):
+        if not request_headers.get("Authorization", "").startswith("Bearer "):
+            return False
+        # The server rejected the API token. Stop here and never fall back
+        # to other credentials: the token itself needs attention
+        # (revoked or expired), silently downgrading would hide that.
+        raise oscerr.OscIOError(
+            None,
+            f"API token for {self.apiurl} was rejected (401); "
+            "not falling back to password authentication",
+        )
 
     def process_response(self, url, request_headers, response):
         pass
