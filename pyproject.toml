@@ -7,7 +7,7 @@ name = "osc"
 dynamic = ["version"]
 description = "Command-line client for the Open Build Service"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.6"
 license = "GPL-2.0-or-later"
 keywords = ["openSUSE", "SUSE", "RPM", "build", "buildservice", "command-line"]
 authors = [
@@ -25,6 +25,11 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.6",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
@@ -38,6 +43,7 @@ dependencies = [
     "rpm",
     "ruamel.yaml",
     "urllib3",
+    "typing_extensions; python_version < \"3.8\"",
 ]
 
 [project.optional-dependencies]

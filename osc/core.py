@@ -28,10 +28,15 @@ from functools import cmp_to_key, total_ordering
 from http.client import IncompleteRead
 from io import StringIO
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Dict, Union, List, Iterable, Tuple, overload
+from typing import TYPE_CHECKING, Optional, Dict, Union, List, Iterable, Tuple, overload
 from urllib.parse import parse_qs, urlsplit, urlunsplit, urlparse, urlunparse, quote, urlencode, unquote
 from urllib.error import HTTPError
 from xml.etree import ElementTree as ET
+
+try:
+    from typing import Literal
+except ImportError:
+    from typing_extensions import Literal
 
 try:
     import distro
