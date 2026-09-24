@@ -1,3 +1,8 @@
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
+
+[tool.ruff]
+line-length = 120
+# Keep in sync with the minimum supported Python; SLE 15 ships 3.6.
+target-version = "py36"
