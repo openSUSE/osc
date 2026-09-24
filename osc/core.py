@@ -5919,7 +5919,7 @@ def print_request_list(apiurl, project, package=None, states=("new", "review"), 
 
 
 def request_interactive_review(apiurl, request, initial_cmd='', group=None,
-                               ignore_reviews=False, source_buildstatus=False):
+                               ignore_reviews=False, source_buildstatus=False, message=None):
     """review the request interactively"""
     tmpfile = None
 
@@ -5945,16 +5945,19 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
         """
         result = []
         for action in src_actions:
-            disabled = show_package_disabled_repos(apiurl, action.src_project, action.src_package)
-            for repo in get_repos_of_project(apiurl, action.src_project):
-                if (disabled is None) or (repo.name not in [d["repo"] for d in disabled]):
-                    entry = {
-                        "proj": action.src_project,
-                        "pkg": action.src_package,
-                        "repo": repo.name,
-                        "arch": repo.arch
-                    }
-                    result.append(entry)
+            for results in get_package_results(apiurl, action.src_project, action.src_package, multibuild=True):
+                root = xml_fromstring(results)
+                for repo in root.findall('result'):
+                    for status in repo.findall('status'):
+                        if status.get('code') in ('disabled', 'excluded'):
+                            continue
+                        entry = {
+                            "proj": action.src_project,
+                            "pkg": status.get('package'),
+                            "repo": repo.get('repository'),
+                            "arch": repo.get('arch')
+                        }
+                        result.append(entry)
         return result
 
     def select_repo(src_actions):
@@ -6016,7 +6019,7 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
         for action in src_actions:
             print(f'{action.src_project}/{action.src_package}:')
             try:
-                print('\n'.join(get_results(apiurl, action.src_project, action.src_package)))
+                print('\n'.join(get_results(apiurl, action.src_project, action.src_package, multibuild=True)))
             except HTTPError as e:
                 if e.code != 404:
                     raise
@@ -6142,6 +6145,8 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                     footer = 'changing request from state \'%s\' to \'%s\'\n\n' \
                         % (request.state.name, state)
                     msg_template = change_request_state_template(request, state)
+                if state == 'accepted' and message is not None:
+                    msg_template = message
                 if tmpfile is None:
                     footer += str(request)
                 if tmpfile is not None:
