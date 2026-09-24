@@ -28,14 +28,12 @@ jobs:
         container:
 
           # Fedora
-          - 'registry.fedoraproject.org/fedora:41'
-          - 'registry.fedoraproject.org/fedora:42'
+          - 'registry.fedoraproject.org/fedora:43'
           - 'registry.fedoraproject.org/fedora:rawhide'
 
           # OpenSUSE
           # leap < 15.2 doesn't contain git-lfs which causes actions/checkout to fail
-          - 'registry.opensuse.org/opensuse/leap:15.5'
-          - 'registry.opensuse.org/opensuse/leap:15.6'
+          - 'registry.opensuse.org/opensuse/leap:16.0'
           - 'registry.opensuse.org/opensuse/tumbleweed'
 
           # SLE
