@@ -63,8 +63,11 @@ def get_editor() -> List[str]:
     import shlex
     from .exceptions import GitObsRuntimeError
 
+    visual = os.getenv("VISUAL")
     editor = os.getenv("EDITOR", None)
-    if editor:
+    if visual:
+        candidates = [visual]
+    elif editor:
         candidates = [editor]
     else:
         candidates = ["vim", "vi"]
