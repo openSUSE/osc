@@ -98,13 +98,7 @@ jobs:
             zypper -n --gpg-auto-import-keys refresh
             zypper -n lr --details
             zypper -n --no-gpg-checks install https://download.opensuse.org/distribution/leap/15.6/repo/oss/x86_64/git-lfs-3.4.0-bp156.1.14.x86_64.rpm
-            # Python 3.11: the interpreter is in the base repos, the modules come from the community backports.
-            # The rpm bindings are not shipped for 3.11, but the unit tests do not need them.
-            zypper -n addrepo https://download.opensuse.org/repositories/devel:/languages:/python:/backports/15.7/devel:languages:python:backports.repo
-            zypper -n --gpg-auto-import-keys refresh
-            zypper -n install diffstat diffutils git-core python311 python311-pip python311-setuptools python311-cryptography python311-urllib3 python311-PyYAML
-            ln -sf /usr/bin/python3.11 /usr/local/bin/python3
-            ln -sf /usr/bin/pip3.11 /usr/local/bin/pip3
+            zypper -n install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-PyYAML python3-setuptools python3-urllib3
 
       - name: 'Install packages (SLE 16)'
         if: ${{ contains(matrix.container, 'bci-base:16.0') }}
@@ -128,13 +122,7 @@ jobs:
             dnf -y makecache
             dnf -y distro-sync
             dnf -y install git-lfs
-            dnf -y install diffstat diffutils git-core
-            # Python 3.11 from AppStream; the rpm bindings are not shipped for 3.11,
-            # but the unit tests do not need them
-            dnf -y install python3.11 python3.11-pip
-            python3.11 -m pip install cryptography "ruamel.yaml" urllib3
-            ln -sf /usr/bin/python3.11 /usr/local/bin/python3
-            ln -sf /usr/bin/pip3.11 /usr/local/bin/pip3
+            dnf -y install diffstat diffutils git-core python3 python3-cryptography python3-pip python3-rpm python3-ruamel-yaml python3-setuptools python3-urllib3
 
       - name: 'Install packages (CentOS Stream 10)'
         if: ${{ contains(matrix.container, '/centos:stream10') }}
