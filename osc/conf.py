@@ -920,6 +920,16 @@ class Options(OscOptions):
         ),
     )  # type: ignore[assignment]
 
+    non_interactive: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Never prompt for input; fail with an error instead.
+            Equivalent to the --non-interactive command-line option.
+            """
+        ),
+    )  # type: ignore[assignment]
+
     print_web_links: bool = Field(
         default=False,
         description=textwrap.dedent(
