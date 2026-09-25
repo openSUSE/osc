@@ -706,6 +706,12 @@ class TestNonInteractiveOption(unittest.TestCase):
         osc.conf.get_config(override_conffile=self.oscrc)
         self.assertTrue(osc.conf.config["non_interactive"])
 
+    @patch.dict(os.environ, {"OSC_NON_INTERACTIVE": ""}, clear=True)
+    def test_env_var_empty_keeps_default(self):
+        # empty values keep the field default instead of raising TypeError
+        osc.conf.get_config(override_conffile=self.oscrc)
+        self.assertFalse(osc.conf.config["non_interactive"])
+
     @patch.dict(os.environ, {"OSC_NON_INTERACTIVE": "1"}, clear=True)
     def test_env_var_loses_to_setopt(self):
         osc.conf.get_config(override_conffile=self.oscrc, overrides={"non_interactive": "0"})
@@ -714,6 +720,29 @@ class TestNonInteractiveOption(unittest.TestCase):
     def test_setopt(self):
         osc.conf.get_config(override_conffile=self.oscrc, overrides={"non_interactive": "1"})
         self.assertTrue(osc.conf.config["non_interactive"])
+
+
+class TestIsNonInteractiveRequested(unittest.TestCase):
+    def test_cli_flag(self):
+        self.assertTrue(osc.conf.is_non_interactive_requested(True, {}))
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_nothing_requested(self):
+        self.assertFalse(osc.conf.is_non_interactive_requested(False, {}))
+        self.assertFalse(osc.conf.is_non_interactive_requested(None, {}))
+
+    @patch.dict(os.environ, {"OSC_NON_INTERACTIVE": "1"}, clear=True)
+    def test_env_var(self):
+        self.assertTrue(osc.conf.is_non_interactive_requested(False, {}))
+
+    @patch.dict(os.environ, {"OSC_NON_INTERACTIVE": ""}, clear=True)
+    def test_env_var_empty(self):
+        self.assertFalse(osc.conf.is_non_interactive_requested(False, {}))
+
+    @patch.dict(os.environ, {}, clear=True)
+    def test_setopt(self):
+        self.assertTrue(osc.conf.is_non_interactive_requested(False, {"non_interactive": "yes"}))
+        self.assertFalse(osc.conf.is_non_interactive_requested(False, {"non_interactive": "0"}))
 
 
 if __name__ == "__main__":

@@ -137,6 +137,12 @@ class OscMainCommand(MainCommand):
             action="store_true",
             help="disable pager in stdout output",
         )
+        self.add_argument(
+            "--non-interactive",
+            action="store_true",
+            default=None,
+            help="never prompt for input, fail with an error instead",
+        )
 
     def post_parse_args(self, args):
         from . import conf
@@ -152,6 +158,11 @@ class OscMainCommand(MainCommand):
             key, value = i.split("=")
             overrides[key] = value
 
+        # Resolve non-interactive mode before get_config(): the interactive
+        # config setup below must be refused even when no config file
+        # exists yet (and get_config() raises).
+        non_interactive = conf.is_non_interactive_requested(args.non_interactive, overrides)
+
         try:
             conf.get_config(
                 override_apiurl=args.apiurl,
@@ -160,6 +171,7 @@ class OscMainCommand(MainCommand):
                 override_http_debug=args.http_debug,
                 override_http_full_debug=args.http_full_debug,
                 override_no_keyring=args.no_keyring,
+                override_non_interactive=args.non_interactive,
                 override_post_mortem=args.post_mortem,
                 override_quiet=args.quiet,
                 override_traceback=args.traceback,
@@ -169,16 +181,31 @@ class OscMainCommand(MainCommand):
             )
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
+            if non_interactive:
+                raise oscerr.NonInteractiveInput(
+                    f"Cannot create the configuration file {e.file} in non-interactive mode. "
+                    "Create it first, e.g. by running osc interactively once."
+                )
             print(f"Creating osc configuration file {e.file} ...", file=sys.stderr)
             conf.interactive_config_setup(e.file, args.apiurl)
             print("done", file=sys.stderr)
             self.post_parse_args(args)
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
+            if non_interactive:
+                raise oscerr.NonInteractiveInput(
+                    "Cannot configure the API URL in non-interactive mode. "
+                    "Add the API URL to the configuration file or pass -A/--apiurl."
+                )
             conf.interactive_config_setup(e.file, e.url, initial=False)
             self.post_parse_args(args)
         except oscerr.ConfigMissingCredentialsError as e:
             print(e.msg, file=sys.stderr)
+            if non_interactive:
+                raise oscerr.NonInteractiveInput(
+                    "Cannot configure credentials in non-interactive mode. "
+                    "Add the credentials to the configuration file first."
+                )
             print("Please enter new credentials.", file=sys.stderr)
             conf.interactive_config_setup(e.file, e.url, initial=False)
             self.post_parse_args(args)
@@ -188,6 +215,7 @@ class OscMainCommand(MainCommand):
         for i in ["apiurl", "debug", "http_debug", "http_full_debug", "post_mortem", "traceback", "verbose"]:
             setattr(args, i, conf.config[i])
         args.no_keyring = not conf.config["use_keyring"]
+        args.non_interactive = conf.config["non_interactive"]
 
         if conf.config["show_download_progress"]:
             self.download_progress = create_text_meter()
