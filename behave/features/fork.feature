@@ -33,3 +33,13 @@ Scenario: Fork multiple git repos from different orgs
     Then the exit code is 0
      And stdout contains " scmsync URL: "
      And stdout contains "/Admin/test-GitPkgA-devel#factory"
+
+
+@destructive
+Scenario: Fork a git repo with a custom --scmsync URL
+    Given I execute git-obs with args "repo fork pool/test-GitPkgA"
+    When I execute osc with args "fork test:factory test-GitPkgA --scmsync=http://localhost:{context.podman.container.ports[gitea_http]}/Admin/test-GitPkgA.git?trackingbranch=factory#factory --target-project=home:Admin --no-devel-project"
+    Then the exit code is 0
+     And stderr contains "Using scmsync URL directly: http://localhost:"
+     And stdout contains "/Admin/test-GitPkgA.git\?trackingbranch=factory#factory"
+     And stdout contains " scmsync URL: http://localhost:"
