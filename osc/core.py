@@ -84,6 +84,7 @@ from .obs_scm.store import store_write_string
 from .output import get_default_pager
 from .output import run_pager
 from .output import sanitize_text
+from .util import helper
 from .util import xdg
 from .util.helper import decode_list, decode_it, raw_input, _html_escape
 from .util.xml import xml_fromstring
@@ -1598,7 +1599,8 @@ class metafile:
                     else:
                         prompt = 'Try again? ([y/N): '
 
-                    ri = raw_input(prompt)
+                    # non-interactive default: Enter answers N (do not retry)
+                    ri = raw_input(prompt, default="")
                     if ri in ('y', 'Y'):
                         self.url = self._url_factory()
                     elif ri in ('f', 'F') and self._url_factory.is_force_supported():
@@ -2045,6 +2047,10 @@ def highlight_diff(diff):
 
 
 def run_editor(filename):
+    helper.refuse_non_interactive(
+        f"edit {filename} in $EDITOR",
+        hint="Supply the content via the command's --message/--file/--stdin option instead of the editor.",
+    )
     cmd = _editor_command()
     cmd.append(filename)
     return run_external(cmd[0], *cmd[1:])
@@ -2116,6 +2122,10 @@ def _edit_message_open_editor(filename, data, orig_mtime):
 
 
 def edit_message(footer='', template='', templatelen=30):
+    helper.refuse_non_interactive(
+        "edit message in $EDITOR",
+        hint="Pass -m/--message to avoid the editor.",
+    )
     delim = '--This line, and those below, will be ignored--\n'
     data = ''
     if template != '':
@@ -2147,7 +2157,10 @@ def edit_text(data='', delim=None, suffix='.txt', template=''):
                 reason = 'Log message not specified'
                 if template == msg:
                     reason = 'Default log message was not changed. Press \'c\' to continue.'
-                ri = raw_input(f'{reason}\na)bort, c)ontinue, e)dit: ')
+                ri = raw_input(
+                    f'{reason}\na)bort, c)ontinue, e)dit: ',
+                    hint="Fix the reported problem and rerun, or run interactively to choose.",
+                )
                 if ri in 'aA':
                     raise oscerr.UserAbort()
                 elif ri in 'cC':
@@ -2677,10 +2690,14 @@ def check_existing_requests(
             open_request_string = "The following submit requests are already open:"
             supersede_request_string = "Supersede the old requests?"
         print(f"{open_request_string} {' '.join([i.reqid for i in reqs])}")
-        repl = raw_input(f'{supersede_request_string} (y/n/c) ')
+        repl = raw_input(
+            f'{supersede_request_string} (y/n/c) ', hint="Use --supersede to supersede without prompting."
+        )
         while repl.lower() not in ['c', 'y', 'n']:
             print(f'{repl} is not a valid option.')
-            repl = raw_input(f'{supersede_request_string} (y/n/c) ')
+            repl = raw_input(
+                f'{supersede_request_string} (y/n/c) ', hint="Use --supersede to supersede without prompting."
+            )
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
@@ -2711,10 +2728,14 @@ def check_existing_maintenance_requests(
             open_request_string = "The following maintenance incident requests are already open:"
             supersede_request_string = "Supersede the old requests?"
         print(f"{open_request_string} {', '.join([i.reqid for i in reqs])}.")
-        repl = raw_input(f'{supersede_request_string} (y/n/c) ')
+        repl = raw_input(
+            f'{supersede_request_string} (y/n/c) ', hint="Use --supersede to supersede without prompting."
+        )
         while repl.lower() not in ['c', 'y', 'n']:
             print(f'{repl} is not a valid option.')
-            repl = raw_input(f'{supersede_request_string} (y/n/c) ')
+            repl = raw_input(
+                f'{supersede_request_string} (y/n/c) ', hint="Use --supersede to supersede without prompting."
+            )
         if repl.lower() == 'c':
             print('Aborting', file=sys.stderr)
             raise oscerr.UserAbort()
@@ -5746,7 +5767,11 @@ def addFiles(filenames, prj_obj=None, force=False):
         if not is_package_dir(directory):
             print(f'osc: warning: \'{filename}\' cannot be associated to a package')
             continue
-        resp = raw_input(f"{filename} is a directory, do you want to archive it for submission? (y/n) ")
+        resp = raw_input(
+            f"{filename} is a directory, do you want to archive it for submission? (y/n) ",
+            # non-interactive default: Enter answers no (skip the directory)
+            default="",
+        )
         if resp not in ('y', 'Y'):
             continue
         archive = f"{filename}.obscpio"
@@ -5972,7 +5997,10 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
 
         while True:
             try:
-                reply = raw_input(f"Number of repo to examine (0 - {len(repos)-1}): ").strip()
+                reply = raw_input(
+                    f"Number of repo to examine (0 - {len(repos)-1}): ",
+                    hint="Use -r/--repo and -a/--arch to select the build target.",
+                ).strip()
                 if not reply:
                     return None
                 reply_num = int(reply)
@@ -6067,7 +6095,9 @@ def request_interactive_review(apiurl, request, initial_cmd='', group=None,
                 repl = initial_cmd
                 initial_cmd = ''
             else:
-                repl = raw_input(prompt).strip()
+                repl = raw_input(
+                    prompt, hint="Interactive request review is not available in non-interactive mode."
+                ).strip()
 
             # remember if we're accepting so we can decide whether to forward request to the parent project later on
             accept = repl == "a" or repl.startswith("a ")

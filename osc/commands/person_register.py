@@ -40,7 +40,11 @@ class PersonRegisterCommand(osc.commandline.OscCommand):
 
     def run(self, args):
         from osc import obs_api
-        from osc.util.helper import raw_input
+        from osc.util.helper import raw_input, require_non_interactive_options
+
+        # pre-flight for --non-interactive: the password prompt below cannot
+        # be answered, so require --password before doing any work
+        require_non_interactive_options("osc person register", [(args.password, "--password")])
 
         if args.password:
             password = args.password

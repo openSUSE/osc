@@ -102,6 +102,12 @@ def run_editor(file_path: str):
 
 
 def edit_message(template: Optional[str] = None) -> str:
+    from ..util import helper
+
+    helper.refuse_non_interactive(
+        "edit message in $EDITOR",
+        hint="Pass the message via the command's --message/--title option to avoid the editor.",
+    )
     with tempfile.NamedTemporaryFile(mode="w+", encoding="utf-8", prefix="git_obs_message_") as f:
         if template:
             f.write(template)

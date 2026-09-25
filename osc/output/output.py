@@ -195,11 +195,12 @@ def get_pager():
 
 def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
     from ..core import run_external
+    from ..util.helper import is_non_interactive
 
     if not message:
         return
 
-    if not tty.IS_INTERACTIVE:
+    if not tty.IS_INTERACTIVE or is_non_interactive():
         safe_write(sys.stdout, message)
         return
 
@@ -216,10 +217,13 @@ def run_pager(message: Union[bytes, str], tmp_suffix: str = ""):
 def pipe_to_pager(lines: Union[List[bytes], List[str]], *, add_newlines=False):
     """
     Pipe ``lines`` to the pager.
-    If running in a non-interactive terminal, print the data instead.
+    If running in a non-interactive terminal (or with --non-interactive),
+    print the data instead.
     Add a newline after each line if ``add_newlines`` is ``True``.
     """
-    if not tty.IS_INTERACTIVE:
+    from ..util.helper import is_non_interactive
+
+    if not tty.IS_INTERACTIVE or is_non_interactive():
         for line in lines:
             safe_write(sys.stdout, line, add_newline=add_newlines)
         return
