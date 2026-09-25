@@ -49,6 +49,16 @@ def _is_non_interactive():
     return conf.config["non_interactive"]
 
 
+def is_non_interactive():
+    """
+    Return True when running in non-interactive mode.
+
+    For call sites that need to branch on the mode themselves; most call
+    sites should use the require_*/refuse_* helpers or raw_input() instead.
+    """
+    return _is_non_interactive()
+
+
 def raise_non_interactive(prompt, hint=None):
     """
     Raise oscerr.NonInteractiveInput for a prompt that cannot be answered
