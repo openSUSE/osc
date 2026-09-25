@@ -780,7 +780,11 @@ class Osc(cmdln.Cmdln):
         modified = [i for i in package.filenamelist if package.status(i) != " " and package.status(i) != "?"]
         if len(modified) > 0:
             print("Your working copy has local modifications.")
-            repl = raw_input("Proceed without committing the local changes? (y|N) ")
+            repl = raw_input(
+                "Proceed without committing the local changes? (y|N) ",
+                # non-interactive default: Enter answers no
+                default="",
+            )
             if repl != "y":
                 raise oscerr.UserAbort()
 

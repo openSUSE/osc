@@ -34,6 +34,11 @@ class RepoRemoveCommand(osc.commandline.OscCommand):
     def run(self, args):
         from .. import obs_api
         from ..output import get_user_input
+        from ..util.helper import require_non_interactive_options
+
+        # pre-flight for --non-interactive: the apply-changes confirmation
+        # below cannot be answered, so require --yes before doing any work
+        require_non_interactive_options("osc repo remove", [(args.yes, "--yes")])
 
         project_obj = obs_api.Project.from_api(args.apiurl, args.project)
         old = project_obj.to_string()
