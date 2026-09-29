@@ -252,7 +252,7 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
             "--gitea-config",
             help=(
                 "Path to gitea config. Default: $GIT_OBS_CONFIG or $XDG_CONFIG_HOME/tea/config.yml "
-                "(~/.config/tea/config.yml when XDG_CONFIG_HOME is unset, empty, or relative)."
+                "(~/.config/tea/config.yml when XDG_CONFIG_HOME is unset or empty)."
             ),
         )
 

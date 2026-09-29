@@ -15,7 +15,7 @@ Logins
 Before executing any ``git-obs`` commands, you need to configure your
 credentials, also known as logins.  These logins are shared with the ``tea``
 client and are stored in ``$XDG_CONFIG_HOME/tea/config.yml``. If
-``XDG_CONFIG_HOME`` is unset, empty, or relative, ``~/.config/tea/config.yml``
+``XDG_CONFIG_HOME`` is unset or empty, ``~/.config/tea/config.yml``
 is used instead. ``--gitea-config`` and ``GIT_OBS_CONFIG`` override this location.
 
 .. note::
