@@ -255,6 +255,14 @@ you can select how changes should be reconciled:
   commits. If the branches have diverged, it merges the source changes and
   ensures the resulting file tree matches the source state.
 
+- **``sync``:**
+  Closest to traditional OBS behavior (``osc sr``). Rather than reconciling
+  disparate Git commit histories, this mode creates a single synchronization
+  commit that brings the destination package contents into exact alignment with
+  the source branch state. This is particularly useful when forwarding across
+  distribution releases or between branches that have diverged significantly,
+  ensuring the target cleanly reflects the source package without history conflicts.
+
 - **``fast-forward``:**
   Applies changes only if the target branch can be cleanly fast-forwarded to
   the source branch. If the target branch contains independent commits not present
@@ -265,12 +273,6 @@ you can select how changes should be reconciled:
   Integrates changes by creating a merge commit on the target branch. If conflicts
   arise, incoming changes from the source take precedence, and files deleted in
   the source are cleanly removed from the target.
-
-- **``sync``:**
-  Creates a synchronization commit that aligns the destination package contents
-  to match the source branch state, regardless of whether commit histories differ.
-  This is useful when synchronizing long-diverged branches where you want the
-  target to become an exact replica of the source package state.
 
 - **``merge-unrelated``:**
   Behaves like ``merge``, but permits combining branches that do not share a common
