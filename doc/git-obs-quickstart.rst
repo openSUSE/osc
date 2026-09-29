@@ -200,6 +200,107 @@ Workflow: Retrieving sources of an existing pull request
     ...
 
 
+Workflow: Forwarding sources between branches (``git-obs pr forward``)
+----------------------------------------------------------------------
+
+The ``git-obs pr forward`` command is the Git-native counterpart to ``osc sr``
+across branches or code streams (for example, promoting changes from ``factory``
+to a downstream release branch such as ``slfo-main`` or ``16.0``).
+
+How it works:
+~~~~~~~~~~~~~
+
+1. **Reuses your existing fork:**
+   Checks whether you already have a fork of the target repository under your
+   Gitea account. If so, it reuses your existing fork without creating redundant
+   repositories or affecting other remotes.
+
+2. **Guarantees safety of your existing work:**
+   The command never modifies your default branch (``main`` / ``master``) or
+   any ongoing work in your other branches. Instead, it creates a dedicated,
+   isolated branch specifically for the forward operation:
+
+   .. code::
+
+       for/<target_branch>/forward-<source_commit_sha>
+
+   *(e.g., ``for/slfo-main/forward-7f9a2b...``)*
+
+   Only this namespaced branch is pushed to your remote fork.
+
+3. **Performs clean, automated synchronization:**
+   The operation executes inside an isolated temporary directory. It integrates
+   the changes, verifies file additions and deletions, and synchronizes any
+   associated Git LFS assets.
+
+4. **Leaves no litter on your filesystem:**
+   The temporary directory is deleted automatically as soon as the command
+   finishes. No residual files are left behind unless you explicitly specify
+   ``--no-cleanup`` or designate a custom ``--workdir``.
+
+5. **Submits the Pull Request:**
+   Once the branch is pushed to your fork, a standard Gitea Pull Request is
+   opened against the upstream target branch.
+
+
+Understanding the merge modes (``--mode``):
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+When forwarding sources between branches that may have evolved separately,
+you can select how changes should be reconciled:
+
+- **``auto`` (recommended):**
+  The best choice for routine forwarding. If the target branch has not diverged
+  from the source branch, it simply fast-forwards without adding unnecessary merge
+  commits. If the branches have diverged, it merges the source changes and
+  ensures the resulting file tree matches the source state.
+
+- **``sync``:**
+  Closest to traditional OBS behavior (``osc sr``). Rather than reconciling
+  disparate Git commit histories, this mode creates a single synchronization
+  commit that brings the destination package contents into exact alignment with
+  the source branch state. This is particularly useful when forwarding across
+  distribution releases or between branches that have diverged significantly,
+  ensuring the target cleanly reflects the source package without history conflicts.
+
+- **``fast-forward``:**
+  Applies changes only if the target branch can be cleanly fast-forwarded to
+  the source branch. If the target branch contains independent commits not present
+  in the source, the command halts without making changes. Use this when you
+  strictly require a linear commit history.
+
+- **``merge``:**
+  Integrates changes by creating a merge commit on the target branch. If conflicts
+  arise, incoming changes from the source take precedence, and files deleted in
+  the source are cleanly removed from the target.
+
+- **``merge-unrelated``:**
+  Behaves like ``merge``, but permits combining branches that do not share a common
+  historical ancestor (such as branches initialized independently in different repositories).
+
+
+Usage examples:
+~~~~~~~~~~~~~~~
+
+Forward package changes from ``factory`` to ``slfo-main``:
+
+.. code::
+
+    git-obs -G opensuse pr forward products/slfo factory slfo-main --mode auto
+
+Preview all planned actions without modifying remotes or creating a PR (dry-run):
+
+.. code::
+
+    git-obs -G opensuse pr forward products/slfo factory slfo-main --mode auto --dry-run
+
+Provide a custom title and interactively edit the PR message:
+
+.. code::
+
+    git-obs -G opensuse pr forward products/slfo factory slfo-main --mode auto --title "Sync slfo-main with Factory" --edit
+
+
 Workflow: Querying pull requests
 --------------------------------
 
