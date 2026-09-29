@@ -250,7 +250,10 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
 
         self.add_argument(
             "--gitea-config",
-            help="Path to gitea config. Default: $GIT_OBS_CONFIG or ~/.config/tea/config.yml.",
+            help=(
+                "Path to gitea config. Default: $GIT_OBS_CONFIG or $XDG_CONFIG_HOME/tea/config.yml "
+                "(~/.config/tea/config.yml when XDG_CONFIG_HOME is unset or empty)."
+            ),
         )
 
         self.add_argument(
