@@ -54,6 +54,11 @@ class RepoAddCommand(osc.commandline.OscCommand):
     def run(self, args):
         from .. import obs_api
         from ..output import get_user_input
+        from ..util.helper import require_non_interactive_options
+
+        # pre-flight for --non-interactive: the apply-changes confirmation
+        # below cannot be answered, so require --yes before doing any work
+        require_non_interactive_options("osc repo add", [(args.yes, "--yes")])
 
         paths = []
         for path in args.paths:

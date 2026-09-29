@@ -84,6 +84,7 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         return final_ssh_key, final_ssh_agent, final_ssh_key_agent_pub
 
     def run(self, args):
+        from osc.util.helper import helper
         print(f"Updating a Gitea credentials entry with name '{args.name}' ...", file=sys.stderr)
         print(f" * Config path: {self.gitea_conf.path}", file=sys.stderr)
         print("", file=sys.stderr)
@@ -93,6 +94,14 @@ class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
         original_login_obj = self.gitea_conf.get_login(args.name)
 
         final_ssh_key, final_ssh_agent, final_ssh_key_agent_pub = self._get_ssh_settings(args, original_login_obj)
+
+        # pre-flight for --non-interactive: the token prompt below cannot
+        # be answered, so require --new-token before doing any work
+        if helper.is_non_interactive() and (not args.new_token or args.new_token == "-"):
+            helper.raise_non_interactive(
+                "Enter new Gitea token",
+                hint="Pass --new-token to supply the token non-interactively.",
+            )
 
         if args.new_token == "-":
             print(file=sys.stderr)

@@ -30,6 +30,7 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
 
     def run(self, args):
         from osc import gitea_api
+        from osc.util.helper import helper
 
         print(f"Adding a Gitea credentials entry with name '{args.name}' ...", file=sys.stderr)
         print(f" * Config path: {self.gitea_conf.path}", file=sys.stderr)
@@ -61,6 +62,13 @@ class LoginAddCommand(osc.commandline_git.GitObsCommand):
                     self.parser.error(f"SSH key file '{args.ssh_key}' is not a valid SSH private key")
 
         if not ssh_login:
+            # pre-flight for --non-interactive: the token prompt below
+            # cannot be answered, so require --token before doing any work
+            if helper.is_non_interactive() and (not args.token or args.token == "-"):
+                helper.raise_non_interactive(
+                    "Enter Gitea token",
+                    hint="Pass --token to supply the token non-interactively.",
+                )
             while not args.token or args.token == "-":
                 args.token = getpass.getpass(prompt=f"Enter Gitea token for user '{args.user}': ")
 

@@ -249,6 +249,13 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         )
 
         self.add_argument(
+            "--non-interactive",
+            action="store_true",
+            default=None,
+            help="fail instead of prompting for input; the error names the option that answers the prompt",
+        )
+
+        self.add_argument(
             "--gitea-config",
             help="Path to gitea config. Default: $GIT_OBS_CONFIG or ~/.config/tea/config.yml.",
         )
@@ -273,6 +280,14 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         ).completer = complete_login
 
     def post_parse_args(self, args):
+        from . import conf
+
+        # resolve non-interactive mode the same way the main CLI does, but
+        # without loading oscrc (git-obs has its own config); the commands
+        # read the resolved value from conf.config["non_interactive"]
+        if conf.is_non_interactive_requested(args.non_interactive):
+            conf.config["non_interactive"] = True
+
         if not args.gitea_config:
             value = os.getenv("GIT_OBS_CONFIG", "").strip()
             if value:
