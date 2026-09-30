@@ -39,6 +39,11 @@ class TestGitEditor(unittest.TestCase):
             c = get_editor_command("test")
         self.assertEqual(c, ["/usr/bin/mycmd", "-A", "my fancy  parameter ", "test"])
 
+    def test_visual(self):
+        with unittest.mock.patch.dict(os.environ, { "VISUAL": "/usr/bin/emacs", "EDITOR": "/usr/bin/mycmd" }):
+            c = get_editor_command("test")
+        self.assertEqual(c, ["/usr/bin/emacs", "test"])
+
 
 if __name__ == "__main__":
     unittest.main()

@@ -2051,8 +2051,9 @@ def run_editor(filename):
 
 
 def _editor_command():
+    visual = os.getenv("VISUAL", default="").strip()
     editor = os.getenv("EDITOR", default="").strip()
-    editor = editor or get_default_editor()
+    editor = visual or editor or get_default_editor()
     try:
         cmd = shlex.split(editor)
     except SyntaxError:
