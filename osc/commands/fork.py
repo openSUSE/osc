@@ -91,6 +91,10 @@ class ForkCommand(osc.commandline.OscCommand):
         package = args.package
         target_project = self._process_project_name(args.target_project)
 
+        if package is None and project and "/" in project:
+            # allow a single "project/package" argument, matching commands like 'co' and 'branch'
+            project, package = project.split("/", 1)
+
         if project and "/" in project:
             self.parser.error(f"Invalid project: {project}")
 
