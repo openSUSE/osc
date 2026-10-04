@@ -30,9 +30,27 @@ class TarDiff:
     def __init__(self, path):
         self.git = git.Git(path)
         os.makedirs(self.path, exist_ok=True)
+        if self._has_incompatible_git_cache():
+            shutil.rmtree(self.path)
+            os.makedirs(self.path, exist_ok=True)
+            self.git = git.Git(path)
         self.git.init(initial_branch="empty", quiet=True, mute_stderr=True)
         # the git repo is switched to this branch by default to hide the files from disk
         self.git.commit("empty branch", allow_empty=True)
+
+    def _has_incompatible_git_cache(self) -> bool:
+        if not os.path.isdir(os.path.join(self.path, ".git")):
+            return False
+
+        proc = subprocess.run(
+            ["git", "rev-parse", "--show-object-format"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            encoding="utf-8",
+            cwd=self.path,
+            check=False,
+        )
+        return proc.returncode == 0 and proc.stdout.strip() != "sha256"
 
     @property
     def path(self):
