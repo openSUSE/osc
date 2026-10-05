@@ -102,7 +102,8 @@ class Config:
 
     def __init__(self, path: Optional[str] = None):
         if not path:
-            path = "~/.config/tea/config.yml"
+            config_home = os.environ.get("XDG_CONFIG_HOME") or "~/.config"
+            path = os.path.join(config_home, "tea", "config.yml")
         self.path = os.path.abspath(os.path.expanduser(path))
 
         self.logins: List[Login] = []
