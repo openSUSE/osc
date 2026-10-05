@@ -1,9 +1,13 @@
 import io
+import os
 import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
+import osc.commandline
 from osc import core
+
+from .common import OscTestCase
 
 
 class TestRequestInteractiveReview(unittest.TestCase):
@@ -52,8 +56,8 @@ class TestRequestInteractiveReview(unittest.TestCase):
                     patch.object(core, 'change_request_state', return_value=True) as change_state, \
                     patch('osc._private.forward_request'):
                 self.review(['a'], message=message)
-                self.assertEqual(editor.call_args.kwargs['template'], expected)
-                self.assertEqual(change_state.call_args.args,
+                self.assertEqual(editor.call_args[1]['template'], expected)
+                self.assertEqual(change_state.call_args[0],
                                  (self.apiurl, '123', 'accepted', 'edited approval'))
 
     def test_inline_accept_message_overrides_default(self):
@@ -62,7 +66,7 @@ class TestRequestInteractiveReview(unittest.TestCase):
                 patch('osc._private.forward_request'):
             self.review(['a -m explicit approval'], message='ok')
         editor.assert_not_called()
-        self.assertEqual(change_state.call_args.args,
+        self.assertEqual(change_state.call_args[0],
                          (self.apiurl, '123', 'accepted', 'explicit approval'))
 
     def test_accept_message_does_not_override_decline_template(self):
@@ -71,14 +75,14 @@ class TestRequestInteractiveReview(unittest.TestCase):
                 patch.object(core, 'edit_message', return_value='edited reason') as editor, \
                 patch.object(core, 'change_request_state', return_value=True):
             self.review(['d'], message='ok')
-        self.assertEqual(editor.call_args.kwargs['template'], 'decline reason')
+        self.assertEqual(editor.call_args[1]['template'], 'decline reason')
 
     def test_buildlog_flavor(self):
         with patch.object(core, 'get_package_results', return_value=iter([self.results])) as results, \
                 patch.object(core, 'print_buildlog') as buildlog:
             output = self.review(['bl', '1', 's'])
         results.assert_called_once_with(self.apiurl, 'source', 'foo', multibuild=True)
-        self.assertEqual(buildlog.call_args.args,
+        self.assertEqual(buildlog.call_args[0],
                          (self.apiurl, 'source', 'foo:test', 'standard', 'x86_64'))
         self.assertIn('(0) source/foo/standard/x86_64', output)
         self.assertIn('(1) source/foo:test/standard/x86_64', output)
@@ -94,7 +98,7 @@ class TestRequestInteractiveReview(unittest.TestCase):
         with patch.object(core, 'get_package_results', return_value=iter([results_xml])), \
                 patch.object(core, 'print_buildlog') as buildlog:
             self.review(['bl', '0', 's'])
-        self.assertEqual(buildlog.call_args.args,
+        self.assertEqual(buildlog.call_args[0],
                          (self.apiurl, 'source', 'foo', 'standard', 'x86_64'))
 
     def test_rpmlint_flavor(self):
@@ -121,7 +125,7 @@ class TestRequestInteractiveReview(unittest.TestCase):
                           side_effect=[iter([self.results]), iter([other_results])]), \
                 patch.object(core, 'print_buildlog') as buildlog:
             self.review(['bl', '3', 's'])
-        self.assertEqual(buildlog.call_args.args,
+        self.assertEqual(buildlog.call_args[0],
                          (self.apiurl, 'other', 'bar:test', 'ports', 'aarch64'))
 
     def test_missing_buildlog(self):
@@ -136,6 +140,56 @@ class TestRequestInteractiveReview(unittest.TestCase):
             output = self.review(['b', 's'])
         results.assert_called_once_with(self.apiurl, 'source', 'foo', multibuild=True)
         self.assertIn('foo:test failed', output)
+
+    def test_initial_buildstatus_includes_multibuild(self):
+        with patch.object(core, 'get_results', return_value=['foo:test failed']) as results:
+            output = self.review(['s'], source_buildstatus=True)
+        results.assert_called_once_with(self.apiurl, 'source', 'foo', multibuild=True)
+        self.assertIn('foo:test failed', output)
+
+
+class TestRequestInteractiveReviewCommandline(OscTestCase):
+    def _get_fixtures_dir(self):
+        return os.path.join(os.path.dirname(__file__), 'request_fixtures')
+
+    def setUp(self):
+        super().setUp(copytree=False)
+        self.request = core.Request()
+        self.request.reqid = '123'
+        self.request.state = core.RequestState(core.xml_fromstring('<state name="new"/>'))
+        self.request.add_action('submit', src_project='source', src_package='foo',
+                                tgt_project='target', tgt_package='foo')
+
+    def test_list_forwards_message(self):
+        for subcmd in ('request', 'review'):
+            for message in ('ok', '', None):
+                with self.subTest(subcmd=subcmd, message=message), \
+                        patch.object(core, 'get_request_collection', return_value=[self.request]), \
+                        patch.object(core, 'get_review_list', return_value=[self.request]), \
+                        patch.object(core, 'request_interactive_review') as review:
+                    args = [subcmd, 'list', '-i', '-U', 'Admin', '-D', '0']
+                    if message is not None:
+                        args.extend(['-m', message])
+                    self._run_osc(*args)
+                    review.assert_called_once_with('http://localhost', self.request, group=None,
+                                                   ignore_reviews=subcmd != 'review',
+                                                   source_buildstatus=False, message=message)
+
+    def test_show_forwards_message(self):
+        for subcmd in ('request', 'review'):
+            with self.subTest(subcmd=subcmd), \
+                    patch.object(core, 'get_request', return_value=self.request), \
+                    patch.object(core, 'request_interactive_review') as review:
+                self._run_osc(subcmd, 'show', '-i', '--source-buildstatus', '-m', 'ok', '123')
+                review.assert_called_once_with('http://localhost', self.request, group=None,
+                                               ignore_reviews=subcmd != 'review',
+                                               source_buildstatus=True, message='ok')
+
+    def test_edit_forwards_message(self):
+        with patch.object(core, 'get_request', return_value=self.request), \
+                patch.object(core, 'request_interactive_review') as review:
+            self._run_osc('request', 'show', '--edit', '-m', 'ok', '123')
+        review.assert_called_once_with('http://localhost', self.request, 'e', message='ok')
 
 
 if __name__ == '__main__':

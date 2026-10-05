@@ -3413,13 +3413,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not r.get_actions('submit'):
                     raise oscerr.WrongOptions('\'--edit\' not possible '
                                               '(request has no \'submit\' action)')
-                return request_interactive_review(apiurl, r, 'e', message=opts.message)
+                request_interactive_review(apiurl, r, 'e', message=opts.message)
+                return
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                 ignore_reviews = subcmd != 'review'
-                return request_interactive_review(apiurl, r, group=opts.group,
-                                                  ignore_reviews=ignore_reviews,
-                                                  source_buildstatus=source_buildstatus,
-                                                  message=opts.message)
+                request_interactive_review(apiurl, r, group=opts.group,
+                                           ignore_reviews=ignore_reviews,
+                                           source_buildstatus=source_buildstatus,
+                                           message=opts.message)
+                return
             else:
                 print(r)
                 print_comments(apiurl, 'request', reqid)
