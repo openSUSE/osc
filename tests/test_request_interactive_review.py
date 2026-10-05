@@ -4,7 +4,6 @@ import unittest
 from contextlib import redirect_stderr, redirect_stdout
 from unittest.mock import patch
 
-import osc.commandline
 from osc import core
 
 from .common import OscTestCase

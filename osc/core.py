@@ -597,12 +597,10 @@ class Action:
                 src_package_meta_releasename = self.src_pkg_object.get_meta_value("releasename")
                 tgt_package = src_package_meta_releasename.split(".")[0]
             else:
-                if not getattr(self, "tgt_project", None) or not getattr(self, "tgt_package", None):
+                tgt_project = getattr(self, "tgt_project", None)
+                tgt_package = getattr(self, "tgt_package", None)
+                if not tgt_project or not tgt_package:
                     return None
-                # tgt_project and tgt_package are checked above
-                # pylint: disable=no-member
-                tgt_project = self.tgt_project
-                tgt_package = self.tgt_package
             self._tgt_pkg_object = _private.ApiPackage(self.apiurl, tgt_project, tgt_package)
         return self._tgt_pkg_object
 
