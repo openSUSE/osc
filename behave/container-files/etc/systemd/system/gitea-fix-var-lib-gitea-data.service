@@ -1,5 +1,6 @@
 [Unit]
 Description=Fix /var/lib/gitea/data by copying it back and forth to the same overlayfs layer
+Before=gitea.service
 
 [Service]
 Type=oneshot
