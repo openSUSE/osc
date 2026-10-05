@@ -35,6 +35,8 @@ class TarDiff:
             os.makedirs(self.path, exist_ok=True)
             self.git = git.Git(path)
         self.git.init(initial_branch="empty", quiet=True, mute_stderr=True)
+        self.git.set_config("user.name", "osc tardiff")
+        self.git.set_config("user.email", "osc-tardiff@example.invalid")
         # the git repo is switched to this branch by default to hide the files from disk
         self.git.commit("empty branch", allow_empty=True)
 
