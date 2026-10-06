@@ -70,6 +70,30 @@ class TestGitStore(unittest.TestCase):
         store = GitStore(self.tmpdir, check=False)
         self.assertEqual(store.scmurl, "https://example.com/packages/my-package.git")
 
+    def test_apiurl_sanitization(self):
+        store = GitStore(self.tmpdir, check=False)
+        self.assertIsNone(store.apiurl)
+
+        # setting apiurl without scheme should be sanitized to https://
+        store.apiurl = "api.opensuse.org"
+        self.assertEqual(store.apiurl, "https://api.opensuse.org")
+
+        # setting with trailing slash should strip it
+        store.set_apiurl("http://custom.api.org/")
+        self.assertEqual(store.get_apiurl(), "http://custom.api.org")
+        self.assertEqual(store.apiurl, "http://custom.api.org")
+
+        # unsetting apiurl
+        store.apiurl = None
+        self.assertIsNone(store.apiurl)
+        self.assertIsNone(store.get_apiurl())
+
+        # LocalGitStore directly
+        local_store = LocalGitStore(self.tmpdir, check=False)
+        local_store.set_apiurl("api.opensuse.org")
+        self.assertEqual(local_store.get_apiurl(), "https://api.opensuse.org")
+        self.assertEqual(local_store.apiurl, "https://api.opensuse.org")
+
 
 @unittest.skipIf(not shutil.which("git"), "The 'git' executable is not available")
 class TestGitStoreProject(unittest.TestCase):

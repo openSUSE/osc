@@ -392,10 +392,21 @@ class LocalGitStore:
         self.set_apiurl(value)
 
     def get_apiurl(self, *, branch: Optional[str] = None) -> Optional[str]:
-        return self._read_meta(branch=branch).apiurl
+        apiurl = self._read_meta(branch=branch).apiurl
+        if apiurl is not None:
+            from ..conf import sanitize_apiurl
+
+            return sanitize_apiurl(apiurl)
+        return None
 
     def set_apiurl(self, value: Optional[str], *, branch: Optional[str] = None):
+        if value is not None:
+            from ..conf import sanitize_apiurl
+
+            value = sanitize_apiurl(value)
         self._write_meta(apiurl=value, branch=branch)
+        if hasattr(self, "_cache"):
+            self._cache.pop("apiurl", None)
 
     # PROJECT
 
@@ -412,6 +423,8 @@ class LocalGitStore:
 
     def set_project(self, value: Optional[str], *, branch: Optional[str] = None):
         self._write_meta(project=value, branch=branch)
+        if hasattr(self, "_cache"):
+            self._cache.pop("project", None)
 
     # PACKAGE
 
@@ -430,6 +443,8 @@ class LocalGitStore:
         if self._check:
             self.assert_is_package()
         self._write_meta(package=value, branch=branch)
+        if hasattr(self, "_cache"):
+            self._cache.pop("package", None)
 
     # CACHE
     # buildinfo and buildconfig files are considered a cache, they can be safely deleted at any time
@@ -602,6 +617,11 @@ class GitStore(LocalGitStore):
         if result is None and self.project_store:
             result = getattr(self.project_store, field_name, None)
 
+        if field_name == "apiurl" and result is not None:
+            from ..conf import sanitize_apiurl
+
+            result = sanitize_apiurl(result)
+
         if self.cached:
             self._cache[field_name] = result
 
@@ -611,13 +631,25 @@ class GitStore(LocalGitStore):
     def apiurl(self) -> Optional[str]:
         return self._resolve_meta("apiurl")
 
+    @apiurl.setter
+    def apiurl(self, value: Optional[str]):
+        self.set_apiurl(value)
+
     @property
     def project(self) -> Optional[str]:
         return self._resolve_meta("project")
 
+    @project.setter
+    def project(self, value: Optional[str]):
+        self.set_project(value)
+
     @property
     def package(self) -> Optional[str]:
         return self._resolve_meta("package")
+
+    @package.setter
+    def package(self, value: Optional[str]):
+        self.set_package(value)
 
     @property
     def scmurl(self) -> Optional[str]:
