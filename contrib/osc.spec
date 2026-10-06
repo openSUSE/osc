@@ -2,7 +2,7 @@
 %if "%{primary_python}" == "python3"
 %define use_python python3
 %else
-%define use_python     %(echo %{primary_python} | sed -e 's|python3|python3.|g')
+%define use_python     %(echo %{primary_python} | sed -E 's|python3([0-9]+)|python3.\\\1|g')
 %endif
 %define use_python_pkg %{primary_python}
 %else
