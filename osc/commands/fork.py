@@ -38,7 +38,7 @@ class ForkCommand(osc.commandline.OscCommand):
 
         self.add_argument(
             "project",
-            help="Name of the project",
+            help="Name of the project (or 'project/package')",
         )
 
         self.add_argument(
@@ -87,8 +87,22 @@ class ForkCommand(osc.commandline.OscCommand):
         from osc.output import tty
 
         # make a copy of project, package; if we change them, the original values remain in args
-        project = self._process_project_name(args.project)
+        project = args.project
         package = args.package
+
+        if package is None and project and "/" in project:
+            parts = osc_core.slash_split([project])
+            if len(parts) == 2:
+                project, package = parts
+                args.project = project
+                args.package = package
+            elif len(parts) == 1:
+                project = parts[0]
+                args.project = project
+            else:
+                self.parser.error(f"Invalid project: {project}")
+
+        project = self._process_project_name(project)
         target_project = self._process_project_name(args.target_project)
 
         if project and "/" in project:

@@ -859,5 +859,53 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
                 change_request_state("https://api", "1", "superseded")
 
 
+class TestForkCommand(unittest.TestCase):
+    """Regression tests for openSUSE/osc#2155: project/package syntax support."""
+
+    def test_fork_project_package_syntax(self):
+        from osc.commands.fork import ForkCommand
+
+        main = OscMainCommand()
+        cmd = main.load_command(ForkCommand, "osc.commands")
+
+        with unittest.mock.patch("osc.core.show_devel_project", return_value=(None, None)):
+            # 1. project/package combined syntax
+            args = main.parse_args(["fork", "graphics/libwebp"])
+            with unittest.mock.patch("osc.obs_api.Package.from_api") as mock_from_api:
+                mock_from_api.return_value.scmsync = None
+                with self.assertRaises(SystemExit):
+                    cmd.run(args)
+                mock_from_api.assert_called_with(unittest.mock.ANY, "graphics", "libwebp")
+
+            # 2. subproject/package combined syntax
+            args = main.parse_args(["fork", "devel:languages:python/cffi"])
+            with unittest.mock.patch("osc.obs_api.Package.from_api") as mock_from_api:
+                mock_from_api.return_value.scmsync = None
+                with self.assertRaises(SystemExit):
+                    cmd.run(args)
+                mock_from_api.assert_called_with(unittest.mock.ANY, "devel:languages:python", "cffi")
+
+            # 3. separate project and package syntax
+            args = main.parse_args(["fork", "graphics", "libwebp"])
+            with unittest.mock.patch("osc.obs_api.Package.from_api") as mock_from_api:
+                mock_from_api.return_value.scmsync = None
+                with self.assertRaises(SystemExit):
+                    cmd.run(args)
+                mock_from_api.assert_called_with(unittest.mock.ANY, "graphics", "libwebp")
+
+            # 4. project with too many slashes raises parser error
+            args = main.parse_args(["fork", "a/b/c"])
+            with self.assertRaises(SystemExit):
+                cmd.run(args)
+
+            # 5. project with trailing slash
+            args = main.parse_args(["fork", "graphics/"])
+            with unittest.mock.patch("osc.obs_api.Project.from_api") as mock_proj_from_api:
+                mock_proj_from_api.return_value.scmsync = None
+                with self.assertRaises(RuntimeError):
+                    cmd.run(args)
+                mock_proj_from_api.assert_called_with(unittest.mock.ANY, "graphics")
+
+
 if __name__ == "__main__":
     unittest.main()
