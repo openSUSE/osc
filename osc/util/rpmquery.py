@@ -333,13 +333,27 @@ class RpmQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
         ver1 = decode_it(ver1)
         ver2 = decode_it(ver2)
         while res == 0:
-            # remove all leading non alphanumeric or tilde chars
-            ver1 = re.sub('^[^a-zA-Z0-9~]*', '', ver1)
-            ver2 = re.sub('^[^a-zA-Z0-9~]*', '', ver2)
+            # remove all leading non alphanumeric, tilde or caret chars
+            ver1 = re.sub("^[^a-zA-Z0-9~^]*", "", ver1)
+            ver2 = re.sub("^[^a-zA-Z0-9~^]*", "", ver2)
             if ver1.startswith('~') or ver2.startswith('~'):
                 if not ver1.startswith('~'):
                     return 1
                 elif not ver2.startswith('~'):
+                    return -1
+                ver1 = ver1[1:]
+                ver2 = ver2[1:]
+                continue
+
+            # caret sorts like tilde, except that it sorts after the end of the string
+            if ver1.startswith("^") or ver2.startswith("^"):
+                if not ver1:
+                    return -1
+                if not ver2:
+                    return 1
+                if not ver1.startswith("^"):
+                    return 1
+                if not ver2.startswith("^"):
                     return -1
                 ver1 = ver1[1:]
                 ver2 = ver2[1:]
