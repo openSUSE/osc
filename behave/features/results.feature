@@ -2,11 +2,12 @@ Feature: `osc results` command
 
 
 Scenario: Run `osc results` with no arguments
-   When I execute osc with args "results"
-   Then the exit code is 2
+   Given I set working directory to "{context.osc.temp}"
+    When I execute osc with args "results"
+   Then the exit code is 1
     And stderr is
         """
-        No project given
+        Directory '{context.osc.temp}' is not a working copy
         """
 
 

@@ -149,12 +149,14 @@ jobs:
             sudo apt-get -y --no-install-recommends install git python3-behave diffstat diffutils python3 python3-cryptography python3-pip python3-rpm python3-ruamel.yaml python3-setuptools python3-urllib3 obs-build obs-service-set-version
             # obs-scm-bridge requires libwww-perl (LWP/UserAgent.pm) for downloading assets
             sudo apt-get -y --no-install-recommends install libwww-perl
-            # obs-scm-bridge is not available as a package at the moment, install it from github
+            # obs-scm-bridge's wheel omits scm_bridge; run the service from its source checkout
             sudo pip3 config set global.break-system-packages 1
-            sudo pip3 install git+https://github.com/openSUSE/obs-scm-bridge
-            sudo chmod a+x /usr/local/lib/*/*/obs_scm_bridge
+            git clone --depth 1 https://github.com/openSUSE/obs-scm-bridge "${RUNNER_TEMP}/obs-scm-bridge"
+            sudo /usr/bin/python3 -m pip install "${RUNNER_TEMP}/obs-scm-bridge"
+            chmod a+x "${RUNNER_TEMP}/obs-scm-bridge/obs_scm_bridge"
             sudo mkdir -p /usr/lib/obs/service
-            sudo ln -s /usr/local/lib/*/*/obs_scm_bridge /usr/lib/obs/service/obs_scm_bridge
+            sudo ln -s "${RUNNER_TEMP}/obs-scm-bridge/obs_scm_bridge" /usr/lib/obs/service/obs_scm_bridge
+            /usr/lib/obs/service/obs_scm_bridge --help
 
       - name: "Checkout sources"
         uses: actions/checkout@v6

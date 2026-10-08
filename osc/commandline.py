@@ -2978,7 +2978,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
     @cmdln.option('--no-devel', action='store_true',
                   help='Do not attempt to forward to devel project')
     @cmdln.option('-m', '--message', metavar='TEXT',
-                  help='specify message TEXT')
+                  help='specify message TEXT; prefill the acceptance comment editor in interactive mode')
     @cmdln.option('-t', '--type', metavar='TYPE',
                   help='limit to requests which contain a given action type (submit/delete/change_devel/add_role/set_bugowner/maintenance_incident/maintenance_release)')
     @cmdln.option('-a', '--all', action='store_true',
@@ -3377,7 +3377,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             ignore_reviews = subcmd != 'review'
                             request_interactive_review(apiurl, result, group=opts.group,
                                                        ignore_reviews=ignore_reviews,
-                                                       source_buildstatus=source_buildstatus)
+                                                       source_buildstatus=source_buildstatus,
+                                                       message=opts.message)
                         else:
                             print(result.list_view(), '\n')
                     else:
@@ -3413,12 +3414,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if not r.get_actions('submit'):
                     raise oscerr.WrongOptions('\'--edit\' not possible '
                                               '(request has no \'submit\' action)')
-                return request_interactive_review(apiurl, r, 'e')
+                request_interactive_review(apiurl, r, 'e', message=opts.message)
+                return
             elif (opts.interactive or conf.config['request_show_interactive']) and not opts.non_interactive:
                 ignore_reviews = subcmd != 'review'
-                return request_interactive_review(apiurl, r, group=opts.group,
-                                                  ignore_reviews=ignore_reviews,
-                                                  source_buildstatus=source_buildstatus)
+                request_interactive_review(apiurl, r, group=opts.group,
+                                           ignore_reviews=ignore_reviews,
+                                           source_buildstatus=source_buildstatus,
+                                           message=opts.message)
+                return
             else:
                 print(r)
                 print_comments(apiurl, 'request', reqid)
