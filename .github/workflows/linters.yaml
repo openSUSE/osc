@@ -74,7 +74,7 @@ jobs:
 
       - name: 'Run pylint --errors-only'
         run: |
-            pylint --errors-only osc
+            pylint --extension-pkg-allow-list=rpm --errors-only osc
 
   pylint_plugins:
     name: 'Diff pylint runs on osc plugin'
@@ -129,7 +129,7 @@ jobs:
       - name: 'Run pylint with osc from master'
         run: |
             cd plugin
-            find . -type f -name "*.py" | sort | PYTHONPATH="../osc-master" xargs pylint --errors-only >> pylint-osc-master.log || :
+            find . -type f -name "*.py" | sort | PYTHONPATH="../osc-master" xargs pylint --extension-pkg-allow-list=rpm --errors-only >> pylint-osc-master.log || :
 
             echo
             echo ">>>>> pylint-osc-master.log <<<<<"
@@ -138,7 +138,7 @@ jobs:
       - name: 'Run pylint with osc from pull-request'
         run: |
             cd plugin
-            find . -type f -name "*.py" | sort | PYTHONPATH="../osc-pr" xargs pylint --errors-only >> pylint-osc-pr.log || :
+            find . -type f -name "*.py" | sort | PYTHONPATH="../osc-pr" xargs pylint --extension-pkg-allow-list=rpm --errors-only >> pylint-osc-pr.log || :
 
             echo
             echo ">>>>> pylint-osc-pr.log <<<<<"
