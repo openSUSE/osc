@@ -125,7 +125,7 @@ class OscMainCommand(MainCommand):
             metavar="KEY=VALUE",
             action="append",
             default=[],
-            help="set a config option for the current program run",
+            help="set a config option for the current program run; run 'osc config --dump' to see the available keys",
         )
         self.add_argument(
             "--no-keyring",
