@@ -3176,6 +3176,11 @@ def make_dir(
             # checked out sub-projects. in this case, we still need to initialize it.
             print(statfrmt('A', prj_dir))
             Project.init_project(apiurl, prj_dir, project, package_tracking)
+        else:
+            from .obs_scm.store import Store
+            prj_store = Store(prj_dir)
+            if prj_store.apiurl != apiurl.rstrip('/'):
+                raise oscerr.OscIOError(None, f"The project working copy '{prj_dir}' uses a different API URL: {prj_store.apiurl}")
 
         if is_project_dir(os.path.join(prj_dir, package)):
             # the thing exists, but is a project directory and not a package directory
