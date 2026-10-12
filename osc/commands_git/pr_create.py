@@ -279,16 +279,32 @@ class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
         if source_fork_root != target_fork_root:
             raise gitea_api.GitObsRuntimeError(f"Unable to create a pull request because repos '{source_owner}/{source_repo}' and '{target_owner}/{target_repo}' do not belong to the same fork tree")
 
-        # if target branch is not set, derive it from the source branch
+        # if target branch is not set, derive it from the source branch if available,
+        # otherwise fall back to the target repo's default branch
         if not target_branch:
             if source_branch.startswith("for/"):
                 # source branch name format: for/<target-branch>/<what-the-branch-name-would-normally-be>
                 target_branch = source_branch.split("/")[1]
+                target_branch_obj = gitea_api.Branch.get(
+                    self.gitea_conn, target_owner, target_repo, target_branch
+                )
             else:
-                target_branch = source_branch
-
-        # load target branch, this verifies that both repo and branch exist
-        target_branch_obj = gitea_api.Branch.get(self.gitea_conn, target_owner, target_repo, target_branch)
+                try:
+                    target_branch_obj = gitea_api.Branch.get(
+                        self.gitea_conn, target_owner, target_repo, source_branch
+                    )
+                    target_branch = source_branch
+                except gitea_api.BranchDoesNotExist:
+                    target_repo_obj = gitea_api.Repo.get(self.gitea_conn, target_owner, target_repo)
+                    target_branch = target_repo_obj.default_branch
+                    target_branch_obj = gitea_api.Branch.get(
+                        self.gitea_conn, target_owner, target_repo, target_branch
+                    )
+        else:
+            # load target branch, this verifies that both repo and branch exist
+            target_branch_obj = gitea_api.Branch.get(
+                self.gitea_conn, target_owner, target_repo, target_branch
+            )
 
         # Check difference: Local vs Target (specific for separate-requests/package iteration)
         if ignore_identical and use_local_git and local_commit == target_branch_obj.commit:
