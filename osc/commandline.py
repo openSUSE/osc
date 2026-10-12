@@ -137,6 +137,12 @@ class OscMainCommand(MainCommand):
             action="store_true",
             help="disable pager in stdout output",
         )
+        self.add_argument(
+            "--non-interactive",
+            action="store_true",
+            default=None,
+            help="never prompt for input, fail with an error instead",
+        )
 
     def post_parse_args(self, args):
         from . import conf
@@ -152,6 +158,11 @@ class OscMainCommand(MainCommand):
             key, value = i.split("=")
             overrides[key] = value
 
+        # Resolve non-interactive mode before get_config(): the interactive
+        # config setup below must be refused even when no config file
+        # exists yet (and get_config() raises).
+        non_interactive = conf.is_non_interactive_requested(args.non_interactive, overrides)
+
         try:
             conf.get_config(
                 override_apiurl=args.apiurl,
@@ -160,6 +171,7 @@ class OscMainCommand(MainCommand):
                 override_http_debug=args.http_debug,
                 override_http_full_debug=args.http_full_debug,
                 override_no_keyring=args.no_keyring,
+                override_non_interactive=args.non_interactive,
                 override_post_mortem=args.post_mortem,
                 override_quiet=args.quiet,
                 override_traceback=args.traceback,
@@ -169,16 +181,31 @@ class OscMainCommand(MainCommand):
             )
         except oscerr.NoConfigfile as e:
             print(e.msg, file=sys.stderr)
+            if non_interactive:
+                raise oscerr.NonInteractiveInput(
+                    f"Cannot create the configuration file {e.file} in non-interactive mode. "
+                    "Create it first, e.g. by running osc interactively once."
+                )
             print(f"Creating osc configuration file {e.file} ...", file=sys.stderr)
             conf.interactive_config_setup(e.file, args.apiurl)
             print("done", file=sys.stderr)
             self.post_parse_args(args)
         except oscerr.ConfigMissingApiurl as e:
             print(e.msg, file=sys.stderr)
+            if non_interactive:
+                raise oscerr.NonInteractiveInput(
+                    "Cannot configure the API URL in non-interactive mode. "
+                    "Add the API URL to the configuration file or pass -A/--apiurl."
+                )
             conf.interactive_config_setup(e.file, e.url, initial=False)
             self.post_parse_args(args)
         except oscerr.ConfigMissingCredentialsError as e:
             print(e.msg, file=sys.stderr)
+            if non_interactive:
+                raise oscerr.NonInteractiveInput(
+                    "Cannot configure credentials in non-interactive mode. "
+                    "Add the credentials to the configuration file first."
+                )
             print("Please enter new credentials.", file=sys.stderr)
             conf.interactive_config_setup(e.file, e.url, initial=False)
             self.post_parse_args(args)
@@ -188,6 +215,7 @@ class OscMainCommand(MainCommand):
         for i in ["apiurl", "debug", "http_debug", "http_full_debug", "post_mortem", "traceback", "verbose"]:
             setattr(args, i, conf.config[i])
         args.no_keyring = not conf.config["use_keyring"]
+        args.non_interactive = conf.config["non_interactive"]
 
         if conf.config["show_download_progress"]:
             self.download_progress = create_text_meter()
@@ -752,7 +780,11 @@ class Osc(cmdln.Cmdln):
         modified = [i for i in package.filenamelist if package.status(i) != " " and package.status(i) != "?"]
         if len(modified) > 0:
             print("Your working copy has local modifications.")
-            repl = raw_input("Proceed without committing the local changes? (y|N) ")
+            repl = raw_input(
+                "Proceed without committing the local changes? (y|N) ",
+                # non-interactive default: Enter answers no
+                default="",
+            )
             if repl != "y":
                 raise oscerr.UserAbort()
 
@@ -1671,6 +1703,16 @@ class Osc(cmdln.Cmdln):
         if cmd == "attribute" and opts.edit and not opts.attribute:
             self.argparse_error("Please specify --attribute")
 
+        # pre-flight for --non-interactive: --edit always opens the editor
+        # unless --file supplies the data, so refuse it before doing any work
+        if opts.edit and not opts.file:
+            from .util import helper
+
+            helper.refuse_non_interactive(
+                "'osc meta --edit' opens an editor",
+                hint="Pass --file to supply the new metadata non-interactively.",
+            )
+
         apiurl = self.get_api_url()
         project = None
         package = None
@@ -1989,6 +2031,15 @@ class Osc(cmdln.Cmdln):
 
         from . import _private
         from . import conf
+        from .util import helper
+
+        # pre-flight for --non-interactive: the message editor below always
+        # runs without -m/--message (or --file), so require one before doing
+        # any work
+        helper.require_non_interactive_options(
+            "osc submitrequest", [(opts.message or opts.file, "-m/--message or --file")]
+        )
+
         from .core import ET
         from .core import Package
         from .core import _html_escape
@@ -2140,11 +2191,21 @@ class Osc(cmdln.Cmdln):
             f = http_GET(u)
             root = xml_parse(f).getroot()
             value = root.findtext('attribute/value')
+            # pre-flight for --non-interactive: the supersede prompt below
+            # cannot be answered, so fail before superseding anything
+            if helper.is_non_interactive() and value and not opts.yes:
+                helper.raise_non_interactive(
+                    "superseding the request this project was cloned from cannot be decided",
+                    hint="Use --yes to proceed without asking.",
+                )
             if value and not opts.yes:
                 repl = ''
                 print('\n\nThere are already following submit request: %s.' %
                       ', '.join([str(i) for i in myreqs]))
-                repl = raw_input('\nSupersede the old requests? (y/n) ')
+                repl = raw_input(
+                    '\nSupersede the old requests? (y/n) ',
+                    hint="Use --yes to proceed without asking, or --supersede to supersede them without prompting.",
+                )
                 if repl.lower() == 'y':
                     myreqs += [value]
 
@@ -2442,7 +2503,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if len(myreqs) > 0 and not opts.yes:
             print('You already created the following submit request: %s.' %
                   ', '.join(myreq_ids))
-            repl = raw_input('Supersede the old requests? (y/n/c) ')
+            repl = raw_input(
+                'Supersede the old requests? (y/n/c) ',
+                hint="Use --yes to proceed without asking, or --supersede to supersede them without prompting.",
+            )
             if repl.lower() == 'c':
                 print('Aborting', file=sys.stderr)
                 sys.exit(1)
@@ -2673,6 +2737,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from . import conf
+        from .util import helper
+
+        # pre-flight for --non-interactive: the message editor below always
+        # runs without -m/--message, so require it before doing any work
+        helper.require_non_interactive_options("osc createrequest", [(opts.message, "-m/--message")])
+
         from .core import ET
         from .core import _html_escape
         from .core import change_request_state
@@ -2766,6 +2836,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         """
 
         from . import conf
+        from .util import helper
+
+        # pre-flight for --non-interactive: the message editor below always
+        # runs without -m/--message, so require it before doing any work
+        helper.require_non_interactive_options("osc requestmaintainership", [(opts.message, "-m/--message")])
+
         from .core import Request
         from .core import edit_message
         from .core import is_package_dir
@@ -2858,6 +2934,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             osc deletereq [-m TEXT] PROJECT [--all|--repository REPOSITORY]
         """
 
+        from .util import helper
+
+        # pre-flight for --non-interactive: the message editor below always
+        # runs without -m/--message, so require it before doing any work
+        helper.require_non_interactive_options("osc deletereq", [(opts.message, "-m/--message")])
+
         from .core import Request
         from .core import edit_message
         from .core import is_package_dir
@@ -2932,6 +3014,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         usage:
             osc changedevelrequest PROJECT PACKAGE DEVEL_PROJECT [DEVEL_PACKAGE]
         """
+
+        from .util import helper
+
+        # pre-flight for --non-interactive: the message editor below always
+        # runs without -m/--message, so require it before doing any work
+        helper.require_non_interactive_options("osc changedevelrequest", [(opts.message, "-m/--message")])
 
         from .core import Request
         from .core import edit_message
@@ -3010,8 +3098,6 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         help='interactive review of request')
     @cmdln.option('--or-revoke', action='store_true',
                   help='For automation scripts: accepts (if using with accept argument) a request when it is in new or review state. Or revoke it when it got declined. Otherwise just do nothing.')
-    @cmdln.option('--non-interactive', action='store_true',
-                  help='non-interactive review of request')
     @cmdln.option('--exclude-target-project', action='append',
                   help='exclude target project from request list')
     @cmdln.option('--keep-packages-locked', action='store_true',
@@ -3142,6 +3228,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import store_read_package
         from .core import store_read_project
         from .core import submit_action_diff
+        from .util import helper
 
         args = slash_split(args)
 
@@ -3184,6 +3271,24 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         del args[0]
         if cmd == 'ls':
             cmd = "list"
+
+        # pre-flight for --non-interactive: fail before doing any work if the
+        # command cannot run without prompting; prompts caused by server state
+        # (already in target state, supersede candidates) still fail fast at
+        # the decision point via raw_input()
+        if helper.is_non_interactive():
+            if cmd == "approvenew":
+                helper.refuse_non_interactive(
+                    "'osc request approvenew' always asks for confirmation",
+                    hint="Approve the requests individually, or run without --non-interactive to confirm.",
+                )
+            elif cmd == "show" and opts.edit:
+                helper.refuse_non_interactive(
+                    "'osc request show --edit' opens an interactive review",
+                    hint="Drop --edit to print the request non-interactively.",
+                )
+            elif cmd in ("accept", "decline", "reopen", "revoke", "wipe", "supersede"):
+                helper.require_non_interactive_options(f"osc request {cmd}", [(opts.message, "-m/--message")])
 
         apiurl = self.get_api_url()
 
@@ -3512,9 +3617,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         cmd = "revoke"
                     elif rq.state.name != "new" and rq.state.name != "review":
                         return 0
-                if rq.state.name == state_map[cmd]:
-                    repl = raw_input("\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** " %
-                                     (reqid, rq.state.name))
+                if rq.state.name == state_map[cmd] and not opts.force:
+                    repl = raw_input(
+                        "\n *** The state of the request (#%s) is already '%s'. Change state anyway?  [y/n] *** "
+                        % (reqid, rq.state.name),
+                        hint="Use --force to change the state without prompting.",
+                    )
                     if repl.lower() != 'y':
                         print('Aborted...', file=sys.stderr)
                         raise oscerr.UserAbort()
@@ -3581,7 +3689,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                                 print(project, end=' ')
                                 if package != action.tgt_package:
                                     print("/", package, end=' ')
-                                repl = raw_input('\nForward this submit to it? ([y]/n)')
+                                repl = raw_input(
+                                    '\nForward this submit to it? ([y]/n)',
+                                    # non-interactive default: Enter forwards ([y] is the default)
+                                    default="",
+                                )
                                 if repl.lower() == 'y' or repl == '':
                                     (supersede, reqs) = check_existing_requests(apiurl, action.tgt_project, action.tgt_package,
                                                                                 project, package)
@@ -5951,9 +6063,18 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import raw_input
         from .core import store_unlink_file
         from .store import git_is_unsupported
+        from .util import helper
 
         msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git commit' and 'git push' instead."
         git_is_unsupported(".", msg)
+
+        # pre-flight for --non-interactive: without -m/--message, --file or
+        # -n/--no-message the commit message always opens the editor, so
+        # require one of them before doing any work
+        helper.require_any_non_interactive_options(
+            "osc commit",
+            [(opts.message, "-m/--message"), (opts.file, "--file"), (opts.no_message, "-n/--no-message")],
+        )
 
         args = parseargs(args)
 
@@ -5990,8 +6111,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                         for pac in prj.pacs_have if prj.get_state(pac) == ' ')
                 can_branch = False
                 if any(pac.is_link_to_different_project() for pac in pacs):
-                    repl = raw_input('Some of the packages are links to a different project!\n'
-                                     'Create a local branch before commit? (y|N) ')
+                    repl = raw_input(
+                        'Some of the packages are links to a different project!\n'
+                        'Create a local branch before commit? (y|N) ',
+                        # non-interactive default: Enter keeps N (no local branch)
+                        default="",
+                    )
                     if repl in ('y', 'Y'):
                         can_branch = True
 
@@ -6052,8 +6177,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 # check any of the packages is a link, if so, as for branching
                 can_branch = False
                 if any(pac.is_link_to_different_project() for pac in pacs):
-                    repl = raw_input('Some of the packages are links to a different project!\n'
-                                     'Create a local branch before commit? (y|N) ')
+                    repl = raw_input(
+                        'Some of the packages are links to a different project!\n'
+                        'Create a local branch before commit? (y|N) ',
+                        # non-interactive default: Enter keeps N (no local branch)
+                        default="",
+                    )
                     if repl in ('y', 'Y'):
                         can_branch = True
 
@@ -6398,6 +6527,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from .core import delete_files
         from .core import raw_input
+        from .util import helper
+
+        # pre-flight for --non-interactive: removing without --force prompts
+        # per file, so require it before doing any work
+        helper.require_non_interactive_options("osc rremove", [(opts.force, "--force")])
 
         project = opts.project
         package = opts.package
@@ -6413,7 +6547,10 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         for filename in files:
             if not opts.force:
-                resp = raw_input(f"rm: remove source file `{filename}' from `{project}/{package}'? (yY|nN) ")
+                resp = raw_input(
+                    f"rm: remove source file `{filename}' from `{project}/{package}'? (yY|nN) ",
+                    hint="Use --force to remove without prompting.",
+                )
                 if resp not in ('y', 'Y'):
                     continue
             try:
@@ -9728,6 +9865,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from .core import edit_text
         from .core import http_request
+        from .util import helper
+
+        # pre-flight for --non-interactive: --edit always opens an editor on
+        # the response, so refuse it before issuing the request
+        if opts.edit:
+            helper.refuse_non_interactive(
+                "'osc api --edit' opens an editor",
+                hint="Drop --edit to print the response non-interactively.",
+            )
 
         url = opts.url
         apiurl = self.get_api_url()
@@ -9868,7 +10014,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 if package:
                     print("/", package, end=' ')
                 print()
-                repl = raw_input('\nCreating a request instead? (y/n) ')
+                repl = raw_input(
+                    '\nCreating a request instead? (y/n) ',
+                    # non-interactive default: Enter answers no
+                    default="",
+                )
                 if repl.lower() == 'y':
                     opts.set_bugowner_request = bugowner
                     opts.set_bugowner = None
@@ -9936,7 +10086,11 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                             print("This is: " + result.get('project'), end=' ')
                             if result.get('package'):
                                 print(" / " + result.get('package'))
-                            repl = raw_input('\nUse this container? (y/n) ')
+                            repl = raw_input(
+                                '\nUse this container? (y/n) ',
+                                # non-interactive default: Enter answers no
+                                default="",
+                            )
                             if repl.lower() != 'y':
                                 searchresult = None
             elif opts.user:
@@ -10838,6 +10992,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import is_package_dir
         from .core import vc_export_env
         from .core import which
+        from .util import helper
 
         if opts.message and opts.file:
             raise oscerr.WrongOptions('\'--message\' and \'--file\' are mutually exclusive')
@@ -10845,6 +11000,20 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             raise oscerr.WrongOptions('\'--message\' and \'--just-edit\' are mutually exclusive')
         elif opts.file and opts.just_edit:
             raise oscerr.WrongOptions('\'--file\' and \'--just-edit\' are mutually exclusive')
+        # pre-flight for --non-interactive: without -m/--message or --file the
+        # vc tool opens an editor, so require them (or refuse --just-edit)
+        # before doing any work
+        if helper.is_non_interactive():
+            if opts.just_edit:
+                helper.refuse_non_interactive(
+                    "'osc vc --just-edit' opens an editor",
+                    hint="Pass -m/--message or --file to supply the changes entry non-interactively.",
+                )
+            elif not opts.message and not opts.file:
+                helper.raise_non_interactive(
+                    "'osc vc' opens an editor without -m/--message or --file",
+                    hint="Pass -m/--message or --file to supply the changes entry non-interactively.",
+                )
         meego_style = False
         if not args:
             try:
@@ -10975,6 +11144,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         from . import conf
         from .core import raw_input
+        from .util import helper
 
         prompt_value = 'Value: '
         if opts.change_password:
@@ -11010,6 +11180,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
             return
 
         section, opt, val = args[0], args[1], args[2:]
+        # pre-flight for --non-interactive: --prompt/--no-echo always prompt
+        # for the value and are mutually exclusive with --stdin, so they can
+        # never run non-interactively; refuse before doing any work
+        if helper.is_non_interactive() and (opts.prompt or opts.no_echo):
+            helper.refuse_non_interactive(
+                "osc config --prompt/--no-echo cannot run without prompting",
+                hint="Drop --prompt/--no-echo and pass the value via --stdin instead.",
+            )
         if val and (opts.delete or opts.stdin or opts.prompt or opts.no_echo):
             raise oscerr.WrongOptions('Sorry, \'--delete\' or \'--stdin\' or \'--prompt\' or \'--no-echo\' '
                                       'and the specification of a value argument are mutually exclusive')
@@ -11022,9 +11200,14 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 raise oscerr.WrongArgs('error: read empty value from stdin')
         elif opts.no_echo or opts.prompt:
             if opts.no_echo:
+                if helper.is_non_interactive():
+                    helper.raise_non_interactive(
+                        prompt_value,
+                        hint="Use --stdin to supply the value without prompting.",
+                    )
                 inp = getpass.getpass(prompt_value).strip()
             else:
-                inp = raw_input(prompt_value).strip()
+                inp = raw_input(prompt_value, hint="Use --stdin to supply the value non-interactively.").strip()
             if not inp:
                 raise oscerr.WrongArgs('error: no value was entered')
             val = [inp]
@@ -11100,11 +11283,16 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         git_is_unsupported(".", msg)
 
         def get_apiurl(apiurls):
+            from .util import helper
+
+            if helper.is_non_interactive() and len(apiurls) == 1:
+                # a single configured apiurl is a deterministic choice, not a guess
+                return apiurls[0]
             print('No apiurl is defined for this working copy.\n'
                   'Please choose one from the following list (enter the number):')
             for i in range(len(apiurls)):
                 print(' %d) %s' % (i, apiurls[i]))
-            num = raw_input('> ')
+            num = raw_input('> ', hint="Use -A/--apiurl to select the API URL directly.")
             try:
                 num = int(num)
             except ValueError:
@@ -11230,6 +11418,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import edit_text
         from .core import print_comments
         from .core import slash_split
+        from .util import helper
+
+        # pre-flight for --non-interactive: creating a comment without
+        # --comment always opens the editor, so require it before doing any work
+        if args and args[0] == "create":
+            helper.require_non_interactive_options("osc comment create", [(opts.comment, "-c/--comment")])
 
         comment = None
         args = slash_split(args)

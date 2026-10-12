@@ -919,6 +919,8 @@ class XmlModel(BaseModel):
                         {e}
                         """,
                         answers={"a": "abort", "e": "edit", "u": "undo changes and edit"},
+                        # non-interactive default: abort on invalid data
+                        default_answer="a",
                     )
                     if reply == "a":
                         from .. import oscerr

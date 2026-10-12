@@ -6,6 +6,7 @@ def forward_request(apiurl, request, interactive=True):
     Forward the specified `request` to the projects the packages were branched from.
     """
     from .. import core as osc_core
+    from ..util.helper import raw_input
 
     for action in request.get_actions("submit"):
         package = osc_package.ApiPackage(apiurl, action.tgt_project, action.tgt_package)
@@ -18,7 +19,11 @@ def forward_request(apiurl, request, interactive=True):
         package = package.linkinfo.package
 
         if interactive:
-            reply = input(f"\nForward request to {project}/{package}? ([y]/n) ")
+            reply = raw_input(
+                f"\nForward request to {project}/{package}? ([y]/n) ",
+                # non-interactive default: Enter forwards ([y] is the default)
+                default="",
+            )
             if reply.lower() not in ("y", ""):
                 continue
 

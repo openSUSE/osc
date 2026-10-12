@@ -163,6 +163,13 @@ class TransientCredentialsManager(AbstractCredentialsManager):
                 msg = f'Password [{user}@{apiurl_no_scheme}]: '
             else:
                 msg = 'Password: '
+            from .util import helper
+
+            helper.raise_non_interactive(
+                msg,
+                hint="Store the password in the config or a credential manager first.",
+            )
+            # raise_non_interactive() only returns when running interactively
             self._password = getpass.getpass(msg)
         return self._password
 

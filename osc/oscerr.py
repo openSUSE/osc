@@ -17,6 +17,10 @@ class UserAbort(OscBaseError):
     """Exception raised when the user requested abortion"""
 
 
+class NonInteractiveInput(OscBaseError):
+    """Exception raised when input is requested in non-interactive mode"""
+
+
 class ConfigError(OscBaseError):
     """Exception raised when there is an error in the config file"""
 

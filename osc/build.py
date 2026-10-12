@@ -708,7 +708,10 @@ def check_trusted_projects(apiurl, projects, interactive=True):
             print("Note that malicious packages can compromise the build result or even your system.")
 
             if interactive:
-                r = raw_input(trustprompt % {'project': prj})
+                r = raw_input(
+                    trustprompt % {'project': prj},
+                    hint="Use --trust-all-projects to trust packages from all projects without prompting.",
+                )
             else:
                 r = "0"
 

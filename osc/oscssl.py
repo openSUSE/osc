@@ -14,6 +14,7 @@ from urllib3.util.ssl_ import create_urllib3_context
 
 from .oscerr import CertVerificationError
 from .util import xdg
+from .util.helper import raw_input
 
 
 # based on openssl's include/openssl/x509_vfy.h.in
@@ -150,8 +151,9 @@ Would you like to
 9 - review the server certificate
 """)
 
-                print("Enter choice [0129]: ", end="")
-                r = input()
+                # raises NonInteractiveInput in non-interactive mode: an untrusted
+                # certificate must be reviewed and trusted interactively first
+                r = raw_input("Enter choice [0129]: ")
                 if not r or r == "0":
                     raise CertVerificationError(["Untrusted certificate"])
                 elif r == "1":
