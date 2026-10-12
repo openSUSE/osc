@@ -1,3 +1,36 @@
+- 1.28.0
+  - Command-line:
+    - Added support for the 'VISUAL' environment variable
+    - Allow 'osc fork project/package' as a single argument
+    - Add 'osc log' --limit/-l option to limit the number of returned revisions
+    - Prefill interactive acceptance comments from the request message option
+    - Honor XDG_CONFIG_HOME in git-obs configuration lookup
+    - Expand user paths in XDG configuration overrides
+    - Fix interactive request review test compatibility
+    - Fix 'git-obs pr dump' to error out cleanly on changed submodule metadata
+    - Fix do_downloadassets missing help text
+    - Error out on deprecated apisrv option is set
+  - Library:
+    - Use any avaiable -p/--prefer-pkgs packages in containers builds
+    - Fix 'osc copypac' to error out when copying a package with an empty name
+    - Change XmlModel to check if the top-level element matches the expected XML_TAG
+    - Validate if we're working with a package in core.copy_pac()
+    - Fix 'osc branch' crash on packages with an empty <scmsync/> element
+    - Include multibuild flavors in interactive request review
+    - Fix stale tardiff cache by rebuilding it
+    - Set tardiff cache commit git username and email
+    - Fix pylint error by accessing Action members via getattr rather than directly
+    - Fix lint errors in request review branch
+    - Fix NoWorkingCopy exception silencing in get_store()
+  - Docs:
+    - Add AGENTS.md as a guideline for AI assisted coding
+    - Document git-obs pr forward workflow and merge modes
+    - Highlight 'sync' mode and clarify traditional OBS alignment in pr forward
+  - Spec:
+    - Drop no-compile
+    - Adapt use_python macro generation to support the legacy primary_python fallback introduced in python-rpm-macros
+    - Fix the regexp generating the use_python definition so that 'python3' doesn't turn into 'python3.'
+
 - 1.27.4
   - Command-line:
     - Add 'osc log' --limit/-l option to limit the number of revisions returned by the server
