@@ -33,3 +33,12 @@ Scenario: Fork multiple git repos from different orgs
     Then the exit code is 0
      And stdout contains " scmsync URL: "
      And stdout contains "/Admin/test-GitPkgA-devel#factory"
+
+
+@destructive
+Scenario: Fork a git repo with custom branch name
+    When I execute osc with args "fork test:factory test-GitPkgA --git-branch my-branch"
+    Then the exit code is 0
+     And stdout contains " scmsync URL: "
+     And stdout contains "/Admin/test-GitPkgA#my-branch"
+     And stdout contains "Preparing branch 'my-branch' from 'parent/factory'"
