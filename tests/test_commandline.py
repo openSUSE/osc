@@ -858,6 +858,30 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
             with self.assertRaises(HTTPError):
                 change_request_state("https://api", "1", "superseded")
 
+    def test_do_list_link_without_linkinfo(self):
+        """do_list breaks cleanly when a link has no linkinfo metadata."""
+        from osc.commandline import Osc
+        cmd = Osc()
+        opts = argparse.Namespace(
+            binaries=False,
+            deleted=False,
+            expand=False,
+            unexpand=False,
+            verbose=False,
+            meta=False,
+            revision="276",
+            repo=None,
+            arch=None,
+        )
+        with unittest.mock.patch.object(cmd, "get_api_url", return_value="https://localhost"), \
+             unittest.mock.patch("builtins.print"), \
+             unittest.mock.patch("osc.core.meta_get_filelist", return_value=["_link", "package.spec"]) as mock_filelist, \
+             unittest.mock.patch("osc.core.show_files_meta", return_value='<directory name="package"/>') as mock_meta:
+            result = cmd.do_list("ls", opts, "Project", "package")
+            self.assertIsNone(result)
+            mock_meta.assert_called_once_with("https://localhost", "Project", "package", revision="276")
+            self.assertEqual(mock_filelist.call_count, 1)
+
 
 if __name__ == "__main__":
     unittest.main()
