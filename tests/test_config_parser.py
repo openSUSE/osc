@@ -1,4 +1,5 @@
 import configparser
+import io
 import unittest
 
 from osc.OscConfigParser import OscConfigParser
@@ -21,6 +22,22 @@ pass=
         # with interpolation on, this would raise
         # ValueError: invalid interpolation syntax in '%' at position 0
         self.parser.set("http://localhost", "pass", "%")
+
+    def test_write_value_that_looks_like_a_placeholder(self):
+        # The written format string is built by substituting the option name
+        # and the value, so a value of "s" or "%" used to land inside the "%s"
+        # written for the name and leave a format string that cannot render.
+        for value in ("secret", "p%ssword", "s", "%", "s=", ""):
+            with self.subTest(value=value):
+                parser = OscConfigParser()
+                parser.read_string("[general]\napiurl = http://localhost\n"
+                                   "\n[http://localhost]\npass = placeholder\n")
+                parser.set("http://localhost", "pass", value)
+                sio = io.StringIO()
+                parser.write(sio, comments=True)
+                written = [line for line in sio.getvalue().splitlines()
+                           if line.startswith("pass")]
+                self.assertEqual(written, ["pass=" + value])
 
     def test_duplicate_section(self):
         conf = """
