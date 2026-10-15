@@ -190,12 +190,25 @@ class OptionLine(Line):
     def format(self, line):
         mo = configparser.ConfigParser.OPTCRE.match(line.strip())
         key, val = mo.group('option', 'value')
-        self.frmt = line.replace(key.strip(), '%s', 1)
         pos = val.find(' ;')
         if pos >= 0:
             val = val[:pos]
         self.value = val
-        self.frmt = self.frmt.replace(val.strip(), '%s', 1).rstrip('\n')
+
+        # Substitute the name and the value at the offsets they occupy in
+        # `line`. Replacing the first textual match would hit the '%s' written
+        # for the name when the value is 's' or '%', leaving a format string
+        # that cannot be rendered.
+        key = key.strip()
+        val = val.strip()
+        key_start = line.index(key)
+        key_end = key_start + len(key)
+        if val:
+            val_start = line.index(val, key_end)
+            val_end = val_start + len(val)
+        else:
+            val_start = val_end = len(line.rstrip('\n'))
+        self.frmt = f"{line[:key_start]}%s{line[key_end:val_start]}%s{line[val_end:]}".rstrip('\n')
 
     def __str__(self):
         return self.value
