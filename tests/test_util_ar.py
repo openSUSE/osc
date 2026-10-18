@@ -75,11 +75,30 @@ class TestAr(unittest.TestCase):
         with open(path, "r", encoding="utf-8") as f:
             self.assertEqual(f.read(), "file-in-a-dir\n")
 
+    def test_saveTo_default_dir(self):
+        # without the 'dir' argument, the file is saved to the current working directory
+        f = self.ar.get_file("dir/file")
+        path = f.saveTo()
+
+        self.assertEqual(path, os.path.join(os.getcwd(), "dir/file"))
+        with open(path, "r", encoding="utf-8") as f:
+            self.assertEqual(f.read(), "file-in-a-dir\n")
+
     def test_saveTo_abspath(self):
         f = self.ar.get_file("/tmp/foo")
         assert f is not None
         # this is supposed to throw an error, extracting files with absolute paths might overwrite system files
         self.assertRaises(ArError, f.saveTo, self.tmpdir)
+
+    def test_not_an_ar_archive(self):
+        path = os.path.join(self.tmpdir, "not-an-archive")
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("not an ar archive\n")
+
+        ar = Ar(path)
+        with self.assertRaises(ArError) as cm:
+            ar.read()
+        self.assertEqual(str(cm.exception), f"no ar archive: {path}")
 
     def test_no_exthdr(self):
         self.archive = os.path.join(FIXTURES_DIR, "archive-no-ext_fnhdr.ar")
