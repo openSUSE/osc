@@ -10133,6 +10133,32 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         else:
 
+            def format_users(users):
+                if opts.email:
+                    emails = []
+                    for maintainer in users:
+                        m = f"group:{maintainer[1:]}" if maintainer.startswith("@") else maintainer
+                        user = get_maintainer_data(apiurl, m, verbose=False)
+                        if user:
+                            emails.append("".join(user))
+                        else:
+                            emails.append(maintainer)
+                    return ", ".join(emails) or "-"
+                elif opts.verbose:
+                    user_list = []
+                    for maintainer in users:
+                        m = f"group:{maintainer[1:]}" if maintainer.startswith("@") else maintainer
+                        user = get_maintainer_data(apiurl, m, verbose=True)
+                        if user:
+                            if user[1] != "-":
+                                user_list.append(f"{user[0]} ({user[1]} <{user[2]}>)")
+                            else:
+                                user_list.append(f"{user[0]} (<{user[2]}>)")
+                        else:
+                            user_list.append(maintainer)
+                    return ", ".join(user_list) or "-"
+                return ", ".join(users)
+
             def print_package_owners(data):
                 grouped = {}
 
@@ -10142,7 +10168,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 for (pr, pa), users in sorted(grouped.items()):
                     users = sorted(users)
-                    print(f"Maintainer of {pr}/{pa} in git: {', '.join(users)}")
+                    print(f"Maintainer of {pr}/{pa} in git: {format_users(users)}")
 
             def print_project_owners(data):
                 grouped = {}
@@ -10153,7 +10179,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
                 for pr, users in sorted(grouped.items()):
                     users = sorted(users)
-                    print(f"Maintainer of {pr} in git: {', '.join(users)}")
+                    print(f"Maintainer of {pr} in git: {format_users(users)}")
 
             if git_prj and git_pac:
                 q = {}
