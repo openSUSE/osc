@@ -325,6 +325,15 @@ class TestUpdate(OscTestCase):
 
         self.assertEqual(sys.stdout.getvalue(), "At revision 1.\n")
 
+    @GET("http://localhost/source/osctest/simple?expand=1&rev=1", file="testUpdateNoChanges_files")
+    def testGetFilesMetaExpanded(self):
+        """get_files_meta forwards expand=True for expanded links or when explicitly requested"""
+        self._change_to_pkg("simple")
+        p = osc.core.Package(".")
+        fm = p.get_files_meta(revision="1", expand=True)
+        self.assertIsNotNone(fm)
+
+
 
 if __name__ == '__main__':
     unittest.main()
