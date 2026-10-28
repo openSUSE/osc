@@ -837,11 +837,13 @@ class Package:
         store_write_string(self.absdir, '_files', meta)
 
     @fail_if_git()
-    def get_files_meta(self, revision='latest', skip_service=True):
+    def get_files_meta(self, revision='latest', skip_service=True, expand=None):
         from ..core import ET_ENCODING
         from ..core import show_files_meta
 
-        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta)
+        if expand is None:
+            expand = self.isexpanded()
+        fm = show_files_meta(self.apiurl, self.prjname, self.name, revision=revision, meta=self.meta, expand=expand)
         # look for "too large" files according to size limit and mark them
         root = xml_fromstring(fm)
         for e in root.findall('entry'):

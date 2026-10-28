@@ -6179,7 +6179,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 meta = show_files_meta(pacs[0].apiurl, pacs[0].prjname,
                                        pacs[0].name, revision=rev,
                                        linkrev=opts.linkrev,
-                                       expand=opts.server_side_source_service_files)
+                                       expand=opts.expand_link or opts.server_side_source_service_files)
                 directory = xml_fromstring(meta)
                 li_node = directory.find('linkinfo')
                 if li_node is None:
