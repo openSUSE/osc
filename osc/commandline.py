@@ -5592,6 +5592,8 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         rev, dummy = parseRevisionOption(opts.revision)
         if revision_is_empty(rev):
             rev = "latest"
+        elif not package:
+            raise oscerr.WrongOptions('-r | --revision can only be used with a package')
 
         if not revision_is_empty(rev) and rev != "latest" and not checkRevision(project, package, rev):
             print(f'Revision \'{rev}\' does not exist', file=sys.stderr)
