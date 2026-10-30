@@ -161,12 +161,13 @@ def http_request_wrap_file(func):
     Turn file path into a file object and close it automatically
     by using a context manager.
     """
-    def new_func(method, url, headers=None, data=None, file=None):
+
+    def new_func(method, url, headers=None, data=None, file=None, timeout=None):
         if file:
             with open(file, "rb") as f:
-                return func(method, url, headers, data, file=f)
+                return func(method, url, headers, data, file=f, timeout=timeout)
         else:
-            return func(method, url, headers, data, file)
+            return func(method, url, headers, data, file, timeout=timeout)
 
     new_func.__name__ = func.__name__
     new_func.__doc__ = func.__doc__
@@ -174,7 +175,7 @@ def http_request_wrap_file(func):
 
 
 @http_request_wrap_file
-def http_request(method: str, url: str, headers=None, data=None, file=None):
+def http_request(method: str, url: str, headers=None, data=None, file=None, timeout=None):
     """
     Send a HTTP request to a server.
 
@@ -194,6 +195,9 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     :param headers: Dictionary of custom headers to send.
     :param data: Data to send in the request body (conflicts with `file`).
     :param file: Path to a file to send as data in the request body (conflicts with `data`).
+    :param timeout: Timeout in seconds for connecting and for each read; no timeout if not specified.
+                    A timeout before the response headers arrive is retried (see ``http_retries``),
+                    a timeout while reading the body raises ``urllib3.exceptions.ReadTimeoutError``.
     """
 
     purl = urllib3.util.parse_url(url)
@@ -218,6 +222,10 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     if content_length:
         headers.add("Content-Length", str(content_length))
 
+    urlopen_kwargs = {}
+    if timeout is not None:
+        urlopen_kwargs["timeout"] = timeout
+
     # handle requests that go outside apiurl
     # do not set auth cookie or auth credentials
     if not apiurl:
@@ -232,7 +240,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
             manager = POOL_MANAGER
 
         with debug_timer():
-            response = manager.urlopen(method, url, body=data, headers=headers, preload_content=False)
+            response = manager.urlopen(method, url, body=data, headers=headers, preload_content=False, **urlopen_kwargs)
 
         if response.status / 100 != 2:
             raise urllib.error.HTTPError(url, response.status, response.reason, response.headers, response)
@@ -393,8 +401,13 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     try:
         with debug_timer():
             response = pool.urlopen(
-                method, urlopen_url, body=data, headers=headers,
-                preload_content=False, assert_same_host=assert_same_host
+                method,
+                urlopen_url,
+                body=data,
+                headers=headers,
+                preload_content=False,
+                assert_same_host=assert_same_host,
+                **urlopen_kwargs,
             )
     except urllib3.exceptions.MaxRetryError as e:
         if not isinstance(e.reason, urllib3.exceptions.SSLError):
@@ -425,8 +438,13 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
 
         with debug_timer():
             response = pool.urlopen(
-                method, urlopen_url, body=data, headers=headers,
-                preload_content=False, assert_same_host=assert_same_host
+                method,
+                urlopen_url,
+                body=data,
+                headers=headers,
+                preload_content=False,
+                assert_same_host=assert_same_host,
+                **urlopen_kwargs,
             )
 
     if response.status == 401:
@@ -438,7 +456,9 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
         if hasattr(data, 'seek'):
             data.seek(0)
         with debug_timer():
-            response = pool.urlopen(method, urlopen_url, body=data, headers=headers, preload_content=False)
+            response = pool.urlopen(
+                method, urlopen_url, body=data, headers=headers, preload_content=False, **urlopen_kwargs
+            )
 
     # we want to save a session cookie before an exception is raised on failed requests
     for handler in auth_handlers:
