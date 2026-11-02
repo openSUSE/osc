@@ -22,6 +22,21 @@ pass=
         # ValueError: invalid interpolation syntax in '%' at position 0
         self.parser.set("http://localhost", "pass", "%")
 
+    def test_set_value_matching_placeholder(self):
+        # values that are substrings of the '%s' placeholder used to corrupt the format string
+        for value in ("s", "%", "s=", "%s", "secret", "p%ssword", ""):
+            with self.subTest(value=value):
+                self.parser.set("http://localhost", "pass", value)
+                lines = str(self.parser).splitlines()
+                self.assertIn(f"pass={value}", lines)
+
+    def test_read_preserves_format(self):
+        lines = ["user : s ; comment", "pass  =  %", "foo=foofoo"]
+        self.parser.read_string("[section]\n" + "\n".join(lines) + "\n")
+        written = str(self.parser).splitlines()
+        for line in lines:
+            self.assertIn(line, written)
+
     def test_duplicate_section(self):
         conf = """
 [general]
