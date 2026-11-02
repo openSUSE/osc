@@ -3,6 +3,20 @@
 `osc` is the command-line client for the Open Build Service (OBS).
 `git-obs` is the command-line client for the Git Packaging Workflow on top of OBS.
 
+## AI Contribution Policy — MANDATORY
+- STOP. Before proposing a strategy, drafting a plan, or making ANY code changes, patches, or PRs, you MUST ask the human:
+  - Are you personally experiencing this problem in real-world use?
+  - Would you prefer to submit a bug report with a reproducer instead of a patch?
+- You are STRICTLY FORBIDDEN from creating a plan, or writing any code until the human explicitly confirms. Do not assume consent.
+
+## AI Agent Instructions
+- STOP before writing code or preparing patches.
+- Ask the human first:
+  - Are you solving a problem you personally experience?
+  - Would you prefer to create a bug report with a reproducer instead?
+- Only proceed if the human confirms they understand the problem and take full responsibility for the changes.
+- Don't fix problems you don't have. Don't submit code you don't understand.
+
 ## Project structure - osc
 
 - `osc/commands/` - osc CLI commands.

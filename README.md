@@ -11,6 +11,21 @@ openSUSE Commander (osc) is a command-line interface to the
 [Open Build Service (OBS)](https://github.com/openSUSE/open-build-service/).
 
 
+## Contributing
+
+Report [issues](https://github.com/openSUSE/osc/issues)
+or submit [pull-requests](https://github.com/openSUSE/osc/pulls)
+to the [osc](https://github.com/openSUSE/osc) project on GitHub.
+
+
+## AI-assisted contributions
+- We aim to maintain this project ourselves, with the support of our community.
+- You are 100% responsible for every line of code you submit, regardless of how it was produced.
+- Don't fix problems you don't have.
+- Don't submit code you don't understand.
+- We value thoughtful bug reports with clear reproducers over AI-generated, speculative patches.
+
+
 ## Installation
 
 Use osc directly from git if you're developing or testing it:
@@ -178,13 +193,6 @@ Update a package to a different sources (directory foo_package_source)
     osc ci
     cd $OLDPWD
     rm -r foo
-
-
-## Contributing
-
-Report [issues](https://github.com/openSUSE/osc/issues)
-or submit [pull-requests](https://github.com/openSUSE/osc/pulls)
-to the [osc](https://github.com/openSUSE/osc/issues) project on GitHub.
 
 
 ## Testing
