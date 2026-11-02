@@ -200,7 +200,16 @@ class OptionLine(Line):
         head, _, tail = line.replace("%", "%%").partition(sep)
         key = key.strip().replace("%", "%%")
         val = val.strip().replace("%", "%%")
-        self.frmt = (head.replace(key, "%s", 1) + sep + tail.replace(val, "%s", 1)).rstrip("\n")
+
+        head = head.replace(key, "%s", 1)
+
+        if val:
+            tail = tail.replace(val, "%s", 1)
+        else:
+            # "".replace("", "%s", 1) returns "" on Python < 3.9: https://github.com/python/cpython/issues/72216
+            tail = "%s" + tail
+
+        self.frmt = f"{head}{sep}{tail}".rstrip("\n")
 
     def __str__(self):
         return self.value

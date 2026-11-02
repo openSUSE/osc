@@ -41,6 +41,10 @@ pass=
             self.assertIn(line, written)
         self.assertIn("user=s", written)
 
+    def test_read_empty_value_at_eof(self):
+        self.parser.read_string("[section]\nk=")
+        self.assertIn("k=", str(self.parser).splitlines())
+
     def test_duplicate_section(self):
         conf = """
 [general]
