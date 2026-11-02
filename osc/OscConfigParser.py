@@ -189,13 +189,27 @@ class OptionLine(Line):
 
     def format(self, line):
         mo = configparser.ConfigParser.OPTCRE.match(line.strip())
-        key, val = mo.group('option', 'value')
-        self.frmt = line.replace(key.strip(), '%s', 1)
+        key, sep, val = mo.group("option", "vi", "value")
         pos = val.find(' ;')
         if pos >= 0:
             val = val[:pos]
         self.value = val
-        self.frmt = self.frmt.replace(val.strip(), '%s', 1).rstrip('\n')
+        # substitute key and value on their own side of the separator
+        # so that the value cannot match inside the '%s' placeholder of the key;
+        # escape '%' because the result is used as a printf-style format string
+        head, _, tail = line.replace("%", "%%").partition(sep)
+        key = key.strip().replace("%", "%%")
+        val = val.strip().replace("%", "%%")
+
+        head = head.replace(key, "%s", 1)
+
+        if val:
+            tail = tail.replace(val, "%s", 1)
+        else:
+            # "".replace("", "%s", 1) returns "" on Python < 3.9: https://github.com/python/cpython/issues/72216
+            tail = "%s" + tail
+
+        self.frmt = f"{head}{sep}{tail}".rstrip("\n")
 
     def __str__(self):
         return self.value
