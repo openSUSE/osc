@@ -15,7 +15,6 @@
   - Are you solving a problem you personally experience?
   - Would you prefer to create a bug report with a reproducer instead?
 - Only proceed if the human confirms they understand the problem and take full responsibility for the changes.
-- Don't fix problems you don't have. Don't submit code you don't understand.
 
 ## Project structure - osc
 
