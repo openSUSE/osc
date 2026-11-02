@@ -5593,9 +5593,12 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         if revision_is_empty(rev):
             rev = "latest"
 
-        if not revision_is_empty(rev) and rev != "latest" and not checkRevision(project, package, rev):
-            print(f'Revision \'{rev}\' does not exist', file=sys.stderr)
-            sys.exit(1)
+        if not revision_is_empty(rev) and rev != "latest":
+            if not package:
+                raise oscerr.WrongArgs("The --revision option can only be used when checking out a package.")
+            if not checkRevision(project, package, rev):
+                print(f'Revision \'{rev}\' does not exist', file=sys.stderr)
+                sys.exit(1)
 
         if filename:
             # Note: same logic as with 'osc cat' (not 'osc ls', which never merges!)

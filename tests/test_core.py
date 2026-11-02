@@ -43,6 +43,14 @@ class TestSlashSplit(unittest.TestCase):
         self.assertEqual(expected, actual)
 
 
+class TestCheckRevision(unittest.TestCase):
+    def test_missing_project_or_package(self):
+        from osc.core import checkRevision
+        self.assertFalse(checkRevision(None, "package", "1"))
+        self.assertFalse(checkRevision("project", None, "1"))
+        self.assertFalse(checkRevision(None, None, "1"))
+
+
 class TestParseRevisionOption(unittest.TestCase):
     def test_empty(self):
         expected = None, None

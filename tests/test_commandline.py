@@ -44,11 +44,13 @@ pass=opensuse
 
 class TestCommandClasses(unittest.TestCase):
     def setUp(self):
+        self.orig_dir = os.getcwd()
         self.tmpdir = tempfile.mkdtemp(prefix="osc_test")
         os.chdir(self.tmpdir)
         self.oscrc = None
 
     def tearDown(self):
+        os.chdir(self.orig_dir)
         try:
             shutil.rmtree(self.tmpdir)
         except OSError:
@@ -857,6 +859,38 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
         ):
             with self.assertRaises(HTTPError):
                 change_request_state("https://api", "1", "superseded")
+
+
+class TestCheckoutCommand(unittest.TestCase):
+    def setUp(self):
+        try:
+            self.orig_dir = os.getcwd()
+        except OSError:
+            self.orig_dir = tempfile.gettempdir()
+        self.tmpdir = tempfile.mkdtemp(prefix="osc_test_co")
+        os.chdir(self.tmpdir)
+
+    def tearDown(self):
+        os.chdir(self.orig_dir)
+        try:
+            shutil.rmtree(self.tmpdir)
+        except OSError:
+            pass
+
+    def test_checkout_revision_without_package_raises(self):
+        from unittest import mock
+        from osc import commandline
+        from osc import oscerr
+
+        osc_inst = commandline.Osc()
+        opts = mock.MagicMock()
+        opts.revision = "9"
+        opts.unexpand_link = False
+        opts.deleted = False
+        with mock.patch.object(osc_inst, "get_api_url", return_value="https://api.opensuse.org"):
+            with self.assertRaises(oscerr.WrongArgs) as cm:
+                osc_inst.do_checkout("checkout", opts, "my_project")
+            self.assertIn("The --revision option can only be used when checking out a package", str(cm.exception))
 
 
 if __name__ == "__main__":

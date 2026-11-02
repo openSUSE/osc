@@ -5176,6 +5176,8 @@ def checkRevision(prj: str, pac: str, revision, apiurl: Optional[str] = None, me
     if len(revision) == 32:
         # there isn't a way to check this kind of revision for validity
         return True
+    if not prj or not pac:
+        return False
     if not apiurl:
         apiurl = conf.config['apiurl']
     try:

@@ -1388,7 +1388,7 @@ co|checkout)
 	for ((off=2; off<=count; off++)) ; do
 	    while test "${cmdline[off+remove]::1}" = "-" ; do
 		case "${cmdline[off+remove]}" in
-		--@(output-dir|revision))
+		--@(output-dir|revision)|-@(o|r))
 		    if ((count-remove == off)); then
 			builtin compgen -W "${opts[*]}" -- "${cmdline[off+remove]}"
 			exit
