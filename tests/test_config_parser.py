@@ -31,11 +31,15 @@ pass=
                 self.assertIn(f"pass={value}", lines)
 
     def test_read_preserves_format(self):
-        lines = ["user : s ; comment", "pass  =  %", "foo=foofoo"]
+        lines = ["user : s ; comment", "pass  =  %", "foo=foofoo", "x = 1 ; 100%", "y = a%b ; 50% off", "a%b = %%s"]
         self.parser.read_string("[section]\n" + "\n".join(lines) + "\n")
+        self.assertEqual(self.parser.get("section", "y"), "a%b")
+        self.assertEqual(self.parser.get("section", "a%b"), "%%s")
+        self.parser.set("section", "user", "s")
         written = str(self.parser).splitlines()
-        for line in lines:
+        for line in lines[1:]:
             self.assertIn(line, written)
+        self.assertIn("user=s", written)
 
     def test_duplicate_section(self):
         conf = """
