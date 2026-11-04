@@ -5527,6 +5527,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import checkout_package
         from .core import get_osc_version
         from .core import get_source_file
+        from .core import is_package_dir
         from .core import is_project_dir
         from .core import meta_get_packagelist
         from .core import parseRevisionOption
@@ -5539,6 +5540,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import show_upstream_srcmd5
         from .core import slash_split
         from .core import statfrmt
+        from .core import store_read_package
         from .core import store_read_project
         from .store import git_is_unsupported
 
@@ -5582,6 +5584,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project(Path.cwd())
                 project_dir = Path.cwd()
                 package = args[0]
+            elif len(args) == 1 and is_package_dir(Path.cwd()):
+                msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git checkout' instead."
+                git_is_unsupported(".", msg)
+
+                project = store_read_project(Path.cwd())
+                package = store_read_package(Path.cwd())
+                filename = args[0]
 
         if opts.deleted and package:
             if not opts.output_dir:
