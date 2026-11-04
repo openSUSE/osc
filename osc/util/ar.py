@@ -31,7 +31,8 @@ class ArError(Exception):
         self.msg = msg
 
     def __str__(self):
-        return f"{self.msg}: {self.file.decode('utf-8')}"
+        fn = self.file.decode("utf-8") if isinstance(self.file, bytes) else self.file
+        return f"{self.msg}: {fn}"
 
 
 class ArHdr:
@@ -75,7 +76,7 @@ class ArFile(BytesIO):
             raise ArError(self.name, "Extracting files with absolute paths is not supported for security reasons")
 
         if not dir:
-            dir = os.getcwdb()
+            dir = os.getcwd()
         fn = os.path.join(dir, self.name.decode("utf-8"))
 
         dir_path, _ = os.path.split(fn)
