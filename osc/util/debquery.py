@@ -1,4 +1,3 @@
-import itertools
 import os
 import re
 import sys
@@ -215,46 +214,49 @@ class DebQuery(packagequery.PackageQuery, packagequery.PackageQueryResult):
     @staticmethod
     def debvercmp(ver1, ver2):
         """
-        implementation of dpkg's version comparison algorithm
+        implementation of dpkg's version comparison algorithm (verrevcmp)
+
+        The versions are compared in alternating parts: first the non-digits,
+        letters sort before everything else and "~" sorts even before the end
+        of the string, then the digits as numbers (a missing number is 0).
         """
-        # 32 is arbitrary - it is needed for the "longer digit string wins" handling
-        # (found this nice approach in Build/Deb.pm (build package))
-        ver1 = re.sub(br'(\d+)', lambda m: (32 * b'0' + m.group(1))[-32:], ver1)
-        ver2 = re.sub(br'(\d+)', lambda m: (32 * b'0' + m.group(1))[-32:], ver2)
-        vers = itertools.zip_longest(ver1, ver2, fillvalue=b'')
-        for v1, v2 in vers:
-            if v1 == v2:
-                continue
-            if not v1:
-                # this makes the corresponding condition in the following
-                # else part superfluous - keep the superfluous condition for
-                # now (just to ease a (hopefully) upcoming refactoring (this
-                # method really deserves a cleanup...))
+        def isdigit(ver, pos):
+            return pos < len(ver) and 48 <= ver[pos] <= 57
+
+        def order(ver, pos):
+            if pos >= len(ver) or isdigit(ver, pos):
+                return 0
+            char = ver[pos]
+            if 65 <= char <= 90 or 97 <= char <= 122:
+                return char
+            if char == 126:  # "~"
                 return -1
-            if not v2:
-                # see above
-                return 1
-            v1 = bytes(bytearray([v1]))
-            v2 = bytes(bytearray([v2]))
-            if (v1.isalpha() and v2.isalpha()) or (v1.isdigit() and v2.isdigit()):
-                res = packagequery.cmp(v1, v2)
+            return char + 256
+
+        i = j = 0
+        while i < len(ver1) or j < len(ver2):
+            first_diff = 0
+            while (i < len(ver1) and not isdigit(ver1, i)) or (j < len(ver2) and not isdigit(ver2, j)):
+                res = order(ver1, i) - order(ver2, j)
                 if res != 0:
-                    return res
-            else:
-                if v1 == b'~' or not v1:
-                    return -1
-                elif v2 == b'~' or not v2:
-                    return 1
-                ord1 = ord(v1)
-                if not (v1.isalpha() or v1.isdigit()):
-                    ord1 += 256
-                ord2 = ord(v2)
-                if not (v2.isalpha() or v2.isdigit()):
-                    ord2 += 256
-                if ord1 > ord2:
-                    return 1
-                else:
-                    return -1
+                    return 1 if res > 0 else -1
+                i += 1
+                j += 1
+            while i < len(ver1) and ver1[i] == 48:
+                i += 1
+            while j < len(ver2) and ver2[j] == 48:
+                j += 1
+            while isdigit(ver1, i) and isdigit(ver2, j):
+                if not first_diff:
+                    first_diff = ver1[i] - ver2[j]
+                i += 1
+                j += 1
+            if isdigit(ver1, i):
+                return 1
+            if isdigit(ver2, j):
+                return -1
+            if first_diff:
+                return 1 if first_diff > 0 else -1
         return 0
 
     @staticmethod
