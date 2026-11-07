@@ -9,6 +9,14 @@ import osc.commandline_git
 class LoginAddCommand(osc.commandline_git.GitObsCommand):
     """
     Add a Gitea credentials entry
+
+    Configure authentication credentials for a Gitea instance. Supports access tokens
+    or SSH HTTP signatures.
+
+    Examples:
+        git-obs login add opensuse --url https://src.opensuse.org --user myuser
+        git-obs login add opensuse --url https://src.opensuse.org --user myuser --token mytoken --set-as-default
+        git-obs login add opensuse --url https://src.opensuse.org --user myuser --ssh-key ~/.ssh/id_ed25519 --ssh-key-agent-pub 'SHA256:XXXX'
     """
 
     name = "add"

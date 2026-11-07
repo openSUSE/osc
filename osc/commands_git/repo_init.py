@@ -8,6 +8,11 @@ class RepoInitCommand(osc.commandline_git.GitObsCommand):
     Init a git repo
 
     Initialize or update a package git repo, setting .gitignore, .gitattributes and other files from a template.
+
+    Examples:
+        git-obs repo init
+        git-obs repo init /path/to/pkg
+        git-obs repo init --template /path/to/template
     """
 
     name = "init"

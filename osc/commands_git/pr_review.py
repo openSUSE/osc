@@ -8,6 +8,13 @@ import osc.commandline_git
 class PullRequestReviewCommand(osc.commandline_git.GitObsCommand):
     """
     Manage pull request reviews
+
+    Approve, decline, cancel, or interactively review pull requests.
+
+    Examples:
+        git-obs pr review
+        git-obs pr review approve openSUSE/curl#42
+        git-obs pr review decline openSUSE/curl#42 -m "Changes needed"
     """
 
     name = "review"

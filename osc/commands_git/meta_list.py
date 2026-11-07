@@ -4,6 +4,12 @@ import osc.commandline_git
 class MetaListCommand(osc.commandline_git.GitObsCommand):
     """
     List metadata in store
+
+    List all metadata key-value pairs stored in .git/obs for the specified branch.
+
+    Examples:
+        git-obs meta list
+        git-obs meta list --branch main
     """
 
     name = "list"

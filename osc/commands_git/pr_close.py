@@ -4,6 +4,12 @@ import osc.commandline_git
 class PullRequestCloseCommand(osc.commandline_git.GitObsCommand):
     """
     Close pull requests
+
+    Close one or more open pull requests with an optional comment message.
+
+    Examples:
+        git-obs pr close openSUSE/curl#42
+        git-obs pr close openSUSE/curl#42 -m "Superseded by PR #45"
     """
 
     name = "close"

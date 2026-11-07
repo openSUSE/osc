@@ -7,6 +7,12 @@ import osc.commandline_git
 class ApiCommand(osc.commandline_git.GitObsCommand):
     """
     Make an arbitrary request to API
+
+    Send an authenticated HTTP request directly to the Gitea API endpoint.
+
+    Examples:
+        git-obs api api/v1/user
+        git-obs api -X POST api/v1/repos/openSUSE/curl/issues --data '{"title": "Bug report"}'
     """
 
     name = "api"

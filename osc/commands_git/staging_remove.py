@@ -4,6 +4,10 @@ import osc.commandline_git
 class StagingRemoveCommand(osc.commandline_git.GitObsCommand):
     """
     Remove package pull requests from a project pull request
+
+    Examples:
+        git-obs staging remove openSUSE/slfo#100 openSUSE/curl#42
+        git-obs staging remove --close-removed openSUSE/slfo#100 openSUSE/curl#42
     """
     name = "remove"
     parent = "StagingCommand"

@@ -10,6 +10,15 @@ import osc.commandline_git
 class PullRequestForwardCommand(osc.commandline_git.GitObsCommand):
     """
     Forward sources from one branch to another (Fork -> Sync -> Push -> PR)
+
+    Forward changes between branches across code streams (e.g. from Factory to a
+    downstream release branch like slfo-main or 16.0). Reuses your fork, creates a
+    namespaced branch, and opens a pull request.
+
+    Examples:
+        git-obs pr forward products/slfo factory slfo-main --mode auto
+        git-obs pr forward products/slfo factory slfo-main --mode auto --dry-run
+        git-obs pr forward products/slfo factory slfo-main --mode auto --title "Sync slfo-main with Factory"
     """
 
     name = "forward"
