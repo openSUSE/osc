@@ -5,6 +5,12 @@ import osc.commandline_git
 
 class SSHKeyRemoveCommand(osc.commandline_git.GitObsCommand):
     """
+    Remove a public SSH key from Gitea
+
+    Delete a registered public SSH key by its ID from your Gitea account.
+
+    Examples:
+        git-obs ssh-key remove 123
     """
 
     name = "remove"

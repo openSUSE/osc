@@ -41,6 +41,9 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
     """
     Interactive review of pull requests
 
+    Interactively review pull requests one by one, displaying diffs and allowing you
+    to approve, decline, comment, or skip.
+
     Since this is an interactive command, the program return code indicates the user choice:
     - 0:   default return code
     - 1-9: reserved for error states
@@ -49,6 +52,11 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
 
     This might be useful when wrapping the command in any external review tooling,
     handling one review at a time.
+
+    Examples:
+        git-obs pr review
+        git-obs pr review openSUSE/curl#42
+        git-obs pr review interactive openSUSE/curl#42
     """
 
     name = "interactive"

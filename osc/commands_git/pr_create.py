@@ -32,6 +32,17 @@ NEW_PULL_REQUEST_TEMPLATE = """
 class PullRequestCreateCommand(osc.commandline_git.GitObsCommand):
     """
     Create a pull request
+
+    Create a pull request from the current branch of your fork to the target branch
+    in the upstream repository. If --title or --description are omitted, an editor is
+    opened to compose them.
+
+    Examples:
+        git-obs pr create
+        git-obs pr create --title "Fix curl build dependencies"
+        git-obs pr create --title "Update to 8.6.0" --description "Bumps version and updates patches."
+        git-obs pr create --target openSUSE/curl:factory
+        git-obs pr create --draft
     """
 
     name = "create"

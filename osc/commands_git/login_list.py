@@ -4,6 +4,12 @@ import osc.commandline_git
 class LoginListCommand(osc.commandline_git.GitObsCommand):
     """
     List Gitea credentials entries
+
+    Display all configured Gitea login entries from the config file.
+
+    Examples:
+        git-obs login list
+        git-obs login list --show-tokens
     """
 
     name = "list"

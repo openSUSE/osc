@@ -6,6 +6,11 @@ import osc.commandline_git
 class LoginRemoveCommand(osc.commandline_git.GitObsCommand):
     """
     Remove a Gitea credentials entry
+
+    Delete a configured Gitea login entry by name from the config file.
+
+    Examples:
+        git-obs login remove opensuse
     """
 
     name = "remove"

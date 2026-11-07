@@ -4,6 +4,11 @@ import osc.commandline_git
 class PullRequestReviewCancelRequestCommand(osc.commandline_git.GitObsCommand):
     """
     Cancel a request for review of pull request
+
+    Cancel an outstanding review request on a pull request for the specified reviewer.
+
+    Examples:
+        git-obs pr review cancel-request openSUSE/curl#42 reviewer_name
     """
 
     name = "cancel-request"

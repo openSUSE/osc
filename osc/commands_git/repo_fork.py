@@ -6,6 +6,14 @@ import osc.commandline_git
 class RepoForkCommand(osc.commandline_git.GitObsCommand):
     """
     Fork a git repo
+
+    Create a fork of one or more repositories under your user account or
+    under a specified target organization on the Gitea server.
+
+    Examples:
+        git-obs repo fork openSUSE/curl
+        git-obs repo fork openSUSE/curl --new-repo-name my-curl
+        git-obs repo fork openSUSE/curl --target-owner my-org
     """
 
     name = "fork"

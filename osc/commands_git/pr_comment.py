@@ -4,6 +4,12 @@ import osc.commandline_git
 class PullRequestCommentCommand(osc.commandline_git.GitObsCommand):
     """
     Comment pull requests
+
+    Add a comment to one or more pull requests. If --message is omitted, an editor is opened.
+
+    Examples:
+        git-obs pr comment openSUSE/curl#42 -m "LGTM, build succeeded."
+        git-obs pr comment openSUSE/curl#42
     """
 
     name = "comment"

@@ -12,6 +12,12 @@ def b(value: str):
 class PullRequestSetCommand(osc.commandline_git.GitObsCommand):
     """
     Change a pull request
+
+    Update attributes such as title, description, or target branch of a pull request.
+
+    Examples:
+        git-obs pr set openSUSE/curl#42 --title "Updated PR title"
+        git-obs pr set openSUSE/curl#42 --target-branch factory
     """
 
     name = "set"

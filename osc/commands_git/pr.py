@@ -8,6 +8,14 @@ import osc.commandline_git
 class PullRequestCommand(osc.commandline_git.GitObsCommand):
     """
     Manage pull requests
+
+    Create, inspect, checkout, review, merge, and manage pull requests on Gitea.
+
+    Examples:
+        git-obs pr create --title "Fix build"
+        git-obs pr checkout 42
+        git-obs pr list openSUSE/curl
+        git-obs pr review
     """
 
     name = "pr"

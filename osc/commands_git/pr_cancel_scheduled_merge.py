@@ -4,6 +4,11 @@ import osc.commandline_git
 class PullRequestCancelScheduledMergeCommand(osc.commandline_git.GitObsCommand):
     """
     Cancel scheduled merge of pull requests
+
+    Cancel a pending automatic merge on one or more pull requests.
+
+    Examples:
+        git-obs pr cancel-scheduled-merge openSUSE/curl#42
     """
 
     name = "cancel-scheduled-merge"

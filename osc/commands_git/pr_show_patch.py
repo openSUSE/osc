@@ -4,6 +4,12 @@ import osc.commandline_git
 class PullRequestShowPatchCommand(osc.commandline_git.GitObsCommand):
     """
     Show patch associated to the specified pull request
+
+    Display the unified diff patch associated with one or more pull requests.
+
+    Examples:
+        git-obs pr show-patch openSUSE/curl#42
+        git-obs pr show-patch 42
     """
 
     name = "show-patch"

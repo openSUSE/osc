@@ -5,7 +5,13 @@ import osc.commandline_git
 
 class StagingSearchCommand(osc.commandline_git.GitObsCommand):
     """
-    Search staging pull requests.
+    Search staging pull requests
+
+    Filter staging pull requests by review state and target branch.
+
+    Examples:
+        git-obs staging search openSUSE/slfo --type BACKLOG
+        git-obs staging search openSUSE/slfo --type INPROGRESS --target-branch factory
     """
 
     name = "search"

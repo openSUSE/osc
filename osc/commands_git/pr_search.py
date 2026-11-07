@@ -6,6 +6,14 @@ import osc.commandline_git
 class PullRequestSearchCommand(osc.commandline_git.GitObsCommand):
     """
     Search pull requests in the whole gitea instance
+
+    Search and filter pull requests across repositories in the Gitea instance.
+
+    Examples:
+        git-obs pr search --review-requested
+        git-obs pr search --owner openSUSE --state open
+        git-obs pr search --title "curl"
+        git-obs pr search --assigned
     """
 
     name = "search"
