@@ -1594,7 +1594,8 @@ class Osc(cmdln.Cmdln):
         will be the pattern file to view or edit.
 
         With the --edit switch, the metadata can be edited. Per default, osc
-        opens the program specified by the environmental variable EDITOR with a
+        opens the program specified by the VISUAL environment variable,
+        or if not set the EDITOR environment variable, with a
         temporary file. Alternatively, content to be saved can be supplied via
         the --file switch. If the argument is '-', input is taken from stdin:
         osc meta prjconf home:user | sed ... | osc meta prjconf home:user -F -
@@ -5526,6 +5527,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import checkout_package
         from .core import get_osc_version
         from .core import get_source_file
+        from .core import is_package_dir
         from .core import is_project_dir
         from .core import meta_get_packagelist
         from .core import parseRevisionOption
@@ -5538,6 +5540,7 @@ Please submit there instead, or use --nodevelproject to force direct submission.
         from .core import show_upstream_srcmd5
         from .core import slash_split
         from .core import statfrmt
+        from .core import store_read_package
         from .core import store_read_project
         from .store import git_is_unsupported
 
@@ -5581,6 +5584,13 @@ Please submit there instead, or use --nodevelproject to force direct submission.
                 project = store_read_project(Path.cwd())
                 project_dir = Path.cwd()
                 package = args[0]
+            elif len(args) == 1 and is_package_dir(Path.cwd()):
+                msg = f"Command 'osc {subcmd}' is not supported with git. Use 'git checkout' instead."
+                git_is_unsupported(".", msg)
+
+                project = store_read_project(Path.cwd())
+                package = store_read_package(Path.cwd())
+                filename = args[0]
 
         if opts.deleted and package:
             if not opts.output_dir:
@@ -5922,15 +5932,15 @@ Please submit there instead, or use --nodevelproject to force direct submission.
            osc ci file1 file2 ...
         """
 
-        from .core import get_default_editor
+        from .core import _editor_command
 
         try:
             self._commit(subcmd, opts, args)
         except oscerr.ExtRuntimeError as e:
             pattern = re.compile("No such file")
             if "No such file" in e.msg:
-                editor = os.getenv('EDITOR', default=get_default_editor())
-                print(f"Editor {editor} not found")
+                editor = _editor_command()
+                print(f"Editor {editor[0]} not found")
                 return 1
             print("ERROR: service run failed", e, file=sys.stderr)
             return 1
@@ -10825,8 +10835,9 @@ Please submit there instead, or use --nodevelproject to force direct submission.
 
         or can be specified via mailaddr environment variable.
 
-        By default, osc vc opens the program specified by the EDITOR
-        environment variable (and it uses Vim if that variable is not set) with
+        By default, osc vc opens the program specified by the VISUAL environment variable
+        or if not set the EDITOR environment variable
+        (and it uses Vim if that variable is not set), with
         a temporary file that should replace the *.changes file when saved by
         the editor, or discarded otherwise.
         """
