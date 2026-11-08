@@ -385,3 +385,13 @@ Scenario: Fail to create a pull request when mixing new and deprecated options
     When I execute git-obs with args "pr create --target :factory --target-owner pool --title 'New PR' --description 'desc' --allow-empty"
     Then the exit code is 2
      And stderr contains "error: Options --target-owner cannot be used together with --target"
+
+@destructive
+Scenario: Create a pull request automatically targeting default branch when source branch does not exist on target
+    When I execute "git checkout -b new-branch-4"
+     And I execute "git push origin new-branch-4"
+     And I execute git-obs with args "pr create --title 'New PR' --description 'desc' --allow-empty"
+    Then the exit code is 0
+     And stderr contains "Source: Admin/test-GitPkgA, branch: new-branch-4"
+     And stderr contains "Target: pool/test-GitPkgA, branch: factory"
+     And stderr contains "Pull request created:"
