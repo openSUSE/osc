@@ -1,0 +1,18 @@
+<resultlist state="publishing-error">
+  <result project="testproject" repository="succeeded_repo" arch="x86_64" code="broken" state="broken" details="not publishing failed packages: other-package">
+    <status package="python-MarkupSafe" code="succeeded" />
+  </result>
+  <result project="testproject" repository="unresolvable_repo" arch="x86_64" code="broken" state="broken" details="not publishing failed packages: python-MarkupSafe">
+    <status package="python-MarkupSafe" code="unresolvable">
+      <details>nothing provides missing-dependency</details>
+    </status>
+  </result>
+  <result project="testproject" repository="failed_repo" arch="x86_64" code="broken" state="broken" details="not publishing failed packages: python-MarkupSafe">
+    <status package="python-MarkupSafe" code="failed" />
+  </result>
+  <result project="testproject" repository="broken_repo" arch="x86_64" code="broken" state="broken" details="not publishing failed packages: python-MarkupSafe">
+    <status package="python-MarkupSafe" code="broken">
+      <details>package has no build description</details>
+    </status>
+  </result>
+</resultlist>
