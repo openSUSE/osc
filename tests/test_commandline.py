@@ -1,13 +1,17 @@
 import argparse
+import io
 import os
 import shutil
+import sys
 import tempfile
+from types import SimpleNamespace
 import unittest
 import unittest.mock
 from urllib.error import HTTPError
 
 from osc.commandline import Command
 from osc.commandline import MainCommand
+from osc.commandline import Osc
 from osc.commandline import OscMainCommand
 from osc.commandline import pop_project_package_from_args
 from osc.commandline import pop_project_package_repository_arch_from_args
@@ -857,6 +861,87 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
         ):
             with self.assertRaises(HTTPError):
                 change_request_state("https://api", "1", "superseded")
+
+
+class TestMaintainerGitPackages(unittest.TestCase):
+    def setUp(self):
+        self.osc_obj = Osc()
+        self.osc_obj.get_api_url = unittest.mock.MagicMock(return_value="https://api.opensuse.org")
+        self.fake_package_cache = [
+            {
+                "package": {"project": {"name": "SUSE:SLFO:1.2"}, "name": "go1.27"},
+                "user": "jfkw",
+            }
+        ]
+        self.fake_project_cache = [
+            {
+                "project": {"name": "SUSE:SLFO:1.2"},
+                "user": "jfkw",
+            }
+        ]
+
+    def _get_opts(self, email=False, verbose=False):
+        return SimpleNamespace(
+            user=None,
+            group=None,
+            all=False,
+            bugowner=True,
+            bugowner_only=True,
+            set_bugowner=None,
+            set_bugowner_request=None,
+            devel_project=None,
+            add=None,
+            delete=None,
+            role=[],
+            email=email,
+            verbose=verbose,
+        )
+
+    def _run_maintainer(self, opts, target):
+        def fake_get_user_data(apiurl, user, *tags):
+            if user == "jfkw":
+                if "realname" in tags:
+                    return ["jfkw", "Jiri Kocourek", "jfkw@suse.com"]
+                return ["jfkw@suse.com"]
+            return []
+
+        with unittest.mock.patch("osc.core.owner", return_value=None), \
+             unittest.mock.patch("osc.gitea_api.cache.gitea_cache_search_package_maintainers", return_value=self.fake_package_cache), \
+             unittest.mock.patch("osc.gitea_api.cache.gitea_cache_search_project_maintainers", return_value=self.fake_project_cache), \
+             unittest.mock.patch("osc.core.get_user_data", side_effect=fake_get_user_data):
+            captured = io.StringIO()
+            old_stdout = sys.stdout
+            sys.stdout = captured
+            try:
+                self.osc_obj.do_maintainer("bugowner", opts, target)
+            finally:
+                sys.stdout = old_stdout
+            return captured.getvalue()
+
+    def test_git_package_maintainer_email(self):
+        """bugowner -e with git packages outputs maintainer email."""
+        opts = self._get_opts(email=True)
+        output = self._run_maintainer(opts, "go1.27")
+        self.assertIn("Maintainer of SUSE:SLFO:1.2/go1.27 in git: jfkw@suse.com", output)
+
+    def test_git_package_maintainer_verbose(self):
+        """bugowner --verbose with git packages outputs user details."""
+        opts = self._get_opts(verbose=True)
+        output = self._run_maintainer(opts, "go1.27")
+        self.assertIn("Maintainer of SUSE:SLFO:1.2/go1.27 in git: jfkw (Jiri Kocourek <jfkw@suse.com>)", output)
+
+    def test_git_package_maintainer_default(self):
+        """bugowner without -e outputs username."""
+        opts = self._get_opts()
+        output = self._run_maintainer(opts, "go1.27")
+        self.assertIn("Maintainer of SUSE:SLFO:1.2/go1.27 in git: jfkw", output)
+
+    def test_git_project_maintainer_email(self):
+        """maintainer -e on git project outputs maintainer email."""
+        opts = self._get_opts(email=True)
+        self.fake_package_cache = []
+        output = self._run_maintainer(opts, "SUSE:SLFO:1.2")
+        self.assertIn("Maintainer of SUSE:SLFO:1.2 in git: jfkw@suse.com", output)
 
 
 if __name__ == "__main__":
