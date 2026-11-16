@@ -10,6 +10,7 @@ import unittest
 
 from osc.commandline import MainCommand
 from osc.commandline import OscMainCommand
+from osc.commandline_common import IN_VENV
 
 
 PLUGINS_DIR = os.path.join(os.path.dirname(__file__), "..", "doc", "plugins")
@@ -62,6 +63,7 @@ class TestPopProjectPackageFromArgs(unittest.TestCase):
         self.assertEqual(args.message, "a message")
         self.assertEqual(args.id, 12345)
 
+    @unittest.skipIf(IN_VENV, "the legacy plugin directories are not loaded in a virtual environment")
     def test_plugin_locations(self):
         osc_paths = [i[1] for i in OscMainCommand.MODULES]
         # skip the first line with osc.commands

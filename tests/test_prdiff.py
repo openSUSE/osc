@@ -150,6 +150,7 @@ new only:  only-in-new
         out = self._run_prdiff('--show-not-in-old', 'old:prj', 'new:prj')
         self.assertEqualMultiline(out, exp)
 
+    @unittest.skipUnless(shutil.which("diffstat"), "diffstat is not installed")
     @GET_PROJECT_PACKAGES('old:prj', 'new:prj')
     @POST_RDIFF('old:prj', 'new:prj')
     def testPrdiffDiffstat(self):
