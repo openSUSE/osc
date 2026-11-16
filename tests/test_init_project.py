@@ -67,6 +67,31 @@ class TestInitProject(OscTestCase):
         self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
         self.assertFalse(os.path.exists(os.path.join(storedir, '_packages')))
 
+    @GET('http://localhost/source/testprj/testpkg/_meta', text='<package name="testpkg" project="testprj" />')
+    def test_apiurl_mismatch(self):
+        """checkout_package into an existing project dir with a different apiurl raises OscIOError"""
+        # mock api2 in config to trigger the test connection mock
+        osc.conf.config['api_host_options']['http://api2'] = osc.conf.config['api_host_options']['http://localhost']
+        prj_dir = os.path.join(self.tmpdir, 'testprj')
+        # initialize a project dir with http://localhost
+        osc.core.Project.init_project('http://localhost', prj_dir, 'testprj', getPackageList=False)
+
+        # attempt to check out a package from http://api2 into the same project dir
+        with self.assertRaises(osc.oscerr.OscIOError) as cm:
+            osc.core.checkout_package('http://api2', 'testprj', 'testpkg', prj_dir=prj_dir)
+        self.assertRegex(cm.exception.msg, r"The project working copy '.*' uses a different API URL: http://localhost")
+
+        # verify that the project's stored API URL remains unchanged
+        storedir = os.path.join(prj_dir, osc.core.store)
+        self._check_list(os.path.join(storedir, '_apiurl'), 'http://localhost\n')
+
+        # verify that package tracking remains unchanged (testpkg not added)
+        self._check_list(os.path.join(storedir, '_packages'), '<project name="testprj" />')
+
+        # verify that no unintended package working copy was created
+        self.assertFalse(os.path.exists(os.path.join(prj_dir, 'testpkg')))
+
+
     def test_delete_dir_robustness(self):
         """delete_dir successfully ignores FileNotFoundError during recursive deletion"""
         import tempfile
