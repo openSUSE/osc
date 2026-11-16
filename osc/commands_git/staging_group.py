@@ -6,6 +6,9 @@ import osc.commandline_git
 class StagingGroupCommand(osc.commandline_git.GitObsCommand):
     """
     Group multiple staging project pull requests into a target staging project pull request
+
+    Examples:
+        git-obs staging group --target openSUSE/slfo#100 openSUSE/curl#42 openSUSE/git#43
     """
 
     name = "group"

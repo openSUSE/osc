@@ -9,6 +9,8 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
     """
     Dump a pull request to disk
 
+    Export pull request metadata, git diffs, and package files into a local directory.
+
     Return codes:
     - 0:   default return code
     - 1-9: reserved for error states
@@ -16,6 +18,10 @@ class PullRequestDumpCommand(osc.commandline_git.GitObsCommand):
 
     In addition to the return codes, a STATUS file is written in each target directory,
     the values are: RUNNING, FAILED, SUCCESS
+
+    Examples:
+        git-obs pr dump openSUSE/curl#42 /tmp/pr-dump
+        git-obs pr dump 42 ./dump-dir
     """
     # NOTE: the return codes are according to `git-obs pr review interactive`
 

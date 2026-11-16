@@ -4,6 +4,11 @@ import osc.commandline_git
 class PullRequestReviewDeclineCommand(osc.commandline_git.GitObsCommand):
     """
     Decline pull request reviews (request changes)
+
+    Request changes or decline one or more pull requests with a justification message.
+
+    Examples:
+        git-obs pr review decline openSUSE/curl#42 -m "Please fix spec file syntax"
     """
 
     name = "decline"

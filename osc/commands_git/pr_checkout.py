@@ -6,6 +6,12 @@ import osc.commandline_git
 class PullRequestCheckoutCommand(osc.commandline_git.GitObsCommand):
     """
     Check out a pull request
+
+    Fetch and check out a pull request by number into a local branch.
+
+    Examples:
+        git-obs pr checkout 42
+        git-obs pr checkout 42 --force
     """
 
     name = "checkout"

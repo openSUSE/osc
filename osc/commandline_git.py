@@ -3,9 +3,11 @@ import glob
 import os
 import subprocess
 import sys
+import textwrap
 
 import osc.commandline_common
 import osc.commands_git
+
 from . import oscerr
 from .output import print_msg
 
@@ -225,6 +227,8 @@ def complete_checkout_pr(prefix, parsed_args, **kwargs):
 class GitObsMainCommand(osc.commandline_common.MainCommand):
     """
     git-obs is a command-line client for interacting with Git repositories within a Gitea instance that is part of an Open Build Service (OBS).
+
+    git-obs provides Git-native workflows for package development, review, and integration with the Open Build Service (OBS) through Gitea.
     """
 
     name = "git-obs"
@@ -300,6 +304,20 @@ class GitObsMainCommand(osc.commandline_common.MainCommand):
         cmd.argparse_manpage = argparse_manpage
         cmd.load_commands()
         cmd.enable_autocomplete()
+        if not argparse_manpage:
+            cmd.parser.epilog = textwrap.dedent(
+                """
+                Workflows:
+                  Standard contribution workflow:
+                    1. Fork repository:        git-obs repo fork <owner>/<repo>
+                    2. Clone your fork:        git-obs repo clone <user>/<repo>
+                    3. Create feature branch:  git checkout -b <branch_name>
+                    4. Commit and push:        git commit -m "..." && git push -u origin <branch_name>
+                    5. Open pull request:      git-obs pr create
+
+                  For detailed quickstart and documentation, see git-obs-quickstart(1).
+                """
+            )
         if run:
             args = cmd.parse_args(args=argv)
             exit_code = cmd.run(args)
@@ -361,6 +379,80 @@ def argparse_manpage_get_parser():
     Needed by argparse-manpage to generate man pages from the argument parser.
     """
     main, _ = GitObsMainCommand.main(run=False, argparse_manpage=True)
+    main.parser.epilog = None
+    main.parser._manpage = [
+        {
+            "heading": "EXAMPLES",
+            "content": textwrap.dedent(
+                """
+                .SS Workflow: Standard Contribution Workflow (Fork, Clone, Branch, Commit, PR)
+                .nf
+                1. Configure your Gitea credentials (one-time setup):
+                    $ git-obs login add opensuse --url https://src.opensuse.org --user <user>
+
+                2. Fork the upstream package repository:
+                    $ git-obs repo fork openSUSE/curl
+
+                3. Clone your newly created fork:
+                    $ git-obs repo clone <user>/curl
+                    $ cd curl
+
+                   git-obs automatically configures 'origin' (pointing to your fork) and
+                   'parent' (pointing to openSUSE/curl).
+
+                4. Create a new branch and make your changes:
+                    $ git checkout -b fix-curl-build
+                    $ # edit spec file, patches, or sources...
+                    $ git commit -am "Fix curl build dependencies"
+
+                5. Push your branch to your fork:
+                    $ git push -u origin fix-curl-build
+
+                6. Submit a Pull Request to upstream:
+                    $ git-obs pr create --title "Fix curl build dependencies"
+                .fi
+
+                .SS Workflow: Checking out and Testing an Existing Pull Request
+                .nf
+                1. Clone the repository and navigate into it:
+                    $ git-obs repo clone openSUSE/curl
+                    $ cd curl
+
+                2. Check out the pull request:
+                    $ git-obs pr checkout 42
+
+                3. Synchronize repository metadata with OBS:
+                    $ git-obs meta pull
+
+                4. Build locally or inspect package status:
+                    $ osc build
+                .fi
+
+                .SS Workflow: Reviewing Pull Requests Interactively
+                .nf
+                1. List or search open pull requests requesting review:
+                    $ git-obs pr search --review-requested
+
+                2. Start interactive review session:
+                    $ git-obs pr review
+                .fi
+
+                .SS Workflow: Forwarding Changes Between Branches
+                .nf
+                1. Forward changes (e.g. promote Factory commit to Leap release branch):
+                    $ git-obs pr forward products/slfo factory slfo-main --mode auto
+                .fi
+                """
+            ).strip(),
+        },
+        {
+            "heading": "SEE ALSO",
+            "content": ".BR osc (1), "
+            ".BR git-obs-quickstart (1), "
+            ".BR git-obs-metadata (1), "
+            ".BR git (1)",
+        },
+    ]
     return main.parser
 
 

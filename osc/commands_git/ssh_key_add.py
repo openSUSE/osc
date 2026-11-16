@@ -5,6 +5,13 @@ import osc.commandline_git
 
 class SSHKeyAddCommand(osc.commandline_git.GitObsCommand):
     """
+    Add a public SSH key to Gitea
+
+    Upload a public SSH key to your Gitea user account from a string or a file.
+
+    Examples:
+        git-obs ssh-key add --key-path ~/.ssh/id_ed25519.pub
+        git-obs ssh-key add --key "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5... user@host"
     """
 
     name = "add"

@@ -4,6 +4,12 @@ import osc.commandline_git
 class MetaFooCommand(osc.commandline_git.GitObsCommand):
     """
     Reset metadata in store
+
+    Reset all stored metadata in .git/obs for the specified branch.
+
+    Examples:
+        git-obs meta reset
+        git-obs meta reset --branch main
     """
 
     name = "reset"

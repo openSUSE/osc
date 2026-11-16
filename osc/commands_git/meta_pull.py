@@ -3,7 +3,13 @@ import osc.commandline_git
 
 class MetaPullCommand(osc.commandline_git.GitObsCommand):
     """
-    Pull metadata about the project or package from Gitea.
+    Pull metadata about the project or package from Gitea
+
+    Synchronize OBS metadata (such as obs_apiurl, project, package) from the
+    remote repository configuration into the local .git/obs store.
+
+    Examples:
+        git-obs meta pull
     """
 
     name = "pull"

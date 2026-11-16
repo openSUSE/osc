@@ -8,8 +8,20 @@ class RepoCloneCommand(osc.commandline_git.GitObsCommand):
     """
     Clone a git repo
 
+    Clone one or more repositories from the Gitea server. Automatically configures
+    additional Git remotes ('parent' pointing to the upstream repository if cloning a
+    fork, or 'fork' pointing to your fork if cloning upstream). Also initializes
+    metadata by pulling from the repository.
+
     NOTE: Some of the options may result in setting "core.sshCommand"
-    config option in the git repository."
+    config option in the git repository.
+
+    Examples:
+        git-obs repo clone openSUSE/curl
+        git-obs repo clone myuser/curl
+        git-obs repo clone -b factory openSUSE/curl
+        git-obs repo clone --directory curl-local openSUSE/curl
+        git-obs repo clone --anonymous openSUSE/curl
     """
 
     name = "clone"

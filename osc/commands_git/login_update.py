@@ -9,6 +9,13 @@ import osc.commandline_git
 class LoginUpdateCommand(osc.commandline_git.GitObsCommand):
     """
     Update a Gitea credentials entry
+
+    Modify settings of an existing Gitea login entry (e.g. token, default status, URL).
+
+    Examples:
+        git-obs login update opensuse --set-as-default
+        git-obs login update opensuse --new-token mynewtoken
+        git-obs login update opensuse --new-git-uses-http=1
     """
 
     name = "update"

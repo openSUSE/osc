@@ -8,6 +8,9 @@ class PullRequestNewPackageRequestCommand(osc.commandline_git.GitObsCommand):
     Request a new package
 
     Create a new package request issue in the target repository.
+
+    Examples:
+        git-obs pr new-package-request -t openSUSE/factory:master openSUSE/curl:main -m "Adding curl to factory"
     """
 
     name = "new-package-request"

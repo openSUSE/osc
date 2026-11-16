@@ -7,9 +7,16 @@ class RepoListCommand(osc.commandline_git.GitObsCommand):
     """
     List repos
 
+    List repositories owned by the specified organizations or users.
+
     Required permissions:
         read:organization
         read:user
+
+    Examples:
+        git-obs repo list --org openSUSE
+        git-obs repo list --user myuser
+        git-obs repo list --org openSUSE --export
     """
 
     name = "list"

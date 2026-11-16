@@ -4,6 +4,11 @@ import osc.commandline_git
 class FileMaintainershipMigrateCommand(osc.commandline_git.GitObsCommand):
     """
     Read _maintainership.json and convert it from legacy format to the current format
+
+    Examples:
+        git-obs file maintainership migrate
+        git-obs file maintainership migrate --in-place
+        git-obs file maintainership migrate /path/to/_maintainership.json --in-place
     """
 
     name = "migrate"

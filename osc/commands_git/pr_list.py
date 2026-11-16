@@ -7,6 +7,14 @@ import osc.commandline_git
 class PullRequestListCommand(osc.commandline_git.GitObsCommand):
     """
     List pull requests in a repository
+
+    List pull requests for one or more repositories with optional filters.
+
+    Examples:
+        git-obs pr list openSUSE/curl
+        git-obs pr list openSUSE/curl --state closed
+        git-obs pr list openSUSE/curl --reviewer @security-team
+        git-obs pr list openSUSE/curl --target-branch factory
     """
 
     name = "list"

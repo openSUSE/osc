@@ -4,6 +4,13 @@ import osc.commandline_git
 class MetaSetCommand(osc.commandline_git.GitObsCommand):
     """
     Set metadata in store
+
+    Manually configure OBS metadata values (apiurl, project, package) in the local store.
+
+    Examples:
+        git-obs meta set --apiurl https://api.opensuse.org
+        git-obs meta set --project openSUSE:Factory --package curl
+        git-obs meta set --branch main --project openSUSE:Factory
     """
 
     name = "set"

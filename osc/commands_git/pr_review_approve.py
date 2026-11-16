@@ -4,6 +4,12 @@ import osc.commandline_git
 class PullRequestReviewApproveCommand(osc.commandline_git.GitObsCommand):
     """
     Approve pull request reviews
+
+    Approve one or more pull request reviews with an optional approval comment.
+
+    Examples:
+        git-obs pr review approve openSUSE/curl#42
+        git-obs pr review approve openSUSE/curl#42 -m "Looks good to me"
     """
 
     name = "approve"

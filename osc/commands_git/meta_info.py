@@ -4,6 +4,14 @@ import osc.commandline_git
 class MetaInfoCommand(osc.commandline_git.GitObsCommand):
     """
     Resolve and print metadata about the current checkout
+
+    Display resolved metadata for the current checkout or query specific keys.
+
+    Examples:
+        git-obs meta info
+        git-obs meta info --project
+        git-obs meta info --package
+        git-obs meta info --apiurl
     """
 
     name = "info"

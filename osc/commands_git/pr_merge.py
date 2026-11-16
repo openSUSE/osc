@@ -4,6 +4,13 @@ import osc.commandline_git
 class PullRequestMergeCommand(osc.commandline_git.GitObsCommand):
     """
     Merge pull requests
+
+    Merge one or more pull requests. By default, auto-merge is scheduled until
+    all CI checks succeed. Use --now to merge immediately.
+
+    Examples:
+        git-obs pr merge openSUSE/curl#42
+        git-obs pr merge openSUSE/curl#42 --now
     """
 
     name = "merge"

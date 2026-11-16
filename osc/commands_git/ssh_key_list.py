@@ -3,6 +3,12 @@ import osc.commandline_git
 
 class SSHKeyListCommand(osc.commandline_git.GitObsCommand):
     """
+    List public SSH keys in Gitea
+
+    Display all public SSH keys registered under your Gitea user account.
+
+    Examples:
+        git-obs ssh-key list
     """
 
     name = "list"

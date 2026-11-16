@@ -6,6 +6,14 @@ import osc.commandline_git
 class PullRequestGetCommand(osc.commandline_git.GitObsCommand):
     """
     Get details about the specified pull requests
+
+    Retrieve and display detailed information about one or more pull requests,
+    optionally including diff patches and timelines.
+
+    Examples:
+        git-obs pr get openSUSE/curl#42
+        git-obs pr get 42 --patch
+        git-obs pr get openSUSE/curl#42 --timeline
     """
 
     name = "get"

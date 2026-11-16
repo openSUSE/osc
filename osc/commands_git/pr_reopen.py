@@ -4,6 +4,12 @@ import osc.commandline_git
 class PullRequestReopenCommand(osc.commandline_git.GitObsCommand):
     """
     Reopen pull requests
+
+    Reopen one or more closed pull requests with an optional comment message.
+
+    Examples:
+        git-obs pr reopen openSUSE/curl#42
+        git-obs pr reopen openSUSE/curl#42 -m "Reopening after fixing review issues"
     """
 
     name = "reopen"
