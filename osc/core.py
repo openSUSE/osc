@@ -4284,13 +4284,12 @@ def result_xml_to_dicts(xml):
 
         for statusnode in snodes:
             smap = dict(rmap)
-            smap['pkg'] = smap['package'] = smap['pac'] = statusnode.get('package')
-            smap['code'] = statusnode.get('code', '')
-            details = statusnode.find('details')
-            if details is not None:
-                smap['details'] = details.text
-            if rmap['code'] == 'broken':
-                # real error just becomes visible in details/verbose
+            smap["pkg"] = smap["package"] = smap["pac"] = statusnode.get("package")
+            smap["code"] = statusnode.get("code", "")
+            details = statusnode.find("details")
+            smap["details"] = details.text if details is not None else None
+            if rmap["code"] == "broken" and smap["code"] in ("unknown", ""):
+                # Show repository errors only if there is no known package result.
                 smap['code'] = rmap['code']
                 smap['details'] = "repository: " + rmap['details']
             yield smap, is_multi
