@@ -86,7 +86,7 @@ def sanitize_text(text: Union[bytes, str]) -> Union[bytes, str]:
         # remove all but allowed CSI escape sequences
 
         # negative lookahead assertion that allows safe color escape sequences
-        neg_allowed_csi_sequences = r"(?!\[([0-5]|[34][0-7]|;)+m)"
+        neg_allowed_csi_sequences = r"(?!\[([0-5]|[34][0-7]|;)*m)"
 
         # range 0x30–0x3F (OCT \040-\077) (ASCII 0–9:;<=>?); zero or more characters
         csi_parameter_bytes = r"[\x30-\x3F]*"
