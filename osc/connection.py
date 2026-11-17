@@ -221,10 +221,10 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     # handle requests that go outside apiurl
     # do not set auth cookie or auth credentials
     if not apiurl:
-        if purl.scheme == "http" and HTTP_PROXY_MANAGER and not urllib.request.proxy_bypass(url):
+        if purl.scheme == "http" and HTTP_PROXY_MANAGER and not urllib.request.proxy_bypass(purl.netloc):
             # connection through proxy
             manager = HTTP_PROXY_MANAGER
-        elif purl.scheme == "https" and HTTPS_PROXY_MANAGER and not urllib.request.proxy_bypass(url):
+        elif purl.scheme == "https" and HTTPS_PROXY_MANAGER and not urllib.request.proxy_bypass(purl.netloc):
             # connection through proxy
             manager = HTTPS_PROXY_MANAGER
         else:
@@ -295,7 +295,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
                 ssl_context.check_hostname = False
                 ssl_context.verify_mode = ssl.CERT_NONE
 
-        if purl.scheme == "http" and HTTP_PROXY_MANAGER and not urllib.request.proxy_bypass(url):
+        if purl.scheme == "http" and HTTP_PROXY_MANAGER and not urllib.request.proxy_bypass(purl.netloc):
             # connection through HTTP proxy
             pool = HTTP_PROXY_MANAGER.connection_from_host(
                 host=purl.host,
@@ -304,7 +304,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
                 pool_kwargs=pool_kwargs
             )
             HTTP_PROXY_MANAGER.request('GET', url)
-        elif purl.scheme == "https" and HTTPS_PROXY_MANAGER and not urllib.request.proxy_bypass(url):
+        elif purl.scheme == "https" and HTTPS_PROXY_MANAGER and not urllib.request.proxy_bypass(purl.netloc):
             # connection through HTTPS proxy
             pool = HTTPS_PROXY_MANAGER.connection_from_host(
                 host=purl.host,
@@ -348,7 +348,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
     elif method == "POST":
         headers.add("Content-Type", "application/x-www-form-urlencoded")
 
-    if purl.scheme == "http" and HTTP_PROXY_MANAGER:
+    if purl.scheme == "http" and HTTP_PROXY_MANAGER and not urllib.request.proxy_bypass(purl.netloc):
         # HTTP proxy requires full URL with 'same host' checking off
         urlopen_url = url
         assert_same_host = False
