@@ -859,5 +859,74 @@ class TestChangeRequestStateCanFail(unittest.TestCase):
                 change_request_state("https://api", "1", "superseded")
 
 
+class TestListCommand(unittest.TestCase):
+    """Regression tests for openSUSE/osc#2228: crash in osc ls with past revision."""
+
+    @unittest.mock.patch("builtins.print")
+    @unittest.mock.patch("osc.core.meta_get_filelist")
+    @unittest.mock.patch("osc.core.show_files_meta")
+    def test_list_past_revision_without_linkinfo(
+        self, mock_show_files_meta, mock_meta_get_filelist, mock_print,
+    ):
+        """When listing a past revision with _link but no linkinfo, do not crash."""
+        from osc.commandline import Osc
+        cmd = Osc()
+        cmd.get_api_url = unittest.mock.MagicMock(return_value="https://api.opensuse.org")
+        opts = argparse.Namespace(
+            binaries=False,
+            verbose=False,
+            deleted=False,
+            expand=False,
+            unexpand=False,
+            meta=False,
+            revision="276",
+        )
+        mock_meta_get_filelist.return_value = ["_link", "file1.txt"]
+        mock_show_files_meta.return_value = "<directory name='hplip' rev='276'></directory>"
+
+        cmd.do_list("ls", opts, "Printing", "hplip")
+
+        mock_show_files_meta.assert_called_once_with(
+            "https://api.opensuse.org", "Printing", "hplip", revision="276",
+        )
+        self.assertEqual(mock_meta_get_filelist.call_count, 1)
+
+    @unittest.mock.patch("builtins.print")
+    @unittest.mock.patch("osc.core.meta_get_filelist")
+    @unittest.mock.patch("osc.core.show_files_meta")
+    def test_list_past_revision_with_linkinfo(
+        self, mock_show_files_meta, mock_meta_get_filelist, mock_print,
+    ):
+        """When listing a past revision with _link and linkinfo, expand link target."""
+        from osc.commandline import Osc
+        cmd = Osc()
+        cmd.get_api_url = unittest.mock.MagicMock(return_value="https://api.opensuse.org")
+        opts = argparse.Namespace(
+            binaries=False,
+            verbose=False,
+            deleted=False,
+            expand=False,
+            unexpand=False,
+            meta=False,
+            revision="276",
+        )
+        mock_meta_get_filelist.side_effect = [
+            ["_link", "file1.txt"],
+            ["file1.txt", "file2.txt"],
+        ]
+        mock_show_files_meta.return_value = (
+            "<directory name='hplip' rev='276'>"
+            "<linkinfo project='Base:System' package='hplip' rev='123' />"
+            "</directory>"
+        )
+
+        cmd.do_list("ls", opts, "Printing", "hplip")
+
+        mock_show_files_meta.assert_called_once_with(
+            "https://api.opensuse.org", "Printing", "hplip", revision="276",
+        )
+        self.assertEqual(mock_meta_get_filelist.call_count, 2)
+
+
 if __name__ == "__main__":
     unittest.main()
