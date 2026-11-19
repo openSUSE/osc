@@ -296,6 +296,19 @@ class HostOptions(OscOptions):
         ini_key="pass",
     )  # type: ignore[assignment]
 
+    token: Optional[Password] = Field(
+        default=None,
+        description=textwrap.dedent(
+            """
+            API token for the apiurl.
+            When set, requests are authenticated with an ``Authorization: Bearer``
+            header and the token takes precedence over password authentication.
+            Can also be supplied through the ``OSC_TOKEN`` environment variable.
+            """
+        ),
+        ini_key="token",
+    )  # type: ignore[assignment]
+
     sshkey: Optional[str] = Field(
         default=FromParent("sshkey"),
         description=textwrap.dedent(
@@ -2092,6 +2105,7 @@ def get_config(override_conffile=None,
     env_username = os.environ.get("OSC_USERNAME", "")
     env_credentials_mgr_class = os.environ.get("OSC_CREDENTIALS_MGR_CLASS", None)
     env_password = os.environ.get("OSC_PASSWORD", None)
+    env_token = os.environ.get("OSC_TOKEN", None)
 
     if config.apiurl not in config.api_host_options:
         host_options = HostOptions(apiurl=config.apiurl, username=env_username, _parent=config)
@@ -2116,13 +2130,18 @@ def get_config(override_conffile=None,
         password = creds_mgr.get_password(config.apiurl, host_options.username, defer=True, apiurl=host_options.apiurl)
         host_options.password = password
 
+    if env_token:
+        # an environment-provided token takes precedence over the configured
+        # one and is never written back to the config file
+        host_options.token = Password(env_token)
+
     # END: override credentials for the default apiurl
 
     for apiurl, host_options in config.api_host_options.items():
         if not host_options.username:
             raise oscerr.ConfigMissingCredentialsError(f"No user configured for apiurl {apiurl}", conffile, apiurl)
 
-        if host_options.password is None:
+        if host_options.password is None and not host_options.token:
             raise oscerr.ConfigMissingCredentialsError(f"No password configured for apiurl {apiurl}", conffile, apiurl)
 
     for key, value in cp["general"].items():
