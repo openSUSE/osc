@@ -1355,6 +1355,8 @@ rev: %s
                 reply = get_user_input(
                     "Write?",
                     answers={"y": "yes", "n": "no", "e": "edit"},
+                    # non-interactive default: do not write the changes
+                    default_answer="n",
                 )
                 if reply == "y":
                     break

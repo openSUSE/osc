@@ -206,7 +206,8 @@ class OscOptions(BaseModel):
         if not value.strip():
             if field.is_optional:
                 setattr(self, field_name, None)
-                return
+            # otherwise keep the field default instead of raising TypeError
+            return
 
         if field.origin_type == Password:
             value = Password(value)
@@ -916,6 +917,16 @@ class Options(OscOptions):
         description=textwrap.dedent(
             """
             Show requests in the interactive mode by default.
+            """
+        ),
+    )  # type: ignore[assignment]
+
+    non_interactive: bool = Field(
+        default=False,
+        description=textwrap.dedent(
+            """
+            Never prompt for input; fail with an error instead.
+            Equivalent to the --non-interactive command-line option.
             """
         ),
     )  # type: ignore[assignment]
@@ -1858,6 +1869,28 @@ def _get_credentials_manager(url, cp):
     return credentials.PlaintextConfigFileCredentialsManager(cp, None)
 
 
+def is_non_interactive_requested(cli_flag=False, overrides=None):
+    """
+    Return True if non-interactive mode was requested via --non-interactive,
+    --setopt non_interactive=... or the OSC_NON_INTERACTIVE environment variable.
+
+    This is for use before get_config() completes (e.g. when no config file
+    exists yet and get_config() raises NoConfigfile); afterwards the resolved
+    value is available as conf.config["non_interactive"].
+    """
+    if cli_flag:
+        return True
+    probe = Options()
+    sources = ((overrides or {}).get("non_interactive"), os.environ.get("OSC_NON_INTERACTIVE"))
+    for raw_value in sources:
+        if raw_value is None:
+            continue
+        probe.set_value_from_string("non_interactive", raw_value)
+        if probe.non_interactive:
+            return True
+    return False
+
+
 def get_config(override_conffile=None,
                override_apiurl=None,
                override_debug=None,
@@ -1868,6 +1901,7 @@ def get_config(override_conffile=None,
                override_quiet=None,
                override_no_keyring=None,
                override_verbose=None,
+               override_non_interactive=None,
                overrides=None,
                store_dir: Optional[str] = None,
                ):
@@ -1912,6 +1946,9 @@ def get_config(override_conffile=None,
 
     if override_verbose is not None:
         overrides["verbose"] = override_verbose
+
+    if override_non_interactive is not None:
+        overrides["non_interactive"] = override_non_interactive
 
     if override_conffile is not None:
         conffile = override_conffile

@@ -68,6 +68,14 @@ class PullRequestReviewInteractiveCommand(osc.commandline_git.GitObsCommand):
     def run(self, args):
         from osc import gitea_api
         from osc.output import get_user_input
+        from osc.util.helper import refuse_non_interactive
+
+        # pre-flight for --non-interactive: reviewing pull requests is
+        # inherently interactive, so refuse before doing any work
+        refuse_non_interactive(
+            "'osc pr review interactive' requires interactive input",
+            hint="Run without --non-interactive to review pull requests.",
+        )
 
         if args.reviewer:
             try:

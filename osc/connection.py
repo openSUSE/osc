@@ -386,6 +386,7 @@ def http_request(method: str, url: str, headers=None, data=None, file=None):
             "Really send the request?",
             answers={"y": "yes", "n": "no"},
             default_answer="n",
+            hint="Disable the 'http_manual_approve' option in the config to run without prompting.",
         )
         if reply != "y":
             raise oscerr.UserAbort()
