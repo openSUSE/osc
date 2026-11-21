@@ -138,11 +138,17 @@ class MockHTTPConnectionPool:
                 if not xml_equal(body, exp):
                     raise RequestDataMismatch(url, repr(body), repr(exp))
 
+        timeout = response_kw.get("timeout")
+        if timeout != request.get("timeout"):
+            raise RuntimeError(f"Timeout mismatch for {url}: got {timeout}, expected {request.get('timeout')}")
+
         if 'exception' in request:
             raise request["exception"]
 
-        if 'text' not in request and 'file' in request:
-            with open(request['file'], 'rb') as f:
+        if "body_exception" in request:
+            data = b""
+        elif "text" not in request and "file" in request:
+            with open(request["file"], "rb") as f:
                 data = f.read()
         elif 'text' in request and 'file' not in request:
             data = request['text'].encode('utf-8')
@@ -152,7 +158,19 @@ class MockHTTPConnectionPool:
         response = urllib3.response.HTTPResponse(body=data, status=request.get("code", 200))
         response._fp = io.BytesIO(data)
 
+        if "body_exception" in request:
+            # fail while reading the body, after urlopen() returned
+            response._fp = RaisingFile(request["body_exception"])
+
         return response
+
+
+class RaisingFile:
+    def __init__(self, exception):
+        self.exception = exception
+
+    def __iter__(self):
+        raise self.exception
 
 
 def urldecorator(method, url, **kwargs):

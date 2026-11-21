@@ -4215,6 +4215,12 @@ def get_binarylist_published(apiurl: str, prj: str, repo: str, arch: str):
     return r
 
 
+# The OBS backend holds a ``_result?oldstate=...`` request until the state changes,
+# but replies after 5 minutes at the latest (checked every 2 minutes) so that proxies do not time out.
+# A longer timeout turns a connection that died silently into a retried error instead of a hang.
+RESULTS_TIMEOUT = 600
+
+
 def show_results_meta(
     apiurl: str,
     prj: str,
@@ -4239,7 +4245,7 @@ def show_results_meta(
     query["repository"] = repository
     query["arch"] = arch
     u = makeurl(apiurl, ['build', prj, '_result'], query=query)
-    f = http_GET(u)
+    f = http_GET(u, timeout=RESULTS_TIMEOUT)
     return f.readlines()
 
 
@@ -4383,6 +4389,8 @@ def get_results(
 
 def get_package_results(apiurl: str, project: str, package: Optional[str] = None, wait=False, multibuild_packages: Optional[List[str]] = None, *args, **kwargs):
     """generator that returns a the package results as an xml structure"""
+    import urllib3.exceptions
+
     xml = b''
     waiting_states = ('blocked', 'scheduled', 'dispatching', 'building',
                       'signing', 'finished')
@@ -4401,6 +4409,9 @@ def get_package_results(apiurl: str, project: str, package: Optional[str] = None
                 kwargs['locallink'] = None
                 continue
             raise
+        except (urllib3.exceptions.ReadTimeoutError, urllib3.exceptions.ProtocolError):
+            # the connection died while reading the response body, which urllib3 doesn't retry
+            continue
         root = xml_fromstring(xml)
         kwargs['oldstate'] = root.get('state')
         for result in root.findall('result'):
