@@ -6,6 +6,9 @@
 
 import builtins
 import html
+import signal
+import subprocess
+import threading
 
 from .. import oscerr
 
@@ -47,6 +50,43 @@ def raw_input(*args):
     except EOFError:
         # interpret ctrl-d as user abort
         raise oscerr.UserAbort()
+
+
+def run_interactive(cmd, **kwargs):
+    """
+    Run an interactive program (an editor, for example) and wait for it.
+
+    Pressing Ctrl-C in a terminal sends SIGINT to the whole foreground
+    process group, that is, to osc as well as to the child. Editors such
+    as vis keep ISIG enabled and handle SIGINT themselves; without
+    protection osc would get KeyboardInterrupt and subprocess would kill
+    the editor in the middle of editing.
+
+    Like system(3) and git's editor launcher, ignore SIGINT and SIGQUIT
+    in osc while the child is running. The signals are ignored only after
+    the child has been spawned, so it does not inherit SIG_IGN.
+
+    Returns the exit code of the child.
+    """
+    proc = subprocess.Popen(cmd, **kwargs)
+
+    if threading.current_thread() is not threading.main_thread():
+        # signal handlers can be changed only from the main thread
+        return proc.wait()
+
+    signums = [signal.SIGINT]
+    if hasattr(signal, "SIGQUIT"):
+        signums.append(signal.SIGQUIT)
+
+    old_handlers = {}
+    try:
+        for signum in signums:
+            old_handlers[signum] = signal.signal(signum, signal.SIG_IGN)
+        return proc.wait()
+    finally:
+        for signum, handler in old_handlers.items():
+            # None means the handler was not installed from Python
+            signal.signal(signum, signal.SIG_DFL if handler is None else handler)
 
 
 def _html_escape(data):

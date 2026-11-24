@@ -85,7 +85,7 @@ from .output import get_default_pager
 from .output import run_pager
 from .output import sanitize_text
 from .util import xdg
-from .util.helper import decode_list, decode_it, raw_input, _html_escape
+from .util.helper import decode_list, decode_it, raw_input, run_interactive, _html_escape
 from .util.xml import xml_fromstring
 from .util.xml import xml_indent_compat as xmlindent
 from .util.xml import xml_parse
@@ -2045,7 +2045,7 @@ def highlight_diff(diff):
 def run_editor(filename):
     cmd = _editor_command()
     cmd.append(filename)
-    return run_external(cmd[0], *cmd[1:])
+    return run_external(cmd[0], *cmd[1:], interactive=True)
 
 
 def _editor_command():
@@ -2071,12 +2071,12 @@ def _edit_message_open_editor(filename, data, orig_mtime):
         data = bytes(data, 'utf-8')
     if mtime == orig_mtime:
         # prepare file for editors
-        if editor[0] in ('vi', 'vim'):
+        if os.path.basename(editor[0]) in ('vi', 'vim'):
             with tempfile.NamedTemporaryFile() as f:
                 f.write(data)
                 f.flush()
                 editor.extend(['-c', f':r {f.name}', filename])
-                run_external(editor[0], *editor[1:])
+                run_external(editor[0], *editor[1:], interactive=True)
         else:
             with open(filename, 'wb') as f:
                 f.write(data)
@@ -6324,7 +6324,7 @@ def get_user_projpkgs(apiurl, user, role=None, exclude_projects=None, proj=True,
     return res
 
 
-def run_external(filename, *args, **kwargs):
+def run_external(filename, *args, interactive=False, **kwargs):
     """Executes the program filename via subprocess.call.
 
     *args are additional arguments which are passed to the
@@ -6334,6 +6334,9 @@ def run_external(filename, *args, **kwargs):
     to subprocess.call (this can be used to execute a shell
     command). Otherwise [filename] + list(args) is passed
     to the subprocess.call function.
+    If interactive is True, osc ignores SIGINT and SIGQUIT while
+    the program runs, so that Ctrl-C is left to the program
+    (an editor, for example) instead of killing it.
 
     """
     # unless explicitly specified use shell=False
@@ -6343,6 +6346,8 @@ def run_external(filename, *args, **kwargs):
     else:
         cmd = filename
     try:
+        if interactive:
+            return run_interactive(cmd, **kwargs)
         return subprocess.call(cmd, **kwargs)
     except OSError as e:
         if e.errno != errno.ENOENT:
