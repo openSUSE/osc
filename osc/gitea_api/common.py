@@ -101,7 +101,12 @@ def get_editor_command(file_path: str) -> List[str]:
 
 
 def run_editor(file_path: str):
-    subprocess.run(get_editor_command(file_path), check=True)
+    from ..util.helper import run_interactive
+
+    cmd = get_editor_command(file_path)
+    returncode = run_interactive(cmd)
+    if returncode != 0:
+        raise subprocess.CalledProcessError(returncode, cmd)
 
 
 def edit_message(template: Optional[str] = None) -> str:
